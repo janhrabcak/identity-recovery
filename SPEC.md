@@ -71,6 +71,10 @@ identity-recovery/
     "secretKey": "XX-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
     "accountKeyHint": "Hint string"
   },
+  "totpSeeds": {
+    "Google": "JBSWY3DPEHPK3PXP",
+    "GitHub": "KVKFKRCPI5UHIZKS"
+  },
   "googleBackupCodes": [
     "23456789",
     "34567890",

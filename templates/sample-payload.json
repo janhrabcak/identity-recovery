@@ -9,6 +9,10 @@
     "secretKey": "A3-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
     "accountKeyHint": "Personal Emergency Vault"
   },
+  "totpSeeds": {
+    "Google": "JBSWY3DPEHPK3PXP",
+    "GitHub": "KVKFKRCPI5UHIZKS"
+  },
   "googleBackupCodes": [
     "23456789",
     "34567890",

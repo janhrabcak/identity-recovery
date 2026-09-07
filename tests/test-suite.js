@@ -306,6 +306,62 @@ async function runTests() {
   }
   console.log("✓ Test 15 Passed: Multi-channel webhook notification logic and CI workflow configuration verified.");
 
+
+  // Test 16: Live TOTP Generation Validation
+  console.log("\n[Test 16] Live TOTP Generation Validation");
+  
+  function base32ToBuffer(base32) {
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    const cleanStr = base32.toUpperCase().replace(/=+$/, "");
+    let bits = 0;
+    let value = 0;
+    let index = 0;
+    const output = new Uint8Array((cleanStr.length * 5) / 8 | 0);
+    for (let i = 0; i < cleanStr.length; i++) {
+      const char = cleanStr[i];
+      const val = alphabet.indexOf(char);
+      if (val === -1) continue;
+      value = (value << 5) | val;
+      bits += 5;
+      if (bits >= 8) {
+        output[index++] = (value >>> (bits - 8)) & 255;
+        bits -= 8;
+      }
+    }
+    return output;
+  }
+
+  async function generateTOTP(base32Secret, epochMs = Date.now()) {
+    const keyBuffer = base32ToBuffer(base32Secret);
+    const key = await crypto.subtle.importKey(
+      "raw", keyBuffer, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]
+    );
+    const timeStep = Math.floor(epochMs / 30000);
+    const timeBuffer = new ArrayBuffer(8);
+    const timeView = new DataView(timeBuffer);
+    timeView.setUint32(4, timeStep, false);
+    const signature = await crypto.subtle.sign("HMAC", key, timeBuffer);
+    const sigView = new Uint8Array(signature);
+    const offset = sigView[sigView.length - 1] & 0x0f;
+    const code = (
+      ((sigView[offset] & 0x7f) << 24) |
+      ((sigView[offset + 1] & 0xff) << 16) |
+      ((sigView[offset + 2] & 0xff) << 8) |
+      (sigView[offset + 3] & 0xff)
+    ) % 1000000;
+    return code.toString().padStart(6, "0");
+  }
+
+  const testSecret = "JBSWY3DPEHPK3PXP";
+  const testEpoch = 1700000000000; 
+  const expectedCode = "324550";
+  const generatedCode = await generateTOTP(testSecret, testEpoch);
+  
+  if (generatedCode !== expectedCode) {
+    throw new Error(`Test 16 Failed: Expected TOTP ${expectedCode}, got ${generatedCode}`);
+  }
+  console.log("✓ Test 16 Passed: TOTP Generation works successfully.");
+
   console.log("\n==========================================");
   console.log("ALL TESTS PASSED SUCCESSFULLY! ✓");
   console.log("==========================================");
