@@ -158,7 +158,7 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
   ```http
   default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';
   ```
-  Outbound network access is strictly locked down: all external scripts, styles, objects, workers, frames, and arbitrary network destinations are completely blocked. `connect-src` is restricted exclusively to trusted public anycast DoH resolvers (`cloudflare-dns.com` and `dns.google`) solely for secondary dead-drop ciphertext retrieval. Decrypted secrets can never be exfiltrated to arbitrary servers.
+  Outbound network access is strictly locked down: all external scripts, styles, objects, workers, frames, and arbitrary network destinations are completely blocked. `connect-src` is restricted exclusively to trusted public anycast DoH resolvers (`cloudflare-dns.com` and `dns.google`) solely for secondary dead-drop ciphertext retrieval. *Note: While XSS is strictly mitigated via `textContent` injection, the DoH `connect-src` whitelist theoretically creates a residual exfiltration vector where an attacker with code execution could exfiltrate secrets via recursive DNS queries.*
 - **HTTP Response Security Headers (`public/_headers`):**
   - `X-Frame-Options: DENY`: Defends against iframe overlay and clickjacking attacks.
   - `Cache-Control: no-cache, no-store, must-revalidate`: Prevents public kiosk or retail terminals from writing decrypted content to disk cache.
