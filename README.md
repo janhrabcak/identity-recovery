@@ -61,7 +61,18 @@ Stateless, zero-hardware emergency credential recovery protocol designed to rest
 
 ## 🚀 Quick Run Commands
 
-### 1. Generate a Sample Recovery Payload
+### ⚡ Automated Rotation & Deploy Script (Recommended)
+To rotate your credentials, verify the crypto, commit strictly `index.html`, push to Cloudflare, and securely shred the unencrypted JSON payload in a single hardened command:
+```bash
+./deploy.sh [path-to-payload.json]
+```
+*(If no payload file is passed as an argument, it automatically uses `payload.json` or prompts for a path. In Step 7, secure plaintext shredding defaults to **Yes**).*
+
+---
+
+### Manual Step-by-Step Workflow
+
+#### 1. Generate a Sample Recovery Payload
 Generate a template `sample-payload.json` matching the specification schema:
 ```bash
 # Generate a fresh sample payload (generated 5 days ago)
@@ -223,6 +234,7 @@ The repository includes pre-configured [`wrangler.json`](wrangler.json), [`_head
 | File | Purpose | Security / Privacy Classification |
 |---|---|---|
 | [`index.html`](index.html) | Standalone recovery terminal UI with zero-dependency WebCrypto AES-GCM decryption, staleness banner, copy buttons, and backup code strikethrough tracker. | Public / Deployable (contains only encrypted ciphertext) |
+| [`deploy.sh`](deploy.sh) | Hardened Bash deployment script: validates payload, ingests passphrase with typo confirmation, embeds ciphertext, tests, commits, pushes, and shreds plaintext. | Private Tooling (Automation) |
 | [`encrypt.js`](encrypt.js) | Node.js 18+ CLI utility to derive PBKDF2-600k keys, encrypt JSON payloads, inject Base64 into `index.html`, or verify offline decryption. | Private Tooling (Zero npm dependencies) |
 | [`SPEC.md`](SPEC.md) | Architectural specification, cryptographic definitions, schema, and threat model. | Documentation |
 | [`README.md`](README.md) | Operational guide, quick run commands, security rules, and deployment instructions. | Documentation |

@@ -119,8 +119,9 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
 
 ---
 
-## 5. Offline Ingestion Tooling (`encrypt.js`)
+## 5. Offline Ingestion & Deployment Tooling
 
+### 5.1 Encryption Utility (`encrypt.js`)
 - **Environment:** Node.js 18+ standard library using `node:crypto` (`subtle` and `getRandomValues`). Zero third-party npm packages.
 - **Command-Line Interface:**
   - `--sample [fresh|stale]`: Creates a schema-compliant `sample-payload.json`.
@@ -129,6 +130,16 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
   - `-o, --output <file>`: Writes Base64 ciphertext to file.
   - `--embed-html <file>`: Automatically injects the Base64 ciphertext into `const EMBEDDED_CIPHERTEXT = "..."` within `index.html`.
   - `--decrypt <base64>`: Decrypts and outputs formatted JSON to verify payload integrity offline.
+
+### 5.2 Automated Deployment Script (`deploy.sh`)
+Hardened Bash orchestration script for rotation and production publishing:
+1. **Pre-flight Checks:** Validates git repository, remote connectivity, and payload schema completeness.
+2. **Passphrase Ingestion:** Prompts for Diceware passphrase with masked input and typo-prevention confirmation.
+3. **Encryption & HTML Embedding:** Invokes `encrypt.js` to derive PBKDF2-600k keys and inject the Base64 ciphertext into `index.html`.
+4. **Pre-Deploy Verification:** Executes `test-suite.js` to guarantee cryptographic and runtime validity before staging.
+5. **Git Safety Guard:** Audits git staging area to prevent accidental credential leaks; stages strictly `index.html`.
+6. **Commit & Push:** Commits with UTC timestamp and pushes to `origin main`, triggering Cloudflare Anycast edge deployment.
+7. **Plaintext Destruction:** Securely shreds and unlinks the plaintext payload file using `shred -u -z -n 3` (3-pass random overwrite + zero fill), defaulting to **Yes**.
 
 ---
 

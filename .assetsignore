@@ -1,4 +1,5 @@
 encrypt.js
+deploy.sh
 test-suite.js
 sample-payload.json
 README.md
