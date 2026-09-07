@@ -34,7 +34,6 @@ identity-recovery/
 ├── tests/                        # 🧪 Verification suite
 │   └── test-suite.js             # Automated crypto & parity tests (15 automated tests)
 │
-├── wrangler.json                 # Cloudflare config: assets directory -> "./public"
 ├── .env.example                  # Environment configuration template (RECOVERY_DOMAIN)
 ├── .gitignore                    # Security boundary (blocks unencrypted payload.json)
 ├── README.md                     # Operational documentation & quick run commands
@@ -286,14 +285,13 @@ When backing up or hosting this project on GitHub (e.g. for the Tier 1 dead-drop
 Cloudflare Pages is the optimal hosting platform for this protocol because it supports **private repositories for free**, provides instant global Anycast routing (<50ms globally), automated SSL, and response-level security headers.
 
 ### Deployment Configuration
-The repository is configured via [`wrangler.json`](wrangler.json) to deploy strictly `./public` to the edge.
+The repository is designed to be deployed using Cloudflare Pages Git integration.
 
-1. In the **Cloudflare Dashboard**, navigate to **Workers & Pages** → **Create application** → **Connect to Git**.
+1. In the **Cloudflare Dashboard**, navigate to **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**.
 2. Authorize your private GitHub repository `identity-recovery`.
 3. Configure the build settings:
    - **Framework preset:** `None`
    - **Build command:** *(leave empty)*
-   - **Deploy command:** `npx wrangler deploy` (or leave default)
    - **Build output directory:** `public`
 4. Click **Save and Deploy**. Your site will be live at `https://identity-recovery.pages.dev`.
 
@@ -337,7 +335,6 @@ node scripts/check-staleness.js --webhook https://ntfy.sh/your_topic
 | [`.github/workflows/staleness-check.yml`](.github/workflows/staleness-check.yml) | Scheduled GitHub Actions workflow monitoring vault age and opening automated alert issues. | CI/CD Automation |
 | [`templates/sample-payload.json`](templates/sample-payload.json) | Dummy schema-compliant template payload for testing. | Dummy Data (Safe to commit) |
 | [`tests/test-suite.js`](tests/test-suite.js) | Automated test suite validating cryptographic parity, error handling, staleness calculations, and CSP rules. | Verification |
-| [`wrangler.json`](wrangler.json) | Cloudflare Workers & Pages configuration pointing assets directory strictly to `./public`. | Deployment Configuration |
 | [`.env.example`](.env.example) | Environment template documenting configurable variables like `RECOVERY_DOMAIN`. | Configuration Template |
 | [`.gitignore`](.gitignore) | Enforces that real unencrypted `payload.json`, secrets, and temporary ciphertext dumps are never committed to Git. | Security Boundary |
 | [`SPEC.md`](SPEC.md) | Architectural specification, cryptographic definitions, schema, and threat model. | Documentation |
