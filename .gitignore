@@ -1,0 +1,15 @@
+# Plaintext recovery payloads (CRITICAL: NEVER commit real unencrypted secrets!)
+payload.json
+my-payload.json
+*private*
+*secret*
+*.env
+secrets/
+
+# Temporary / scratch ciphertext dumps
+ciphertext.b64
+
+# Operating System & Logs
+.DS_Store
+Thumbs.db
+*.log

@@ -1,0 +1,25 @@
+{
+  "metadata": {
+    "generatedAt": "2026-09-02T07:18:48.955Z",
+    "staleAfterMonths": 6,
+    "canaryCode": "12345678"
+  },
+  "onePassword": {
+    "email": "user@example.com",
+    "secretKey": "A3-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+    "accountKeyHint": "Personal Emergency Vault"
+  },
+  "googleBackupCodes": [
+    "23456789",
+    "34567890",
+    "45678901",
+    "56789012",
+    "67890123",
+    "78901234",
+    "89012345",
+    "90123456",
+    "01234567",
+    "12345670"
+  ],
+  "notes": "Emergency contact: Alice (+1-555-0199). Recovery protocol: Recover Google account first using backup codes, then sign in to 1Password at my.1password.com."
+}

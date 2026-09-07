@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';">
+  <title>SOS Recovery Protocol | Cold-Start Identity Recovery</title>
+  <style>
+    :root {
+      --bg-base: #0a0e17;
+      --bg-surface: #111827;
+      --bg-surface-elevated: #1f2937;
+      --bg-surface-subtle: #1e293b;
+      --border-color: #374151;
+      --border-focus: #38bdf8;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      
+      --accent-primary: #0284c7;
+      --accent-hover: #0369a1;
+      --accent-focus: rgba(2, 132, 199, 0.4);
+
+      --status-green-bg: rgba(6, 78, 59, 0.35);
+      --status-green-border: #059669;
+      --status-green-text: #34d399;
+
+      --status-amber-bg: rgba(120, 53, 15, 0.35);
+      --status-amber-border: #d97706;
+      --status-amber-text: #fbbf24;
+
+      --status-red-bg: rgba(127, 29, 29, 0.35);
+      --status-red-border: #dc2626;
+      --status-red-text: #f87171;
+
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      padding: 24px 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 860px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Cards */
+    .card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background-color: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 8px 14px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+      user-select: none;
+    }
+
+    .btn:hover:not(:disabled) {
+      background-color: #374151;
+      border-color: #4b5563;
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--border-focus);
+      outline-offset: 2px;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn-danger {
+      background-color: rgba(220, 38, 38, 0.2);
+      border-color: var(--status-red-border);
+      color: var(--status-red-text);
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background-color: rgba(220, 38, 38, 0.35);
+    }
+
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 0.775rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-copy {
+      font-family: var(--font-sans);
+      min-width: 72px;
+    }
+
+    .btn-copy.copied {
+      background-color: var(--status-green-bg) !important;
+      border-color: var(--status-green-border) !important;
+      color: var(--status-green-text) !important;
+    }
+
+    /* Forms & Inputs */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.825rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    textarea {
+      width: 100%;
+      background-color: var(--bg-surface-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    textarea:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+
+    .input-toggle-btn {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 4px;
+    }
+
+    .input-toggle-btn:hover {
+      color: var(--text-primary);
+    }
+
+    /* Banner: Staleness and Status */
+    .banner {
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border: 1px solid transparent;
+    }
+
+    .banner-fresh {
+      background-color: var(--status-green-bg);
+      border-color: var(--status-green-border);
+      color: #ecfdf5;
+    }
+
+    .banner-expiring {
+      background-color: var(--status-amber-bg);
+      border-color: var(--status-amber-border);
+      color: #fffbeb;
+    }
+
+    .banner-stale {
+      background-color: var(--status-red-bg);
+      border-color: var(--status-red-border);
+      color: #fef2f2;
+      animation: pulse-border 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-border {
+      0%, 100% { border-color: var(--status-red-border); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3); }
+      50% { border-color: #ef4444; box-shadow: 0 0 16px 2px rgba(239, 68, 68, 0.3); }
+    }
+
+    .banner-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .banner-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .banner-badge {
+      font-size: 0.725rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-fresh {
+      background-color: var(--status-green-border);
+      color: #ffffff;
+    }
+
+    .badge-expiring {
+      background-color: var(--status-amber-border);
+      color: #ffffff;
+    }
+
+    .badge-stale {
+      background-color: var(--status-red-border);
+      color: #ffffff;
+    }
+
+    .banner-desc {
+      font-size: 0.885rem;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .banner-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 6px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 0.8rem;
+    }
+
+    .meta-item-label {
+      opacity: 0.75;
+      font-size: 0.725rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .meta-item-value {
+      font-weight: 600;
+      font-family: var(--font-mono);
+      margin-top: 2px;
+      word-break: break-all;
+    }
+
+    /* Secret Key / Credential Display Box */
+    .cred-box {
+      background-color: var(--bg-base);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .cred-content {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+
+    .cred-label {
+      font-size: 0.725rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+
+    .cred-value {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      word-break: break-all;
+      user-select: all;
+    }
+
+    .secret-key-value {
+      color: #38bdf8;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    /* Google Backup Codes Tracker */
+    .tracker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+      background-color: var(--bg-surface-subtle);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+    }
+
+    .tracker-counter {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .tracker-counter-num {
+      color: var(--text-primary);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .tracker-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .codes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
+    }
+
+    .code-card {
+      background-color: var(--bg-surface-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .code-card:hover {
+      border-color: #4b5563;
+      background-color: #243042;
+    }
+
+    .code-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .code-checkbox {
+      width: 18px;
+      height: 18px;
+      accent-color: #ef4444;
+      cursor: pointer;
+    }
+
+    .code-index {
+      font-size: 0.725rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      min-width: 22px;
+    }
+
+    .code-digits {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #f3f4f6;
+      transition: all 0.15s ease;
+    }
+
+    /* Strikethrough state */
+    .code-card.used {
+      background-color: rgba(15, 23, 42, 0.4);
+      border-color: rgba(55, 65, 81, 0.5);
+      opacity: 0.45;
+    }
+
+    .code-card.used .code-digits {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .code-card.used:hover {
+      opacity: 0.75;
+    }
+
+    /* Notes card */
+    .notes-box {
+      background-color: var(--bg-base);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.6;
+      color: #e5e7eb;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    /* Recovery instructions callout */
+    .instructions-box {
+      background-color: rgba(2, 132, 199, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      margin-top: 16px;
+      font-size: 0.875rem;
+      color: #bae6fd;
+    }
+
+    .instructions-box ol {
+      margin-left: 20px;
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    /* Collapsible Details */
+    details {
+      margin-top: 14px;
+      background-color: var(--bg-surface-subtle);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-size: 0.825rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      user-select: none;
+    }
+
+    summary:hover {
+      color: var(--text-primary);
+    }
+
+    .details-content {
+      margin-top: 10px;
+    }
+
+    /* Error Message */
+    .error-banner {
+      background-color: var(--status-red-bg);
+      border: 1px solid var(--status-red-border);
+      color: var(--status-red-text);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #ffffff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 32px;
+      font-size: 0.775rem;
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: var(--text-secondary);
+      text-decoration: none;
+    }
+
+    /* Utility classes */
+    .hidden {
+      display: none !important;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+      .card, .banner, .cred-box, .code-card, .notes-box {
+        background: #ffffff !important;
+        border-color: #cccccc !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+      }
+      .btn, header .brand-badge, details, footer, .tracker-actions {
+        display: none !important;
+      }
+      .code-digits, .secret-key-value {
+        color: #000000 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="brand-badge">Tier 1 Cold-Start Dead-Drop</div>
+      <h1>Identity Recovery Protocol</h1>
+      <p class="subtitle">Stateless zero-hardware emergency credential vault. Zero external dependencies, pure browser WebCrypto.</p>
+    </header>
+
+    <!-- UNLOCK / DECRYPTION VIEW -->
+    <section id="lock-screen">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🔒</span> Decrypt Recovery Vault
+          </div>
+          <span style="font-size: 0.775rem; color: var(--text-muted);">AES-GCM-256 + PBKDF2 (600k)</span>
+        </div>
+
+        <div id="error-message" class="error-banner" role="alert"></div>
+
+        <form id="decrypt-form" onsubmit="event.preventDefault(); decryptVault();">
+          <div class="form-group">
+            <label for="passphrase-input">6-Word Diceware Passphrase</label>
+            <div class="input-wrapper">
+              <input 
+                type="password" 
+                id="passphrase-input" 
+                placeholder="word1 word2 word3 word4 word5 word6" 
+                autocomplete="off" 
+                autocorrect="off" 
+                autocapitalize="off" 
+                spellcheck="false" 
+                required 
+                autofocus
+              >
+              <button 
+                type="button" 
+                class="input-toggle-btn" 
+                id="toggle-passphrase-btn" 
+                onclick="togglePassphraseVisibility()" 
+                title="Toggle passphrase visibility"
+              >Show</button>
+            </div>
+            <p style="font-size: 0.775rem; color: var(--text-muted); margin-top: 6px;">
+              Enter the memorized 6-word Diceware recovery phrase (~77 bits entropy). This derives the AES-256 key via PBKDF2-SHA-256 (600,000 iterations).
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 12px; align-items: center; margin-top: 20px;">
+            <button type="submit" id="decrypt-btn" class="btn btn-primary" style="flex: 1; padding: 12px;">
+              <span id="btn-spinner" class="spinner hidden"></span>
+              <span id="btn-text">Decrypt Recovery Vault</span>
+            </button>
+          </div>
+
+          <!-- Collapsible: Custom Payload Input -->
+          <details style="margin-top: 18px;">
+            <summary>Advanced: Custom Payload Ciphertext</summary>
+            <div class="details-content">
+              <p style="font-size: 0.775rem; color: var(--text-muted); margin-bottom: 8px;">
+                By default, this page attempts to decrypt the pre-embedded ciphertext. You can paste an alternative base64 payload below:
+              </p>
+              <textarea id="ciphertext-input" rows="3" placeholder="Base64 encoded [16-byte salt][12-byte IV][ciphertext]"></textarea>
+            </div>
+          </details>
+        </form>
+      </div>
+    </section>
+
+    <!-- UNLOCKED RECOVERY VAULT VIEW -->
+    <main id="vault-screen" class="hidden">
+      
+      <!-- Top Action Bar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10b981;"></span>
+          <span style="font-size: 0.85rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em;">Vault Decrypted</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-sm" onclick="copyFullPayload(this)">📋 Copy JSON</button>
+          <button type="button" class="btn btn-sm btn-danger" onclick="lockVault()">🔒 Lock & Purge</button>
+        </div>
+      </div>
+
+      <!-- Staleness Check Banner -->
+      <section id="staleness-banner" class="banner banner-fresh">
+        <div class="banner-top">
+          <div class="banner-title">
+            <span id="banner-icon">✓</span>
+            <span id="banner-headline">Payload Freshness Status</span>
+          </div>
+          <span id="banner-badge" class="banner-badge badge-fresh">Fresh</span>
+        </div>
+        <div id="banner-message" class="banner-desc">
+          Vault age is within acceptable operational thresholds.
+        </div>
+        <div class="banner-meta-grid">
+          <div>
+            <div class="meta-item-label">Generated At (UTC)</div>
+            <div id="meta-generated-at" class="meta-item-value">-</div>
+          </div>
+          <div>
+            <div class="meta-item-label">Vault Age</div>
+            <div id="meta-vault-age" class="meta-item-value">-</div>
+          </div>
+          <div>
+            <div class="meta-item-label">Staleness Limit</div>
+            <div id="meta-stale-limit" class="meta-item-value">-</div>
+          </div>
+          <div>
+            <div class="meta-item-label">Canary Code</div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+              <span id="meta-canary-code" class="meta-item-value">-</span>
+              <button type="button" class="btn btn-sm btn-copy" id="copy-canary-btn" onclick="copyValue(this, currentPayload?.metadata?.canaryCode)">Copy</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: 1Password Root of Trust -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🔑</span> Root of Trust: 1Password
+          </div>
+          <span style="font-size: 0.775rem; color: var(--text-secondary);">Primary Credential Store</span>
+        </div>
+
+        <div class="cred-box">
+          <div class="cred-content">
+            <div class="cred-label">Account Email</div>
+            <div id="op-email" class="cred-value">-</div>
+          </div>
+          <button type="button" class="btn btn-sm btn-copy" onclick="copyValue(this, currentPayload?.onePassword?.email)">Copy</button>
+        </div>
+
+        <div class="cred-box">
+          <div class="cred-content">
+            <div class="cred-label">Secret Key</div>
+            <div id="op-secret-key" class="cred-value secret-key-value">-</div>
+          </div>
+          <button type="button" class="btn btn-sm btn-copy" onclick="copyValue(this, currentPayload?.onePassword?.secretKey)">Copy</button>
+        </div>
+
+        <div id="op-hint-box" class="cred-box hidden">
+          <div class="cred-content">
+            <div class="cred-label">Account Key Hint</div>
+            <div id="op-hint" class="cred-value">-</div>
+          </div>
+          <button type="button" class="btn btn-sm btn-copy" onclick="copyValue(this, currentPayload?.onePassword?.accountKeyHint)">Copy</button>
+        </div>
+
+        <div class="instructions-box">
+          <strong>1Password Sign-in Protocol:</strong>
+          <ol>
+            <li>Open <code style="color: #38bdf8;">https://my.1password.com</code> in a clean/incognito browser tab.</li>
+            <li>Paste the <strong>Account Email</strong> and <strong>Secret Key</strong> copied above.</li>
+            <li>Type your memorized 1Password Master Password to restore access to all vaults and authenticator seeds.</li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Section: Google Backup Codes Tracker -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🛡️</span> Google 2SV Backup Codes
+          </div>
+          <span style="font-size: 0.775rem; color: var(--text-secondary);">Single-Use Emergency Authenticator</span>
+        </div>
+
+        <p style="font-size: 0.825rem; color: var(--text-secondary); margin-bottom: 14px;">
+          Each Google backup code can only be used once. Click any code or its checkbox to strike it through as <strong>USED</strong> so you don't burn recovery attempts.
+        </p>
+
+        <div class="tracker-header">
+          <div class="tracker-counter">
+            Remaining Unused: <span id="codes-remaining-count" class="tracker-counter-num">0</span> / <span id="codes-total-count">0</span>
+          </div>
+          <div class="tracker-actions">
+            <button type="button" class="btn btn-sm btn-primary" id="copy-next-code-btn" onclick="copyNextUnusedCode(this)">
+              ⚡ Copy Next Unused Code
+            </button>
+            <button type="button" class="btn btn-sm" onclick="resetAllCodeStrikes()">
+              ↺ Reset Tracker
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Grid of Codes -->
+        <div id="backup-codes-container" class="codes-grid">
+          <!-- Populated by JavaScript -->
+        </div>
+      </section>
+
+      <!-- Section: Emergency Notes -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>📝</span> Emergency Instructions & Contacts
+          </div>
+          <button type="button" class="btn btn-sm btn-copy" onclick="copyValue(this, currentPayload?.notes)">Copy Notes</button>
+        </div>
+        <div id="emergency-notes" class="notes-box">-</div>
+      </section>
+
+    </main>
+
+    <footer>
+      Cold-Start Identity Recovery Protocol &bull; Zero CDN &bull; Browser-Native WebCrypto AES-GCM-256
+    </footer>
+  </div>
+
+  <script>
+    /**
+     * Cold-Start Identity Recovery Protocol
+     * Implements AES-GCM-256 with PBKDF2-SHA-256 (600k rounds)
+     * Zero external dependencies or network requests.
+     */
+
+    // Embedded ciphertext placeholder: replaced during ingestion by `encrypt.js --embed-html`
+    const EMBEDDED_CIPHERTEXT = "SZZE4GwWbrmJPW0fQBU0ivfOgFYnuPElmWotUz1LnPiPo9sGnuaPHxkxOrEqK1xr+UxHn9+mdFKMURlg0SYQnvsdhZe8Ks6i07f5zBkzEt88ysNa3taxzGeWVPAcyjkgqpoRVySY0JJNLEeDhh8sUAb3vYN8DTVEBmVTmDIwhiPAfL/GpIbwYeaosAqx8/nV5CqKUBtC6wuPaRDkHxBhEaqmSB0jOP69lXjSvB3sj9NI/JexRJw/ZSFD/c709JR8oqBwgihBtlhKqTyLRdS/E1P3RN6D22vSvRA/z54W1C4+GgYIamN7VI5AllMxGccsPjgJqAAu0s8enW6/6dj7E6kgSAju4NzVYZF1B9cIBtm43CVnbl3nEXAPBfmw4JH0eQdW/oxNbvScwkN0TjgOXjjDKaYIiEBTxawZP5Lg+VMJNALLBjqfGVO/kkFcFN0BefS78ys32vFCb6ummEUO3OXmuuDFIhBawa3tD8CMOPGvJV1ymDH9RvOKRiQUEy/XAKXay2sftcElKiPwEqJUJscdeM7FSiLlSdeX1unE9xgMjQhS8ddl2gT3PX/C1wB7BYuiQ/qCfDBlsH3/nmmaO4nbFBS2laHwbNS6Ld8xgQqHGzO5Yk+rYqEJG8FJ+PahzzocXC/IoxCK8lDQioD2McViCIkQwxxJA+nJ49Mvu8hXy4id6GC82jl81Y9MB4RZaz+OMi9NtyEKfnqymoLBUoetbqPNBNyPPcbtI/Fj4VeG7ZxPCd5Kpe+sABhx6b9YVqnITWgTfADbshv3SkPCsAD2G+X11OkPX2PKpy6E+TNP+QdCI2DDOAUIOJgJ+BmOXNHkcJquLCYqAJEn657txrstqwzFLAiP+qHWSGtSws1zyicoo6ubsd4enUUnPRnRpgoTPaO+9DP8dSfAo9956bpZaqtd5UI=";
+
+    const PBKDF2_ITERATIONS = 600000;
+    const SALT_BYTES = 16;
+    const IV_BYTES = 12;
+
+    let currentPayload = null;
+    let usedCodeIndices = new Set();
+    let vaultSessionStorageKey = "recovery_used_codes";
+
+    // Setup initial state
+    window.addEventListener("DOMContentLoaded", () => {
+      const textarea = document.getElementById("ciphertext-input");
+      if (EMBEDDED_CIPHERTEXT && EMBEDDED_CIPHERTEXT.length > 0) {
+        textarea.value = EMBEDDED_CIPHERTEXT;
+      }
+    });
+
+    /**
+     * Converts a Base64 string to Uint8Array safely without dependencies.
+     */
+    function base64ToUint8Array(base64String) {
+      const clean = base64String.trim().replace(/[\r\n\s]/g, "");
+      const binary = atob(clean);
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes;
+    }
+
+    /**
+     * Toggle password visibility
+     */
+    function togglePassphraseVisibility() {
+      const input = document.getElementById("passphrase-input");
+      const btn = document.getElementById("toggle-passphrase-btn");
+      if (input.type === "password") {
+        input.type = "text";
+        btn.textContent = "Hide";
+      } else {
+        input.type = "password";
+        btn.textContent = "Show";
+      }
+    }
+
+    /**
+     * Display error banner
+     */
+    function showError(msg) {
+      const errEl = document.getElementById("error-message");
+      errEl.textContent = msg;
+      errEl.style.display = "block";
+    }
+
+    function clearError() {
+      const errEl = document.getElementById("error-message");
+      errEl.textContent = "";
+      errEl.style.display = "none";
+    }
+
+    /**
+     * Universal copy function with visual feedback and execCommand fallback
+     */
+    async function copyValue(buttonEl, textToCopy) {
+      if (!textToCopy) return;
+
+      let success = false;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(textToCopy);
+          success = true;
+        } catch (e) {
+          success = fallbackCopy(textToCopy);
+        }
+      } else {
+        success = fallbackCopy(textToCopy);
+      }
+
+      if (success && buttonEl) {
+        const originalText = buttonEl.textContent;
+        buttonEl.textContent = "✓ Copied!";
+        buttonEl.classList.add("copied");
+        setTimeout(() => {
+          buttonEl.textContent = originalText;
+          buttonEl.classList.remove("copied");
+        }, 1800);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      let ok = false;
+      try {
+        ok = document.execCommand("copy");
+      } catch (err) {
+        ok = false;
+      }
+      document.body.removeChild(textArea);
+      return ok;
+    }
+
+    /**
+     * Decrypt the vault using WebCrypto
+     */
+    async function decryptVault() {
+      clearError();
+      const passphrase = document.getElementById("passphrase-input").value;
+      const customCiphertext = document.getElementById("ciphertext-input").value.trim();
+      const ciphertextB64 = customCiphertext || EMBEDDED_CIPHERTEXT;
+
+      if (!passphrase || passphrase.trim().length === 0) {
+        showError("Please enter your Diceware passphrase.");
+        return;
+      }
+
+      if (!ciphertextB64 || ciphertextB64.length === 0) {
+        showError("No encrypted payload provided. Please enter ciphertext.");
+        return;
+      }
+
+      const decryptBtn = document.getElementById("decrypt-btn");
+      const btnText = document.getElementById("btn-text");
+      const btnSpinner = document.getElementById("btn-spinner");
+
+      decryptBtn.disabled = true;
+      btnSpinner.classList.remove("hidden");
+      btnText.textContent = "Deriving Key (PBKDF2 600,000 rounds)...";
+
+      // Allow DOM to update spinner before heavy crypto execution
+      setTimeout(async () => {
+        try {
+          const combinedBytes = base64ToUint8Array(ciphertextB64);
+
+          if (combinedBytes.length < SALT_BYTES + IV_BYTES + 16) {
+            throw new Error("Ciphertext payload is too short or corrupted.");
+          }
+
+          const salt = combinedBytes.slice(0, SALT_BYTES);
+          const iv = combinedBytes.slice(SALT_BYTES, SALT_BYTES + IV_BYTES);
+          const ciphertext = combinedBytes.slice(SALT_BYTES + IV_BYTES);
+
+          // Import passphrase
+          const enc = new TextEncoder();
+          const keyMaterial = await window.crypto.subtle.importKey(
+            "raw",
+            enc.encode(passphrase.trim()),
+            { name: "PBKDF2" },
+            false,
+            ["deriveKey"]
+          );
+
+          // Derive AES-GCM key
+          const key = await window.crypto.subtle.deriveKey(
+            {
+              name: "PBKDF2",
+              salt: salt,
+              iterations: PBKDF2_ITERATIONS,
+              hash: "SHA-256"
+            },
+            keyMaterial,
+            { name: "AES-GCM", length: 256 },
+            false,
+            ["decrypt"]
+          );
+
+          btnText.textContent = "Decrypting AES-GCM...";
+
+          // Decrypt payload
+          const decryptedBuffer = await window.crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: iv },
+            key,
+            ciphertext
+          );
+
+          const dec = new TextDecoder();
+          const jsonText = dec.decode(decryptedBuffer);
+          const payload = JSON.parse(jsonText);
+
+          currentPayload = payload;
+
+          // Scope sessionStorage key by canaryCode or payload hash
+          if (payload.metadata && payload.metadata.canaryCode) {
+            vaultSessionStorageKey = "recovery_used_codes_" + payload.metadata.canaryCode;
+          }
+
+          loadUsedCodesFromSession();
+          renderVault(payload);
+
+          // Switch screen
+          document.getElementById("lock-screen").classList.add("hidden");
+          document.getElementById("vault-screen").classList.remove("hidden");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+
+        } catch (err) {
+          console.error("Decryption error:", err);
+          showError("Decryption failed. Incorrect passphrase or corrupted ciphertext.");
+        } finally {
+          decryptBtn.disabled = false;
+          btnSpinner.classList.add("hidden");
+          btnText.textContent = "Decrypt Recovery Vault";
+        }
+      }, 20);
+    }
+
+    /**
+     * Render the decrypted vault contents into the DOM safely.
+     */
+    function renderVault(payload) {
+      renderStalenessBanner(payload.metadata);
+      renderOnePassword(payload.onePassword);
+      renderBackupCodes(payload.googleBackupCodes);
+      renderEmergencyNotes(payload.notes);
+    }
+
+    /**
+     * Staleness banner evaluation & formatting
+     */
+    function renderStalenessBanner(metadata) {
+      const bannerEl = document.getElementById("staleness-banner");
+      const iconEl = document.getElementById("banner-icon");
+      const headlineEl = document.getElementById("banner-headline");
+      const badgeEl = document.getElementById("banner-badge");
+      const messageEl = document.getElementById("banner-message");
+      const genAtEl = document.getElementById("meta-generated-at");
+      const ageEl = document.getElementById("meta-vault-age");
+      const staleLimitEl = document.getElementById("meta-stale-limit");
+      const canaryEl = document.getElementById("meta-canary-code");
+
+      if (!metadata) {
+        metadata = {};
+      }
+
+      const generatedAtStr = metadata.generatedAt;
+      const staleAfterMonths = typeof metadata.staleAfterMonths === "number" ? metadata.staleAfterMonths : 6;
+      const canaryCode = metadata.canaryCode || "N/A";
+
+      canaryEl.textContent = canaryCode;
+      staleLimitEl.textContent = `${staleAfterMonths} Months`;
+
+      if (!generatedAtStr) {
+        bannerEl.className = "banner banner-expiring";
+        badgeEl.className = "banner-badge badge-expiring";
+        badgeEl.textContent = "Unknown Age";
+        iconEl.textContent = "⚠️";
+        headlineEl.textContent = "Vault Generation Date Missing";
+        messageEl.textContent = "No generation timestamp found in payload metadata. Treat codes with caution.";
+        genAtEl.textContent = "Unknown";
+        ageEl.textContent = "Unknown";
+        return;
+      }
+
+      const genDate = new Date(generatedAtStr);
+      const now = new Date();
+      
+      genAtEl.textContent = genDate.toISOString().replace("T", " ").substring(0, 19) + " UTC";
+
+      const diffMs = now.getTime() - genDate.getTime();
+      const diffDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+      const diffMonths = +(diffDays / 30.4375).toFixed(1);
+
+      ageEl.textContent = `${diffDays} days (~${diffMonths} mos)`;
+
+      // Calculate exact expiration threshold date
+      const expireDate = new Date(genDate);
+      expireDate.setMonth(expireDate.getMonth() + staleAfterMonths);
+      const daysUntilStale = Math.round((expireDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+      // Classify staleness
+      if (daysUntilStale < 0) {
+        // STALE / EXPIRED
+        bannerEl.className = "banner banner-stale";
+        badgeEl.className = "banner-badge badge-stale";
+        badgeEl.textContent = "STALE / EXPIRED";
+        iconEl.textContent = "⚠️";
+        headlineEl.textContent = "CRITICAL: Recovery Vault is Stale";
+        messageEl.textContent = `This recovery payload was generated ${diffDays} days ago (${diffMonths} months ago), which exceeds the ${staleAfterMonths}-month freshness limit (expired ${Math.abs(daysUntilStale)} days ago on ${expireDate.toISOString().substring(0, 10)}). Single-use Google backup codes or credentials may have been invalidated or rotated!`;
+      } else if (daysUntilStale <= 30) {
+        // EXPIRING SOON
+        bannerEl.className = "banner banner-expiring";
+        badgeEl.className = "banner-badge badge-expiring";
+        badgeEl.textContent = "EXPIRING SOON";
+        iconEl.textContent = "⏳";
+        headlineEl.textContent = "Warning: Recovery Vault Expiring Soon";
+        messageEl.textContent = `Payload is ${diffDays} days old and will become stale in ${daysUntilStale} days (on ${expireDate.toISOString().substring(0, 10)}). Refresh your backup codes promptly once recovered.`;
+      } else {
+        // FRESH
+        bannerEl.className = "banner banner-fresh";
+        badgeEl.className = "banner-badge badge-fresh";
+        badgeEl.textContent = "FRESH";
+        iconEl.textContent = "✓";
+        headlineEl.textContent = "Vault Is Fresh and Valid";
+        messageEl.textContent = `Payload was generated ${diffDays} days ago. Configured staleness threshold is ${staleAfterMonths} months (${daysUntilStale} days remaining until ${expireDate.toISOString().substring(0, 10)}).`;
+      }
+    }
+
+    /**
+     * Render 1Password credentials
+     */
+    function renderOnePassword(onePassword) {
+      const emailEl = document.getElementById("op-email");
+      const secretKeyEl = document.getElementById("op-secret-key");
+      const hintBoxEl = document.getElementById("op-hint-box");
+      const hintEl = document.getElementById("op-hint");
+
+      if (!onePassword) {
+        emailEl.textContent = "Not specified in vault";
+        secretKeyEl.textContent = "Not specified in vault";
+        return;
+      }
+
+      emailEl.textContent = onePassword.email || "-";
+      secretKeyEl.textContent = onePassword.secretKey || "-";
+
+      if (onePassword.accountKeyHint) {
+        hintEl.textContent = onePassword.accountKeyHint;
+        hintBoxEl.classList.remove("hidden");
+      } else {
+        hintBoxEl.classList.add("hidden");
+      }
+    }
+
+    /**
+     * Strikethrough Tracker: Load & Save Session State
+     */
+    function loadUsedCodesFromSession() {
+      try {
+        const stored = sessionStorage.getItem(vaultSessionStorageKey);
+        if (stored) {
+          usedCodeIndices = new Set(JSON.parse(stored));
+        } else {
+          usedCodeIndices = new Set();
+        }
+      } catch (e) {
+        usedCodeIndices = new Set();
+      }
+    }
+
+    function saveUsedCodesToSession() {
+      try {
+        sessionStorage.setItem(vaultSessionStorageKey, JSON.stringify(Array.from(usedCodeIndices)));
+      } catch (e) {
+        // Storage restricted
+      }
+    }
+
+    /**
+     * Render Google Backup Codes with interactive strikethrough tracker
+     */
+    function renderBackupCodes(codes) {
+      const container = document.getElementById("backup-codes-container");
+      container.innerHTML = "";
+
+      if (!Array.isArray(codes) || codes.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.875rem;">No backup codes found in payload.</div>';
+        updateTrackerCounts(0, 0);
+        return;
+      }
+
+      codes.forEach((code, index) => {
+        const isUsed = usedCodeIndices.has(index);
+
+        const card = document.createElement("div");
+        card.className = `code-card ${isUsed ? "used" : ""}`;
+        card.id = `code-card-${index}`;
+
+        // Left container
+        const left = document.createElement("div");
+        left.className = "code-left";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "code-checkbox";
+        checkbox.checked = isUsed;
+        checkbox.title = "Mark as used";
+        checkbox.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleCodeUsed(index);
+        });
+
+        const idxLabel = document.createElement("span");
+        idxLabel.className = "code-index";
+        idxLabel.textContent = `#${index + 1}`;
+
+        const codeDigits = document.createElement("span");
+        codeDigits.className = "code-digits";
+        // Format as XXXX XXXX if 8 digits for enhanced legibility
+        const formattedCode = code.length === 8 ? `${code.slice(0, 4)} ${code.slice(4)}` : code;
+        codeDigits.textContent = formattedCode;
+
+        left.appendChild(checkbox);
+        left.appendChild(idxLabel);
+        left.appendChild(codeDigits);
+
+        // Copy button
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "btn btn-sm btn-copy";
+        copyBtn.textContent = "Copy";
+        copyBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          copyValue(copyBtn, code);
+        });
+
+        // Toggle strikethrough when clicking on the card itself
+        card.addEventListener("click", () => {
+          toggleCodeUsed(index);
+        });
+
+        card.appendChild(left);
+        card.appendChild(copyBtn);
+        container.appendChild(card);
+      });
+
+      updateTrackerCounts(codes.length - usedCodeIndices.size, codes.length);
+    }
+
+    /**
+     * Toggle used state of a backup code
+     */
+    function toggleCodeUsed(index) {
+      if (usedCodeIndices.has(index)) {
+        usedCodeIndices.delete(index);
+      } else {
+        usedCodeIndices.add(index);
+      }
+      saveUsedCodesToSession();
+
+      const card = document.getElementById(`code-card-${index}`);
+      if (card) {
+        const checkbox = card.querySelector(".code-checkbox");
+        if (usedCodeIndices.has(index)) {
+          card.classList.add("used");
+          if (checkbox) checkbox.checked = true;
+        } else {
+          card.classList.remove("used");
+          if (checkbox) checkbox.checked = false;
+        }
+      }
+
+      const totalCodes = currentPayload?.googleBackupCodes?.length || 0;
+      updateTrackerCounts(totalCodes - usedCodeIndices.size, totalCodes);
+    }
+
+    /**
+     * Quick Action: Copy Next Unused Code
+     */
+    function copyNextUnusedCode(buttonEl) {
+      const codes = currentPayload?.googleBackupCodes;
+      if (!Array.isArray(codes) || codes.length === 0) return;
+
+      const nextIndex = codes.findIndex((_, idx) => !usedCodeIndices.has(idx));
+      if (nextIndex === -1) {
+        alert("All backup codes are marked as USED!");
+        return;
+      }
+
+      const nextCode = codes[nextIndex];
+      copyValue(buttonEl, nextCode);
+
+      // Flash and scroll card into view
+      const targetCard = document.getElementById(`code-card-${nextIndex}`);
+      if (targetCard) {
+        targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
+        targetCard.style.outline = "2px solid #38bdf8";
+        setTimeout(() => {
+          targetCard.style.outline = "";
+        }, 1500);
+      }
+    }
+
+    /**
+     * Reset all strikethroughs
+     */
+    function resetAllCodeStrikes() {
+      if (usedCodeIndices.size === 0) return;
+      if (confirm("Reset all backup code strikethrough marks?")) {
+        usedCodeIndices.clear();
+        saveUsedCodesToSession();
+        if (currentPayload && currentPayload.googleBackupCodes) {
+          renderBackupCodes(currentPayload.googleBackupCodes);
+        }
+      }
+    }
+
+    /**
+     * Update remaining / total counters
+     */
+    function updateTrackerCounts(remaining, total) {
+      document.getElementById("codes-remaining-count").textContent = remaining;
+      document.getElementById("codes-total-count").textContent = total;
+
+      const copyNextBtn = document.getElementById("copy-next-code-btn");
+      if (copyNextBtn) {
+        if (remaining === 0 && total > 0) {
+          copyNextBtn.disabled = true;
+          copyNextBtn.textContent = "No Unused Codes Left";
+        } else {
+          copyNextBtn.disabled = false;
+          copyNextBtn.textContent = "⚡ Copy Next Unused Code";
+        }
+      }
+    }
+
+    /**
+     * Render emergency notes safely
+     */
+    function renderEmergencyNotes(notes) {
+      const notesEl = document.getElementById("emergency-notes");
+      notesEl.textContent = notes || "No emergency instructions provided.";
+    }
+
+    /**
+     * Copy full decrypted JSON
+     */
+    function copyFullPayload(buttonEl) {
+      if (!currentPayload) return;
+      copyValue(buttonEl, JSON.stringify(currentPayload, null, 2));
+    }
+
+    /**
+     * Lock and purge vault from memory
+     */
+    function lockVault() {
+      // Zero out / wipe payload
+      currentPayload = null;
+      usedCodeIndices.clear();
+
+      // Clear DOM
+      document.getElementById("op-email").textContent = "-";
+      document.getElementById("op-secret-key").textContent = "-";
+      document.getElementById("op-hint").textContent = "-";
+      document.getElementById("backup-codes-container").innerHTML = "";
+      document.getElementById("emergency-notes").textContent = "-";
+      document.getElementById("passphrase-input").value = "";
+      clearError();
+
+      // Switch screen back to lock screen
+      document.getElementById("vault-screen").classList.add("hidden");
+      document.getElementById("lock-screen").classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      const notice = document.createElement("div");
+      notice.className = "brand-badge";
+      notice.style.borderColor = "#34d399";
+      notice.style.color = "#34d399";
+      notice.textContent = "✓ Vault locked & purged from memory";
+      document.getElementById("lock-screen").prepend(notice);
+      setTimeout(() => notice.remove(), 2500);
+    }
+  </script>
+</body>
+</html>
