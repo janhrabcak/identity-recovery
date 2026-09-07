@@ -261,6 +261,51 @@ async function runTests() {
   }
   console.log("✓ Test 13 Passed: Cloudflare DNS API synchronization and configuration integrity verified.");
 
+  // Test 14: Emergency Paper Printout Styles & Layout Integrity
+  console.log("\n[Test 14] Emergency Paper Printout Styles & Layout Integrity");
+  if (!html.includes("@media print")) {
+    throw new Error("Test 14 Failed: index.html missing @media print stylesheet!");
+  }
+  if (!html.includes("print-sheet-btn")) {
+    throw new Error("Test 14 Failed: index.html missing print-sheet-btn button!");
+  }
+  if (!html.includes("print-only-header")) {
+    throw new Error("Test 14 Failed: index.html missing print-only-header element!");
+  }
+  if (!html.includes("page-break-inside: avoid")) {
+    throw new Error("Test 14 Failed: index.html missing page-break-inside avoid rules!");
+  }
+  console.log("✓ Test 14 Passed: Clean high-contrast paper printout styles and print action button verified.");
+
+  // Test 15: Multi-Channel Staleness Webhook Alerting
+  console.log("\n[Test 15] Multi-Channel Staleness Webhook Alerting");
+  const { sendWebhookNotification } = await import('../scripts/check-staleness.js');
+
+  // Verify missing webhook URL returns error gracefully
+  const missingUrlRes = await sendWebhookNotification({ status: "STALE" }, "");
+  if (missingUrlRes.sent !== false) {
+    throw new Error("Test 15 Failed: sendWebhookNotification should fail when URL is empty!");
+  }
+
+  // Verify FRESH status is ignored (only alert on EXPIRING_SOON or STALE)
+  const freshRes = await sendWebhookNotification({ status: "FRESH" }, "https://ntfy.sh/test");
+  if (freshRes.sent !== false || !freshRes.error.includes("FRESH")) {
+    throw new Error("Test 15 Failed: sendWebhookNotification should not alert on FRESH vaults!");
+  }
+
+  // Verify STALENESS_WEBHOOK_URL exists in .env.example
+  if (!envExample.includes("STALENESS_WEBHOOK_URL")) {
+    throw new Error("Test 15 Failed: .env.example missing STALENESS_WEBHOOK_URL!");
+  }
+
+  // Verify workflow passes STALENESS_WEBHOOK_URL and --notify-webhook
+  const workflowPath = path.join(REPO_ROOT, '.github', 'workflows', 'staleness-check.yml');
+  const workflowContent = fs.readFileSync(workflowPath, 'utf8');
+  if (!workflowContent.includes("STALENESS_WEBHOOK_URL") || !workflowContent.includes("--notify-webhook")) {
+    throw new Error("Test 15 Failed: staleness-check.yml missing STALENESS_WEBHOOK_URL or --notify-webhook!");
+  }
+  console.log("✓ Test 15 Passed: Multi-channel webhook notification logic and CI workflow configuration verified.");
+
   console.log("\n==========================================");
   console.log("ALL TESTS PASSED SUCCESSFULLY! ✓");
   console.log("==========================================");

@@ -190,6 +190,105 @@ function manageGitHubIssue(result) {
   }
 }
 
+/**
+ * Dispatches high-priority push notifications to webhooks (ntfy.sh, Discord, Slack, or generic HTTP)
+ * @param {object} result - Freshness evaluation result
+ * @param {string} [webhookUrl] - Target webhook URL
+ * @returns {Promise<{ sent: boolean, status?: number, error?: string }>}
+ */
+export async function sendWebhookNotification(result, webhookUrl = process.env.STALENESS_WEBHOOK_URL) {
+  if (!webhookUrl || typeof webhookUrl !== 'string' || webhookUrl.trim().length === 0) {
+    return { sent: false, error: 'No webhook URL provided.' };
+  }
+
+  const url = webhookUrl.trim();
+  const { status, daysUntilStale, generatedAt, expireDate, staleAfterMonths, diffDays, message } = result;
+
+  // Only alert if expiring soon or stale
+  if (status !== 'EXPIRING_SOON' && status !== 'STALE') {
+    return { sent: false, error: `Vault status is ${status}; webhook alerts only trigger on EXPIRING_SOON or STALE.` };
+  }
+
+  const isStale = status === 'STALE';
+  const severity = isStale ? 'CRITICAL ALERT' : 'EXPIRING SOON';
+
+  let reqInit = {};
+
+  if (url.includes('ntfy.sh')) {
+    // ntfy.sh format
+    reqInit = {
+      method: 'POST',
+      headers: {
+        'Title': isStale ? `🚨 Vault is STALE (Expired ${expireDate})` : `⏳ Vault expiring in ${daysUntilStale} days`,
+        'Priority': isStale ? '5' : '4',
+        'Tags': isStale ? 'rotating_light,skull,lock' : 'hourglass,warning,key'
+      },
+      body: `Your cold-start identity recovery vault is ${status}!\n\nGenerated: ${generatedAt} (${diffDays} days ago)\nExpiration deadline: ${expireDate}\n\nAction required: Rotate your credentials using ./scripts/deploy.sh`
+    };
+  } else if (url.includes('discord.com/api/webhooks')) {
+    // Discord webhook format
+    reqInit = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        embeds: [{
+          title: isStale ? `🚨 CRITICAL: Identity Recovery Vault is STALE` : `⚠️ WARNING: Identity Recovery Vault Expiring Soon`,
+          description: message,
+          color: isStale ? 15158332 : 16753920,
+          fields: [
+            { name: "Status", value: status, inline: true },
+            { name: "Days Remaining", value: String(daysUntilStale), inline: true },
+            { name: "Expiration Date", value: expireDate || "Unknown", inline: true },
+            { name: "Generated At", value: generatedAt || "Unknown", inline: false }
+          ],
+          footer: { text: "Cold-Start Identity Recovery Protocol Monitor" }
+        }]
+      })
+    };
+  } else if (url.includes('hooks.slack.com')) {
+    // Slack webhook format
+    reqInit = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: `${isStale ? '🚨 *CRITICAL:*' : '⚠️ *WARNING:*'} ${message}\n*Status:* ${status} | *Days Remaining:* ${daysUntilStale} | *Deadline:* ${expireDate}`
+      })
+    };
+  } else {
+    // Generic JSON payload
+    reqInit = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event: 'vault_staleness',
+        severity,
+        status,
+        daysUntilStale,
+        diffDays,
+        staleAfterMonths,
+        generatedAt,
+        expireDate,
+        message
+      })
+    };
+  }
+
+  try {
+    const res = await fetch(url, reqInit);
+    if (res.ok) {
+      console.log(`✓ Webhook alert sent successfully to: ${url.replace(/\/[^/]{8,}$/, '/***')}`);
+      return { sent: true, status: res.status };
+    } else {
+      const errText = await res.text().catch(() => '');
+      console.warn(`Warning: Webhook responded with status ${res.status}: ${errText}`);
+      return { sent: false, status: res.status, error: errText };
+    }
+  } catch (err) {
+    console.warn(`Warning: Webhook dispatch error: ${err.message}`);
+    return { sent: false, error: err.message };
+  }
+}
+
 async function main() {
   const htmlPath = resolveHtmlPath();
   if (!htmlPath || !fs.existsSync(htmlPath)) {
@@ -226,6 +325,15 @@ async function main() {
 
   if (process.argv.includes('--manage-issue')) {
     manageGitHubIssue(result);
+  }
+
+  const webhookUrl = getArgValue('--webhook') || process.env.STALENESS_WEBHOOK_URL;
+  if (webhookUrl || process.argv.includes('--notify-webhook')) {
+    if (webhookUrl) {
+      await sendWebhookNotification(result, webhookUrl);
+    } else {
+      console.warn('Notice: --notify-webhook requested but STALENESS_WEBHOOK_URL is not set.');
+    }
   }
 
   if (process.argv.includes('--fail-on-stale') && result.status === 'STALE') {

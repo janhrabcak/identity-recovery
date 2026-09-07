@@ -36,4 +36,5 @@ jobs:
       - name: Run Staleness Check & Update Issues
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/check-staleness.js --manage-issue
+          STALENESS_WEBHOOK_URL: ${{ secrets.STALENESS_WEBHOOK_URL }}
+        run: node scripts/check-staleness.js --manage-issue --notify-webhook

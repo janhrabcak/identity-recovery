@@ -611,22 +611,99 @@
     }
 
     /* Print styles */
+    .print-only-header {
+      display: none;
+    }
+
     @media print {
       body {
         background: #ffffff !important;
         color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        font-size: 10pt;
       }
-      .card, .banner, .cred-box, .code-card, .notes-box {
-        background: #ffffff !important;
-        border-color: #cccccc !important;
-        color: #000000 !important;
-        box-shadow: none !important;
+      .container {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
       }
-      .btn, header .brand-badge, details, footer, .tracker-actions {
+      header, footer, .btn, button, input, textarea, #lock-screen, #clipboard-notice, .brand-badge, .code-checkbox, details, .tracker-actions, .input-group, #custom-payload-container {
         display: none !important;
       }
-      .code-digits, .secret-key-value {
+      .print-only-header {
+        display: block !important;
+        margin-bottom: 14px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #000000;
+      }
+      .print-only-header h2 {
+        font-size: 1.25rem;
+        letter-spacing: -0.01em;
+        margin-bottom: 4px;
+      }
+      .print-only-header p {
+        font-size: 0.8rem;
+        color: #444444;
+      }
+      .card {
+        background: #ffffff !important;
+        border: 1px solid #777777 !important;
         color: #000000 !important;
+        box-shadow: none !important;
+        margin-bottom: 14px !important;
+        padding: 12px 16px !important;
+        page-break-inside: avoid;
+      }
+      .card-header {
+        border-bottom: 1px solid #999999 !important;
+        padding-bottom: 6px !important;
+        margin-bottom: 10px !important;
+      }
+      .banner {
+        background: #f4f4f5 !important;
+        border: 1px solid #888888 !important;
+        color: #000000 !important;
+        padding: 10px 14px !important;
+        margin-bottom: 14px !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+      }
+      .banner-title, .banner-badge, .banner-desc, .meta-item-label, .meta-item-value {
+        color: #000000 !important;
+      }
+      .cred-box, .notes-box {
+        background: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        color: #000000 !important;
+        padding: 8px 12px !important;
+      }
+      .backup-codes-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 6px !important;
+      }
+      .code-card {
+        background: #ffffff !important;
+        border: 1px solid #888888 !important;
+        color: #000000 !important;
+        padding: 6px 10px !important;
+        page-break-inside: avoid;
+      }
+      .code-card.used {
+        opacity: 0.3 !important;
+        text-decoration: line-through !important;
+        background: #eeeeee !important;
+      }
+      .code-card.used .code-digits::after {
+        content: " [USED]";
+        font-size: 0.75rem;
+        color: #666666;
+      }
+      .code-digits, .secret-key-value, .cred-value {
+        color: #000000 !important;
+        font-weight: 700 !important;
       }
     }
   </style>
@@ -710,6 +787,12 @@
     <!-- UNLOCKED RECOVERY VAULT VIEW -->
     <main id="vault-screen" class="hidden">
       
+      <!-- Print-Only Watermark / Header -->
+      <div class="print-only-header">
+        <h2>COLD-START IDENTITY RECOVERY CREDENTIAL SHEET</h2>
+        <p>Confidential Emergency Access Document • Strictly zero-hardware recovery material</p>
+      </div>
+
       <!-- Top Action Bar -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
         <div style="display: flex; align-items: center; gap: 8px;">
@@ -717,6 +800,7 @@
           <span style="font-size: 0.85rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em;">Vault Decrypted</span>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-sm" id="print-sheet-btn" onclick="window.print()">🖨️ Print Sheet</button>
           <button type="button" class="btn btn-sm" id="scrub-clipboard-btn" onclick="scrubClipboard('manual')">🧹 Clear Clipboard</button>
           <button type="button" class="btn btn-sm" onclick="copyFullPayload(this)">📋 Copy JSON</button>
           <button type="button" class="btn btn-sm btn-danger" onclick="lockVault()">🔒 Lock & Purge</button>

@@ -251,6 +251,12 @@ python3 -m http.server 8080 --directory public
    - Strict Content Security Policy (`CSP`) restricting outbound traffic exclusively to trusted anycast DoH resolvers (`https://cloudflare-dns.com https://dns.google`).
    - **"🔒 Lock & Purge"** button: Actively scrubs the OS clipboard, completely zeroes out sensitive memory structures, clears DOM elements, resets inputs, and wipes session storage.
 
+7. **High-Stress Emergency Paper Printout (`@media print`)**:
+   - Clean, toner-saving white print format eliminating dark backgrounds, buttons, and inputs.
+   - Formats 1Password secret keys, notes, and backup codes into a clean 2-column card grid with `page-break-inside: avoid`.
+   - Striking indicator (`[USED]`) on burned codes and confidential header stamp.
+   - One-click `🖨️ Print Sheet` button in the unlocked vault screen.
+
 ---
 
 ## 🔒 Security & GitHub Backup Rules
@@ -302,13 +308,16 @@ To prevent the common operational failure of forgetting to rotate backup codes b
 - **Evaluator Script:** [`scripts/check-staleness.js`](scripts/check-staleness.js)
 - **Cadence:** Automatically runs on a schedule (1st and 15th of every month at 09:00 UTC) and on pushes to `main`. Can also be manually triggered via `workflow_dispatch`.
 - **Zero-Knowledge Architecture:** Does **not** require any decryption passphrase or secrets. Reads the non-sensitive public metadata tags (`vault-generated-at` and `vault-stale-after-months`) embedded in `public/index.html`.
+- **Multi-Channel Push Notifications:** Configure `STALENESS_WEBHOOK_URL` in your GitHub repository secrets (or local `.env`) with an **[ntfy.sh](https://ntfy.sh)**, **Discord**, or **Slack** webhook URL to receive instant high-priority push notifications directly on your mobile device when rotation is due.
 - **Automated Alerts:**
-  - If the vault is within 30 days of expiration or stale: Opens/updates an Issue labeled `vault-staleness`, sending an automated email notification to the repository owner.
+  - If the vault is within 30 days of expiration or stale: Opens/updates an Issue labeled `vault-staleness`, sending an automated email notification and firing your push webhook.
   - If the vault was recently rotated and fresh: Automatically closes any open staleness issues.
 
 Run locally anytime:
 ```bash
 node scripts/check-staleness.js
+# Or test with webhook:
+node scripts/check-staleness.js --webhook https://ntfy.sh/your_topic
 ```
 
 ---

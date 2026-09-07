@@ -141,6 +141,14 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
 - Masked input with instant Show/Hide toggle.
 - Streamlined button states (`Unlock Vault` and `Unlocking...`).
 
+### 3.8 Emergency Paper Printout (`@media print` & Print Action)
+- Dedicated print formatting tailored for high-stress scenarios where terminal access is constrained or unsecure.
+- Strips all dark-mode styling down to high-contrast black text on white paper.
+- Hides interactive buttons, DNS tools, inputs, badges, and footers.
+- Formats 1Password credentials, emergency notes, and Google backup codes into a clean 2-column card grid with `page-break-inside: avoid`.
+- Displays a prominent confidential watermark header and strikes through burned codes with `[USED]` labels.
+- Triggerable via a dedicated `🖨️ Print Sheet` button in the unlocked view or standard browser print shortcut (`Ctrl+P`).
+
 ---
 
 ## 4. Threat Model & Security Controls
@@ -194,9 +202,10 @@ Hardened Bash orchestration script for rotation and production publishing:
 6. **Commit & Push:** Commits with UTC timestamp and pushes to `origin main`, triggering Cloudflare Anycast edge deployment.
 7. **Plaintext Destruction & Automated DNS Sync:** Securely shreds and unlinks the plaintext payload file using `shred -u -z -n 3` (3-pass random overwrite + zero fill, defaulting to **Yes**), and automatically synchronizes the secondary DNS TXT dead-drop via Cloudflare API v4 (`PUT`/`POST` to `/zones/:id/dns_records` with 120s TTL) if `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ZONE_ID` are set, or prints manual instructions.
 
-### 5.3 Automated Staleness Monitoring (`scripts/check-staleness.js`, `.github/workflows/staleness-check.yml`)
+### 5.3 Automated Staleness Monitoring & Multi-Channel Webhooks (`scripts/check-staleness.js`, `.github/workflows/staleness-check.yml`)
 - **Zero-Knowledge Principle:** Evaluates vault age without accessing private key material or decrypting ciphertext by reading the public `<meta name="vault-generated-at">` tag in `public/index.html`.
 - **Scheduled CI Automation:** Runs on the 1st and 15th of every month via GitHub Actions (`cron: '0 9 1,15 * *'`).
+- **Multi-Channel Push Alerting:** Supports `STALENESS_WEBHOOK_URL` (ntfy.sh, Discord, Slack, or generic HTTP endpoints) delivering high-priority push notifications directly to the operator's devices when the vault reaches `EXPIRING_SOON` or `STALE` status.
 - **Issue Lifecycle Management:**
   - Automatically creates/updates an issue labeled `vault-staleness` when the vault is within 30 days of staleness or expired.
   - Automatically closes open staleness issues when a newly rotated vault is deployed (`status == FRESH`).
@@ -219,3 +228,5 @@ Automated test runner verifying:
 11. Whitespace and Unicode NFKC normalization parity across formatting variations.
 12. Untrusted terminal clipboard auto-scrubbing code integrity, focus-catchup event listener, and "Lock & Purge" integration in `public/index.html`.
 13. Automated Cloudflare DNS API dead-drop synchronization configuration and deployment logic integrity.
+14. Emergency paper printout styles (`@media print`), confidential header, and print action button verification.
+15. Multi-channel staleness push notification webhook payload generation and CI workflow integration.
