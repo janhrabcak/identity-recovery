@@ -237,6 +237,30 @@ async function runTests() {
   }
   console.log("✓ Test 12 Passed: Clipboard auto-scrubbing, focus-catchup, and lock & purge hooks verified in public/index.html.");
 
+  // Test 13: Automated Cloudflare DNS Dead-Drop Sync Verification
+  console.log("\n[Test 13] Automated Cloudflare DNS Dead-Drop Sync Verification");
+  const envExamplePath = path.join(REPO_ROOT, '.env.example');
+  const deployScriptPath = path.join(REPO_ROOT, 'scripts', 'deploy.sh');
+
+  if (!fs.existsSync(envExamplePath)) {
+    throw new Error("Test 13 Failed: .env.example missing!");
+  }
+  const envExample = fs.readFileSync(envExamplePath, 'utf8');
+  if (!envExample.includes("CLOUDFLARE_API_TOKEN") || !envExample.includes("CLOUDFLARE_ZONE_ID")) {
+    throw new Error("Test 13 Failed: .env.example missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ZONE_ID!");
+  }
+
+  if (!fs.existsSync(deployScriptPath)) {
+    throw new Error("Test 13 Failed: scripts/deploy.sh missing!");
+  }
+  const deployScript = fs.readFileSync(deployScriptPath, 'utf8');
+  if (!deployScript.includes("api.cloudflare.com/client/v4/zones") ||
+      !deployScript.includes("CLOUDFLARE_API_TOKEN") ||
+      !deployScript.includes("ttl: 120")) {
+    throw new Error("Test 13 Failed: scripts/deploy.sh missing Cloudflare DNS API sync logic or 120s TTL!");
+  }
+  console.log("✓ Test 13 Passed: Cloudflare DNS API synchronization and configuration integrity verified.");
+
   console.log("\n==========================================");
   console.log("ALL TESTS PASSED SUCCESSFULLY! ✓");
   console.log("==========================================");

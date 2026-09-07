@@ -22,12 +22,16 @@ cd "$REPO_ROOT"
 # Load environment configuration if present
 if [[ -f "$REPO_ROOT/.env" ]]; then
   RECOVERY_DOMAIN_ENV=$(grep -E '^\s*RECOVERY_DOMAIN=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
+  CLOUDFLARE_API_TOKEN_ENV=$(grep -E '^\s*CLOUDFLARE_API_TOKEN=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
+  CLOUDFLARE_ZONE_ID_ENV=$(grep -E '^\s*CLOUDFLARE_ZONE_ID=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
 fi
 
 # Detect from index.html meta tag if not in environment
 META_DOMAIN=$(grep -o 'name="recovery-dns-domain" content="[^"]*"' "$REPO_ROOT/public/index.html" | cut -d'"' -f4 || true)
 
 RECOVERY_DOMAIN="${RECOVERY_DOMAIN:-${RECOVERY_DOMAIN_ENV:-${META_DOMAIN:-recovery.hrabcak.com}}}"
+CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN:-$CLOUDFLARE_API_TOKEN_ENV}"
+CLOUDFLARE_ZONE_ID="${CLOUDFLARE_ZONE_ID:-$CLOUDFLARE_ZONE_ID_ENV}"
 
 # Colors
 C_RESET='\033[0m'
@@ -209,16 +213,92 @@ else
   fi
 fi
 
-# Optional secondary DNS Dead-Drop info
+# Optional secondary DNS Dead-Drop Synchronization
 B64_CIPHERTEXT=$(grep -o 'const EMBEDDED_CIPHERTEXT = "[^"]*"' public/index.html | cut -d'"' -f2)
 if [[ -n "$B64_CIPHERTEXT" ]]; then
   RECORD_NAME=$(echo "$RECOVERY_DOMAIN" | cut -d'.' -f1)
-  echo -e "\n${C_CYAN}${C_BOLD}DNS TXT Dead-Drop Record (${RECOVERY_DOMAIN}):${C_RESET}"
-  echo -e "To sync your secondary dead-drop, add or update this TXT record in Cloudflare DNS:"
-  echo -e "  ${C_BOLD}Type:${C_RESET}    TXT"
-  echo -e "  ${C_BOLD}Name:${C_RESET}    $RECORD_NAME"
-  echo -e "  ${C_BOLD}TTL:${C_RESET}     Auto (or 300s)"
-  echo -e "  ${C_BOLD}Content:${C_RESET} $B64_CIPHERTEXT"
+
+  if [[ -n "$CLOUDFLARE_API_TOKEN" && -n "$CLOUDFLARE_ZONE_ID" ]]; then
+    echo -e "\n${C_CYAN}${C_BOLD}Synchronizing Cloudflare DNS TXT Dead-Drop (${RECOVERY_DOMAIN})...${C_RESET}"
+    
+    # Query existing TXT record ID
+    CF_QUERY_RES=$(curl -s -X GET \
+      "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records?type=TXT&name=${RECOVERY_DOMAIN}" \
+      -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+      -H "Content-Type: application/json" || true)
+
+    EXISTING_RECORD_ID=$(node -e "
+      try {
+        const res = JSON.parse(process.argv[1]);
+        if (res.success && res.result && res.result.length > 0) {
+          console.log(res.result[0].id);
+        }
+      } catch (e) {}
+    " "$CF_QUERY_RES")
+
+    RECORD_PAYLOAD=$(node -e "
+      console.log(JSON.stringify({
+        type: 'TXT',
+        name: process.argv[1],
+        content: process.argv[2],
+        ttl: 120,
+        comment: 'Cold-Start Identity Recovery Dead-Drop (Automated by deploy.sh)'
+      }));
+    " "$RECOVERY_DOMAIN" "$B64_CIPHERTEXT")
+
+    if [[ -n "$EXISTING_RECORD_ID" ]]; then
+      # Update existing record
+      CF_SYNC_RES=$(curl -s -X PUT \
+        "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${EXISTING_RECORD_ID}" \
+        -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+        -H "Content-Type: application/json" \
+        --data "$RECORD_PAYLOAD" || true)
+    else
+      # Create new record
+      CF_SYNC_RES=$(curl -s -X POST \
+        "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
+        -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+        -H "Content-Type: application/json" \
+        --data "$RECORD_PAYLOAD" || true)
+    fi
+
+    CF_SYNC_SUCCESS=$(node -e "
+      try {
+        const res = JSON.parse(process.argv[1]);
+        console.log(res.success ? 'true' : 'false');
+      } catch (e) {
+        console.log('false');
+      }
+    " "$CF_SYNC_RES")
+
+    if [[ "$CF_SYNC_SUCCESS" == "true" ]]; then
+      echo -e "${C_GREEN}✓ Cloudflare DNS TXT record synchronized successfully! (TTL: 120s)${C_RESET}"
+    else
+      CF_ERR_MSG=$(node -e "
+        try {
+          const res = JSON.parse(process.argv[1]);
+          const errs = (res.errors || []).map(e => e.message).join(', ');
+          console.log(errs || 'Unknown error');
+        } catch (e) {
+          console.log('Failed to parse Cloudflare response');
+        }
+      " "$CF_SYNC_RES")
+      echo -e "${C_RED}✗ Cloudflare DNS API sync failed: ${CF_ERR_MSG}${C_RESET}"
+      echo -e "${C_YELLOW}Falling back to manual DNS record details:${C_RESET}"
+      echo -e "  ${C_BOLD}Type:${C_RESET}    TXT"
+      echo -e "  ${C_BOLD}Name:${C_RESET}    $RECORD_NAME"
+      echo -e "  ${C_BOLD}TTL:${C_RESET}     120s"
+      echo -e "  ${C_BOLD}Content:${C_RESET} $B64_CIPHERTEXT"
+    fi
+  else
+    echo -e "\n${C_CYAN}${C_BOLD}DNS TXT Dead-Drop Record (${RECOVERY_DOMAIN}):${C_RESET}"
+    echo -e "To sync your secondary dead-drop, add or update this TXT record in Cloudflare DNS:"
+    echo -e "  ${C_BOLD}Type:${C_RESET}    TXT"
+    echo -e "  ${C_BOLD}Name:${C_RESET}    $RECORD_NAME"
+    echo -e "  ${C_BOLD}TTL:${C_RESET}     120s"
+    echo -e "  ${C_BOLD}Content:${C_RESET} $B64_CIPHERTEXT"
+    echo -e "\n${C_CYAN}Tip: Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID in .env to automate this step!${C_RESET}"
+  fi
 fi
 
 echo

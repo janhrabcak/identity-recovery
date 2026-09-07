@@ -192,7 +192,7 @@ Hardened Bash orchestration script for rotation and production publishing:
 4. **Pre-Deploy Verification:** Executes `tests/test-suite.js` to guarantee cryptographic and runtime validity before staging.
 5. **Git Safety Guard:** Audits git staging area to prevent accidental credential leaks; stages strictly `public/index.html`.
 6. **Commit & Push:** Commits with UTC timestamp and pushes to `origin main`, triggering Cloudflare Anycast edge deployment.
-7. **Plaintext Destruction & DNS Dead-Drop Info:** Securely shreds and unlinks the plaintext payload file using `shred -u -z -n 3` (3-pass random overwrite + zero fill, defaulting to **Yes**), and outputs the formatted DNS TXT record for `recovery.hrabcak.com`.
+7. **Plaintext Destruction & Automated DNS Sync:** Securely shreds and unlinks the plaintext payload file using `shred -u -z -n 3` (3-pass random overwrite + zero fill, defaulting to **Yes**), and automatically synchronizes the secondary DNS TXT dead-drop via Cloudflare API v4 (`PUT`/`POST` to `/zones/:id/dns_records` with 120s TTL) if `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ZONE_ID` are set, or prints manual instructions.
 
 ### 5.3 Automated Staleness Monitoring (`scripts/check-staleness.js`, `.github/workflows/staleness-check.yml`)
 - **Zero-Knowledge Principle:** Evaluates vault age without accessing private key material or decrypting ciphertext by reading the public `<meta name="vault-generated-at">` tag in `public/index.html`.
@@ -218,3 +218,4 @@ Automated test runner verifying:
 10. Diceware passphrase entropy validation enforcing $\ge 6$ words, length, repetition rejection, and `--allow-low-entropy` override.
 11. Whitespace and Unicode NFKC normalization parity across formatting variations.
 12. Untrusted terminal clipboard auto-scrubbing code integrity, focus-catchup event listener, and "Lock & Purge" integration in `public/index.html`.
+13. Automated Cloudflare DNS API dead-drop synchronization configuration and deployment logic integrity.

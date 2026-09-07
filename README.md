@@ -64,6 +64,7 @@ identity-recovery/
 |    - Stages strictly public/index.html (guarantees no secret leaks)     |
 |    - Commits & pushes to origin main                                    |
 |    - Securely shreds plaintext payload.json (3 passes + zero-fill)      |
+|    - Automatically syncs Cloudflare DNS TXT dead-drop via API v4        |
 +-------------------------------------------------------------------------+
                                   |
                                   v
@@ -99,13 +100,15 @@ To rotate your credentials, verify the crypto, commit strictly `public/index.htm
 ```bash
 ./scripts/deploy.sh [path-to-payload.json]
 ```
-*(If no payload file is passed as an argument, it automatically uses `payload.json` or prompts for a path. In Step 7, secure plaintext shredding defaults to **Yes**).*
+*(If no payload file is passed as an argument, it automatically uses `payload.json` or prompts for a path. In Step 7, secure plaintext shredding defaults to **Yes**, and the Cloudflare DNS TXT record is automatically synchronized via API if configured).*
 
 ---
 
 ### 🌐 Transferability & Custom Domain Configuration
 The entire repository is fully portable to any custom domain:
-- **Environment file (`.env`)**: Copy `.env.example` to `.env` and set `RECOVERY_DOMAIN=recovery.yourdomain.com`.
+- **Environment file (`.env`)**: Copy `.env.example` to `.env` and set:
+  - `RECOVERY_DOMAIN=recovery.yourdomain.com`
+  - *(Optional)* `CLOUDFLARE_API_TOKEN` & `CLOUDFLARE_ZONE_ID` to automatically sync the DNS TXT dead-drop on every deployment.
 - **Inline CLI variable**: Pass `RECOVERY_DOMAIN=recovery.yourdomain.com ./scripts/deploy.sh`.
 - **CLI Flag**: Run `node scripts/encrypt.js --domain recovery.yourdomain.com --embed-html public/index.html`.
 - **HTML Meta Tag**: Set `<meta name="recovery-dns-domain" content="recovery.yourdomain.com">` in `public/index.html`.
