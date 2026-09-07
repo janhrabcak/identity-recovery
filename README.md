@@ -32,7 +32,7 @@ identity-recovery/
 │   └── sample-payload.json       # Template recovery schema
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # Automated crypto & parity tests (15 automated tests)
+│   └── test-suite.js             # Automated crypto & parity tests (16 automated tests)
 │
 ├── .env.example                  # Environment configuration template (RECOVERY_DOMAIN)
 ├── .gitignore                    # Security boundary (blocks unencrypted payload.json)
@@ -111,7 +111,41 @@ The entire repository is fully portable to any custom domain:
 - **Inline CLI variable**: Pass `RECOVERY_DOMAIN=recovery.yourdomain.com ./scripts/deploy.sh`.
 - **CLI Flag**: Run `node scripts/encrypt.js --domain recovery.yourdomain.com --embed-html public/index.html`.
 - **HTML Meta Tag**: Set `<meta name="recovery-dns-domain" content="recovery.yourdomain.com">` in `public/index.html`.
-- **On-the-Fly URL Parameter**: Visit `https://sos.<domain>.com/?dns=recovery.yourdomain.com` to query an arbitrary recovery domain without code changes.
+---
+
+### 🍴 How to Adopt This Repository for Your Own Vault
+
+This project is built to be a 100% portable, turnkey template. Anyone can set up their own personal cold-start recovery vault in 5 minutes:
+
+1. **Fork or Use as Template**:
+   - Click **Use this template** on GitHub (or clone into your private repository).
+   - Ensure repository visibility is **Private** (Cloudflare Pages supports private repos for free).
+
+2. **Configure Your Domain**:
+   ```bash
+   cp .env.example .env
+   ```
+   Set `RECOVERY_DOMAIN=recovery.yourdomain.com` in `.env` (and optionally add Cloudflare API credentials for automated DNS TXT dead-drop syncing).
+
+3. **Prepare Your Credentials**:
+   ```bash
+   # Generate a clean schema template:
+   node scripts/encrypt.js --sample fresh
+   cp templates/sample-payload.json payload.json
+   ```
+   Fill in `payload.json` with your real 1Password secret key, Google backup codes, and TOTP seeds.
+
+4. **Run the Hardened Deployment Pipeline**:
+   ```bash
+   ./scripts/deploy.sh payload.json
+   ```
+   - Enter your memorized 6-word Diceware passphrase when prompted.
+   - The script encrypts the payload, validates all 16 automated tests, stages strictly `public/index.html`, pushes to `main`, and securely shreds the plaintext `payload.json` via 3-pass zero-fill.
+
+5. **Connect Cloudflare Pages (Free)**:
+   - In Cloudflare Dashboard: **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**.
+   - Select your repository. Build output directory: `public`.
+   - Add your custom domain (e.g. `sos.yourdomain.com`).
 
 ---
 
@@ -151,7 +185,7 @@ node scripts/encrypt.js --decrypt "$(cat ciphertext.b64)" -p "correct horse batt
 #### 5. Query Ciphertext from Secondary DNS Dead-Drop
 If web browsing is blocked or Cloudflare Pages is unavailable, retrieve the ciphertext via DNS:
 ```bash
-dig +short TXT recovery.hrabcak.com | tr -d ' "\n'
+dig +short TXT recovery.yourdomain.com | tr -d ' "\n'
 ```
 
 #### 6. Run the Automated Test Suite
@@ -159,7 +193,7 @@ Execute end-to-end cryptographic parity, staleness logic, corrupted payload reje
 ```bash
 node tests/test-suite.js
 ```
-*(Runs 15 automated test suites ensuring zero regressions).*
+*(Runs 16 automated test suites ensuring zero regressions).*
 
 #### 7. Preview / Test Recovery Terminal Locally
 Because `public/index.html` is strictly self-contained with no external build tools, you can open it directly in any browser:
@@ -215,8 +249,8 @@ python3 -m http.server 8080 --directory public
    - Streamlined button states (`Unlock Vault` and `Unlocking...`).
 
 2. **DNS-over-HTTPS (DoH) Dead-Drop Fetcher**:
-   - Secondary dead-drop hosted on `recovery.hrabcak.com` TXT record.
-   - Clicking **"⚡ Fetch from recovery.hrabcak.com"** fetches the latest ciphertext via RFC 8484 DNS-over-HTTPS.
+   - Secondary dead-drop hosted on your custom DNS TXT record (e.g. `recovery.yourdomain.com`).
+   - Clicking **"⚡ Fetch from DNS"** fetches the latest ciphertext via RFC 8484 DNS-over-HTTPS.
    - Dual-resolver redundancy: queries Cloudflare 1.1.1.1 first with automatic failover to Google 8.8.8.8 if blocked.
    - Automatically stitches RFC 1035 255-byte DNS chunks and populates the vault input.
 

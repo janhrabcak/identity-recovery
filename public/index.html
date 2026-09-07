@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none';">
   <meta name="vault-generated-at" content="2026-09-02T07:18:48.955Z">
   <meta name="vault-stale-after-months" content="6">
-  <meta name="recovery-dns-domain" content="recovery.hrabcak.com">
+  <meta name="recovery-dns-domain" content="recovery.yourdomain.com">
   <title>SOS Recovery Protocol | Cold-Start Identity Recovery</title>
   <style>
     :root {
@@ -1821,7 +1821,7 @@ var qrcodegen;
 
     // Configurable recovery DNS domain (retrieved from <meta> or URL ?dns=...)
     const urlParams = new URLSearchParams(window.location.search);
-    const RECOVERY_DNS_DOMAIN = urlParams.get("dns") || document.querySelector('meta[name="recovery-dns-domain"]')?.content || "recovery.hrabcak.com";
+    const RECOVERY_DNS_DOMAIN = urlParams.get("dns") || document.querySelector('meta[name="recovery-dns-domain"]')?.content || "recovery.yourdomain.com";
 
     let currentPayload = null;
     let usedCodeIndices = new Set();

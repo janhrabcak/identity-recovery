@@ -12,7 +12,7 @@
 
 ### 2.1 Hosting Target & Runtime Model
 - **Primary Hosting Target:** Cloudflare Pages / Workers (recommended) or GitHub Pages served over HTTPS via custom domain (`sos.<domain>.com`).
-- **Secondary Dead-Drop:** RFC 1035 DNS TXT record hosted on `recovery.<domain>.com` (configurable, default: `recovery.hrabcak.com`), queryable via RFC 8484 DNS-over-HTTPS (DoH) through public anycast resolvers (`cloudflare-dns.com` and `dns.google`) or standard terminal DNS utilities (`dig`, `nslookup`).
+- **Secondary Dead-Drop:** RFC 1035 DNS TXT record hosted on `recovery.<domain>.com` (configurable, default: `recovery.yourdomain.com`), queryable via RFC 8484 DNS-over-HTTPS (DoH) through public anycast resolvers (`cloudflare-dns.com` and `dns.google`) or standard terminal DNS utilities (`dig`, `nslookup`).
 - **Runtime Model:** Standalone, single-file zero-dependency `public/index.html` executing pure browser-native WebCrypto (`window.crypto.subtle`). No external CDNs, JavaScript frameworks, or remote fonts. Network egress is restricted exclusively to public DoH resolvers.
 
 ### 2.2 Repository Organization
@@ -135,7 +135,7 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
   1. URL Query Parameter (`?dns=recovery.yourdomain.com` overrides without code modification)
   2. HTML Meta Tag (`<meta name="recovery-dns-domain" content="...">`)
   3. Build/Deployment Environment (`RECOVERY_DOMAIN` in `.env` or CLI)
-  4. Default Fallback (`recovery.hrabcak.com`)
+  4. Default Fallback (`recovery.yourdomain.com`)
 - **Dual Anycast Resolver Redundancy:** Queries Cloudflare DoH (`https://cloudflare-dns.com/dns-query`) first with automated failover to Google Public DoH (`https://dns.google/resolve`).
 - **RFC 1035 Chunk Stitching:** Normalizes and stitches multiple 255-byte DNS text chunks into the unified RFC 4648 Base64 ciphertext string.
 
