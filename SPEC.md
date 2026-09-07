@@ -50,6 +50,8 @@ identity-recovery/
   - **Iterations:** 600,000 rounds (exceeding OWASP password storage recommendations).
   - **Salt:** 16 bytes (128 bits), cryptographically secure random.
 - **Key Material:** Memorized 6-word Diceware passphrase (~77 bits of entropy), strictly distinct from the 1Password master password.
+  - **Entropy Validation Rules:** Validated at generation time for $\ge 6$ whitespace-delimited words, $\ge 20$ characters total length, $\ge 4$ unique words, and $\ge 2$ characters per token.
+  - **Normalization:** Passphrases undergo Unicode NFKC normalization, leading/trailing whitespace trimming, and collapse of consecutive whitespace (`\s+` to `\u0020`) before key derivation to guarantee consistency across terminals.
 - **Serialized Binary Format:**
   ```text
   [16-byte Salt] || [12-byte IV] || [Ciphertext + 16-byte Auth Tag]
@@ -105,19 +107,23 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
 - **Ephemeral Session Persistence:** Strikethrough status is persisted in `sessionStorage` under a key scoped to the vault canary (`recovery_used_codes_<canaryCode>`). If the recovery terminal tab is refreshed or reloaded during 2SV navigation, marked codes are preserved.
 - **Reset Trigger:** Allows clearing all strikethrough markers if needed.
 
-### 3.4 Universal One-Click Copy Mechanics
+### 3.4 Universal One-Click Copy Mechanics & Clipboard Auto-Scrubbing
 - Universal helper supporting all sensitive fields (Email, Secret Key, Canary Code, Notes, individual backup codes, and raw JSON export).
 - **Dual-Mode Implementation:** Uses `navigator.clipboard.writeText` with an automatic fallback to an ephemeral hidden `<textarea>` + `document.execCommand('copy')` for restricted kiosk browser contexts.
-- **Visual Confirmation:** Button displays `✓ Copied!` and highlights green for 1.8 seconds before reverting.
+- **Visual Confirmation:** Button displays `✓ Copied! (clears in 45s)` and highlights green before reverting.
+- **Untrusted Terminal Auto-Scrubbing (45s Timer):** Upon copying any credential, an ephemeral 45-second timer (`CLIPBOARD_SCRUB_TIMEOUT_MS = 45000`) is scheduled. When expired, the OS clipboard is actively overwritten with blank space (`" "`) to prevent credential theft by subsequent kiosk users.
+- **Focus-Catchup Scrubbing:** If the user switches away to another browser tab (e.g. completing Google 2SV) while the timer lapses, the scrub triggers immediately the moment the recovery terminal tab regains window focus.
+- **Manual Scrubbing:** A dedicated `🧹 Clear Clipboard` button allows users to immediately overwrite clipboard content on demand.
 
 ### 3.5 Emergency Purge & Memory Wiping ("Lock & Purge")
 - Clicking **"🔒 Lock & Purge"** immediately:
-  1. Overwrites and nullifies the in-memory payload reference (`currentPayload = null`).
-  2. Clears all tracked backup code indices.
-  3. Replaces all DOM text nodes containing decrypted credentials with placeholders (`-`).
-  4. Clears the passphrase input value and resets the live word counter badge.
-  5. Cleans up `sessionStorage`.
-  6. Returns the UI to the locked screen state.
+  1. Overwrites and scrubs the OS clipboard (`scrubClipboard("lock_purge")`).
+  2. Overwrites and nullifies the in-memory payload reference (`currentPayload = null`).
+  3. Clears all tracked backup code indices.
+  4. Replaces all DOM text nodes containing decrypted credentials with placeholders (`-`).
+  5. Clears the passphrase input value and resets the live word counter badge.
+  6. Cleans up `sessionStorage`.
+  7. Returns the UI to the locked screen state.
 
 ### 3.6 DNS-over-HTTPS (DoH) Secondary Dead-Drop Fetcher
 - Allows on-demand retrieval of the encrypted ciphertext directly from the recovery DNS TXT record.
@@ -171,15 +177,17 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
 - **Command-Line Interface:**
   - `--sample [fresh|stale]`: Creates a schema-compliant `templates/sample-payload.json`.
   - `-i, --input <file>`: Reads plaintext JSON payload.
-  - `-p, --passphrase <phrase>`: Accepts Diceware passphrase (masked interactive prompt if omitted).
+  - `-p, --passphrase <phrase>`: Accepts Diceware passphrase (masked interactive prompt with entropy validation if omitted).
   - `-o, --output <file>`: Writes Base64 ciphertext to file.
+  - `-d, --domain <domain>`: Configures recovery DNS domain.
+  - `--allow-low-entropy`: Explicitly bypasses the 6-word Diceware entropy validation rules.
   - `--embed-html <file>`: Automatically injects the Base64 ciphertext into `const EMBEDDED_CIPHERTEXT = "..."` within `public/index.html`.
   - `--decrypt <base64>`: Decrypts and outputs formatted JSON to verify payload integrity offline.
 
 ### 5.2 Automated Deployment Script (`scripts/deploy.sh`)
 Hardened Bash orchestration script for rotation and production publishing:
 1. **Pre-flight Checks:** Validates git repository, remote connectivity, and payload schema completeness.
-2. **Passphrase Ingestion:** Prompts for Diceware passphrase with masked input and typo-prevention confirmation.
+2. **Passphrase Ingestion:** Prompts for Diceware passphrase with masked input, verifies $\ge 6$ Diceware words via `evaluatePassphraseEntropy`, and confirms input to prevent typos.
 3. **Encryption & HTML Embedding:** Invokes `scripts/encrypt.js` to derive PBKDF2-600k keys and inject the Base64 ciphertext into `public/index.html`.
 4. **Pre-Deploy Verification:** Executes `tests/test-suite.js` to guarantee cryptographic and runtime validity before staging.
 5. **Git Safety Guard:** Audits git staging area to prevent accidental credential leaks; stages strictly `public/index.html`.
@@ -207,3 +215,6 @@ Automated test runner verifying:
 7. Staleness evaluator unit tests (`scripts/check-staleness.js`) across all freshness states.
 8. DNS-over-HTTPS (DoH) multi-chunk parsing logic parity across Cloudflare and Google DoH formats.
 9. Configurable recovery DNS domain meta tag and `RECOVERY_DNS_DOMAIN` variable verification.
+10. Diceware passphrase entropy validation enforcing $\ge 6$ words, length, repetition rejection, and `--allow-low-entropy` override.
+11. Whitespace and Unicode NFKC normalization parity across formatting variations.
+12. Untrusted terminal clipboard auto-scrubbing code integrity, focus-catchup event listener, and "Lock & Purge" integration in `public/index.html`.

@@ -1,4 +1,4 @@
-import { encryptPayload, decryptPayload, createSamplePayload } from '../scripts/encrypt.js';
+import { encryptPayload, decryptPayload, createSamplePayload, normalizePassphrase, evaluatePassphraseEntropy } from '../scripts/encrypt.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -160,6 +160,82 @@ async function runTests() {
     throw new Error("Test 9 Failed: index.html missing RECOVERY_DNS_DOMAIN constant!");
   }
   console.log("✓ Test 9 Passed: Recovery DNS domain meta tag and RECOVERY_DNS_DOMAIN variable verified.");
+
+  // Test 10: Diceware Passphrase Entropy Validation
+  console.log("\n[Test 10] Diceware Passphrase Entropy Validation");
+  const validEntropy = evaluatePassphraseEntropy("correct horse battery staple zebra guitar");
+  if (!validEntropy.valid || validEntropy.wordCount !== 6) {
+    throw new Error("Test 10 Failed: Valid Diceware phrase was rejected!");
+  }
+
+  const shortWords = evaluatePassphraseEntropy("correct horse battery");
+  if (shortWords.valid) {
+    throw new Error("Test 10 Failed: Passphrase with only 3 words should have been rejected!");
+  }
+
+  const repeatedWords = evaluatePassphraseEntropy("zebra zebra zebra zebra zebra zebra");
+  if (repeatedWords.valid) {
+    throw new Error("Test 10 Failed: Passphrase with repeated words should have been rejected!");
+  }
+
+  const shortLength = evaluatePassphraseEntropy("a bb cc dd ee ff");
+  if (shortLength.valid) {
+    throw new Error("Test 10 Failed: Passphrase under 20 characters should have been rejected!");
+  }
+
+  // Verify encryptPayload rejects low entropy unless explicitly allowed
+  try {
+    await encryptPayload(samplePayload, "low entropy words phrase");
+    throw new Error("Test 10 Failed: encryptPayload should reject low entropy passphrase!");
+  } catch (err) {
+    if (!err.message.includes("Passphrase validation failed")) {
+      throw err;
+    }
+  }
+
+  const allowedCiphertext = await encryptPayload(samplePayload, "short low entropy words phrase test", { allowLowEntropy: true });
+  if (!allowedCiphertext) {
+    throw new Error("Test 10 Failed: encryptPayload failed with allowLowEntropy: true");
+  }
+  console.log("✓ Test 10 Passed: Diceware entropy validation correctly enforced and overrideable.");
+
+  // Test 11: Whitespace and Unicode Normalization Parity
+  console.log("\n[Test 11] Whitespace and Unicode Normalization Parity");
+  const basePhrase = "correct horse battery staple zebra guitar";
+  const messyPhrase = "   correct   horse \t battery \n staple   zebra   guitar  ";
+  
+  if (normalizePassphrase(messyPhrase) !== basePhrase) {
+    throw new Error(`Test 11 Failed: normalizePassphrase did not normalize whitespace correctly. Got: '${normalizePassphrase(messyPhrase)}'`);
+  }
+
+  const encryptedBase = await encryptPayload(samplePayload, basePhrase);
+  const decryptedWithMessy = await decryptPayload(encryptedBase, messyPhrase);
+  if (decryptedWithMessy.metadata.canaryCode !== samplePayload.metadata.canaryCode) {
+    throw new Error("Test 11 Failed: Decryption with messy whitespace failed to match original payload!");
+  }
+  console.log("✓ Test 11 Passed: Normalization parity verified across whitespace and formatting variations.");
+
+  // Test 12: Untrusted Terminal Clipboard Auto-Scrubbing Code Integrity
+  console.log("\n[Test 12] Clipboard Auto-Scrubbing Code Integrity in public/index.html");
+  if (!html.includes("CLIPBOARD_SCRUB_TIMEOUT_MS = 45000")) {
+    throw new Error("Test 12 Failed: index.html missing CLIPBOARD_SCRUB_TIMEOUT_MS constant (45000ms)!");
+  }
+  if (!html.includes("scrubClipboard")) {
+    throw new Error("Test 12 Failed: index.html missing scrubClipboard function!");
+  }
+  if (!html.includes("showClipboardNotice")) {
+    throw new Error("Test 12 Failed: index.html missing showClipboardNotice function!");
+  }
+  if (!html.includes("focus_catchup")) {
+    throw new Error("Test 12 Failed: index.html missing focus_catchup event handler!");
+  }
+  if (!html.includes('scrubClipboard("lock_purge")')) {
+    throw new Error("Test 12 Failed: lockVault in index.html missing scrubClipboard call!");
+  }
+  if (!html.includes("scrub-clipboard-btn")) {
+    throw new Error("Test 12 Failed: index.html missing scrub-clipboard-btn button!");
+  }
+  console.log("✓ Test 12 Passed: Clipboard auto-scrubbing, focus-catchup, and lock & purge hooks verified in public/index.html.");
 
   console.log("\n==========================================");
   console.log("ALL TESTS PASSED SUCCESSFULLY! ✓");

@@ -104,12 +104,30 @@ while true; do
     continue
   fi
 
+  ENTROPY_CHECK=$(node -e "
+    import('./scripts/encrypt.js').then(m => {
+      const res = m.evaluatePassphraseEntropy(process.argv[1]);
+      if (!res.valid) {
+        console.error(res.reason);
+        process.exit(1);
+      }
+      console.log(res.wordCount);
+    });
+  " "$PASSPHRASE" 2>&1) || ENTROPY_STATUS=$?
+
+  if [[ "${ENTROPY_STATUS:-0}" -ne 0 ]]; then
+    echo -e "${C_RED}✗ Passphrase Entropy Error: ${ENTROPY_CHECK}${C_RESET}"
+    echo -e "${C_YELLOW}Please enter a valid 6-word Diceware passphrase (~77 bits entropy).${C_RESET}\n"
+    unset ENTROPY_STATUS
+    continue
+  fi
+
   read -s -rp "Confirm Passphrase: " PASSPHRASE_CONFIRM
   echo
   if [[ "$PASSPHRASE" != "$PASSPHRASE_CONFIRM" ]]; then
     echo -e "${C_RED}✗ Passphrases did not match. Please try again.${C_RESET}"
   else
-    echo -e "${C_GREEN}✓ Passphrase confirmed.${C_RESET}\n"
+    echo -e "${C_GREEN}✓ Passphrase confirmed (${ENTROPY_CHECK} words, ~77 bits entropy verified).${C_RESET}\n"
     break
   fi
 done

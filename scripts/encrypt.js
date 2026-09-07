@@ -20,7 +20,67 @@ const SALT_BYTES = 16;
 const IV_BYTES = 12;
 
 /**
+ * Normalizes a passphrase: trims whitespace, normalizes Unicode to NFKC, and collapses multiple spaces into a single space.
+ * @param {string} passphrase 
+ * @returns {string}
+ */
+export function normalizePassphrase(passphrase) {
+  if (!passphrase || typeof passphrase !== 'string') return '';
+  return passphrase.trim().normalize('NFKC').replace(/\s+/g, ' ');
+}
+
+/**
+ * Evaluates the entropy and complexity of a Diceware passphrase.
+ * Enforces >= 6 words, >= 20 characters, >= 4 unique words, and min 2 chars per token.
+ * @param {string} passphrase 
+ * @returns {{ valid: boolean, reason?: string, wordCount: number, normalized?: string }}
+ */
+export function evaluatePassphraseEntropy(passphrase) {
+  if (!passphrase || typeof passphrase !== 'string' || passphrase.trim().length === 0) {
+    return { valid: false, reason: 'Passphrase must be a non-empty string.', wordCount: 0 };
+  }
+  const normalized = normalizePassphrase(passphrase);
+  const words = normalized.split(' ').filter(w => w.length > 0);
+
+  if (words.length < 6) {
+    return {
+      valid: false,
+      reason: `Insufficient words (${words.length}/6). A minimum 6-word Diceware phrase (~77 bits entropy) is required.`,
+      wordCount: words.length
+    };
+  }
+
+  if (normalized.length < 20) {
+    return {
+      valid: false,
+      reason: `Passphrase too short (${normalized.length} chars). Minimum 20 characters required.`,
+      wordCount: words.length
+    };
+  }
+
+  const unique = new Set(words.map(w => w.toLowerCase()));
+  if (unique.size < 4) {
+    return {
+      valid: false,
+      reason: 'Too many repeated words. Use distinct Diceware words to maintain entropy.',
+      wordCount: words.length
+    };
+  }
+
+  if (words.some(w => w.length < 2)) {
+    return {
+      valid: false,
+      reason: 'Passphrase contains single-letter words. Diceware words should each be at least 2 characters.',
+      wordCount: words.length
+    };
+  }
+
+  return { valid: true, normalized, wordCount: words.length };
+}
+
+/**
  * Derives an AES-GCM-256 key from a passphrase and salt using PBKDF2-SHA-256.
+ * Automatically normalizes passphrase whitespace and Unicode before derivation.
  * @param {string} passphrase 
  * @param {Uint8Array} salt 
  * @param {string[]} usages - e.g. ['encrypt'] or ['decrypt']
@@ -28,7 +88,8 @@ const IV_BYTES = 12;
  */
 async function deriveKey(passphrase, salt, usages) {
   const enc = new TextEncoder();
-  const passphraseBytes = enc.encode(passphrase.trim());
+  const normalized = normalizePassphrase(passphrase);
+  const passphraseBytes = enc.encode(normalized);
 
   const keyMaterial = await subtle.importKey(
     'raw',
@@ -56,11 +117,15 @@ async function deriveKey(passphrase, salt, usages) {
  * Encrypts a payload string/object with a passphrase.
  * @param {string|object} payload - JSON string or object matching SPEC schema
  * @param {string} passphrase - Diceware passphrase
+ * @param {object} [options] - Optional settings
+ * @param {boolean} [options.allowLowEntropy=false] - Bypass entropy validation
  * @returns {Promise<string>} Base64 encoded [salt (16b)][iv (12b)][ciphertext+tag]
  */
-export async function encryptPayload(payload, passphrase) {
-  if (!passphrase || typeof passphrase !== 'string' || passphrase.trim().length === 0) {
-    throw new Error('Passphrase must be a non-empty string.');
+export async function encryptPayload(payload, passphrase, options = {}) {
+  const allowLowEntropy = options.allowLowEntropy === true;
+  const entropy = evaluatePassphraseEntropy(passphrase);
+  if (!entropy.valid && !allowLowEntropy) {
+    throw new Error(`Passphrase validation failed: ${entropy.reason}`);
   }
 
   let jsonString;
@@ -86,6 +151,9 @@ export async function encryptPayload(payload, passphrase) {
     key,
     plaintextBytes
   );
+
+  // Zero-fill plaintext buffer from memory
+  plaintextBytes.fill(0);
 
   const ciphertextBytes = new Uint8Array(ciphertextBuffer);
   const combined = new Uint8Array(SALT_BYTES + IV_BYTES + ciphertextBytes.byteLength);
@@ -242,6 +310,7 @@ Options:
   -p, --passphrase <phrase>  Diceware passphrase (prompted securely if omitted)
   -o, --output <file>        Output file for base64 ciphertext (prints to stdout if omitted)
   -d, --domain <domain>      Recovery DNS domain name (embeds into recovery-dns-domain meta tag)
+  --allow-low-entropy        Allow passphrases that do not meet 6-word Diceware entropy rules
   --embed-html <file>        Inject encrypted base64 payload into specified index.html
   --sample [fresh|stale]     Generate a sample payload.json in current directory
   --decrypt <base64>         Decrypt and display a ciphertext payload
@@ -261,6 +330,8 @@ async function main() {
     printUsage();
     return;
   }
+
+  const allowLowEntropy = args.includes('--allow-low-entropy');
 
   // Handle sample generation
   const sampleIdx = args.findIndex(a => a === '--sample');
@@ -350,16 +421,32 @@ async function main() {
   const pIdx = args.findIndex(a => a === '-p' || a === '--passphrase');
   let pass = pIdx !== -1 ? args[pIdx + 1] : null;
   if (!pass) {
-    pass = await promptUser('Enter 6-word Diceware passphrase: ', true);
-    if (!pass || pass.trim().length === 0) {
-      console.error('Error: Passphrase cannot be empty.');
+    while (true) {
+      pass = await promptUser('Enter 6-word Diceware passphrase: ', true);
+      if (!pass || pass.trim().length === 0) {
+        console.error('Error: Passphrase cannot be empty.');
+        continue;
+      }
+      const entropy = evaluatePassphraseEntropy(pass);
+      if (!entropy.valid && !allowLowEntropy) {
+        console.error(`\n✗ Entropy warning: ${entropy.reason}`);
+        console.error('Please enter a valid 6-word Diceware passphrase (~77 bits entropy).\n');
+        continue;
+      }
+      break;
+    }
+  } else {
+    const entropy = evaluatePassphraseEntropy(pass);
+    if (!entropy.valid && !allowLowEntropy) {
+      console.error(`\n✗ Error: ${entropy.reason}`);
+      console.error('To override entropy validation, pass --allow-low-entropy.');
       process.exit(1);
     }
   }
 
   console.log(`Deriving key (PBKDF2 SHA-256, ${PBKDF2_ITERATIONS.toLocaleString()} iterations) and encrypting AES-GCM-256...`);
   const t0 = Date.now();
-  const ciphertextB64 = await encryptPayload(parsedPayload, pass);
+  const ciphertextB64 = await encryptPayload(parsedPayload, pass, { allowLowEntropy });
   const duration = Date.now() - t0;
   console.log(`✓ Encryption complete in ${duration}ms (${ciphertextB64.length} base64 chars).`);
 

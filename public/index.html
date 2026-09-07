@@ -711,16 +711,20 @@
     <main id="vault-screen" class="hidden">
       
       <!-- Top Action Bar -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10b981;"></span>
           <span style="font-size: 0.85rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em;">Vault Decrypted</span>
         </div>
-        <div style="display: flex; gap: 8px;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-sm" id="scrub-clipboard-btn" onclick="scrubClipboard('manual')">🧹 Clear Clipboard</button>
           <button type="button" class="btn btn-sm" onclick="copyFullPayload(this)">📋 Copy JSON</button>
           <button type="button" class="btn btn-sm btn-danger" onclick="lockVault()">🔒 Lock & Purge</button>
         </div>
       </div>
+
+      <!-- Ephemeral Clipboard Scrub Alert -->
+      <div id="clipboard-notice" class="hidden brand-badge" style="border-color: #38bdf8; color: #38bdf8; margin-bottom: 16px; width: 100%; justify-content: center;"></div>
 
       <!-- Staleness Check Banner -->
       <section id="staleness-banner" class="banner banner-fresh">
@@ -873,6 +877,56 @@
     let usedCodeIndices = new Set();
     let vaultSessionStorageKey = "recovery_used_codes";
 
+    // Untrusted terminal clipboard auto-scrubbing state
+    let clipboardScrubTimer = null;
+    let pendingClipboardScrub = false;
+    const CLIPBOARD_SCRUB_TIMEOUT_MS = 45000; // 45 seconds auto-scrub timer
+
+    // Focus catch-up: scrub clipboard if 45s timer expired while user was in another tab
+    window.addEventListener("focus", () => {
+      if (pendingClipboardScrub) {
+        scrubClipboard("focus_catchup");
+      }
+    });
+
+    /**
+     * Overwrites the OS clipboard with blank space to prevent credential lingering on shared/untrusted terminals
+     */
+    async function scrubClipboard(reason = "auto") {
+      if (clipboardScrubTimer) {
+        clearTimeout(clipboardScrubTimer);
+        clipboardScrubTimer = null;
+      }
+      pendingClipboardScrub = false;
+
+      let scrubbed = false;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(" ");
+          scrubbed = true;
+        } catch (e) {
+          scrubbed = fallbackCopy(" ");
+        }
+      } else {
+        scrubbed = fallbackCopy(" ");
+      }
+
+      if (scrubbed && reason !== "lock_purge") {
+        showClipboardNotice("✓ Clipboard scrubbed: credentials cleared from OS clipboard");
+      }
+    }
+
+    function showClipboardNotice(msg) {
+      const notice = document.getElementById("clipboard-notice");
+      if (!notice) return;
+      notice.textContent = msg;
+      notice.classList.remove("hidden");
+      clearTimeout(notice._hideTimeout);
+      notice._hideTimeout = setTimeout(() => {
+        notice.classList.add("hidden");
+      }, 3500);
+    }
+
     // Setup initial state
     window.addEventListener("DOMContentLoaded", () => {
       const textarea = document.getElementById("ciphertext-input");
@@ -920,11 +974,14 @@
     function updateWordCount(val) {
       const badge = document.getElementById("word-count-badge");
       if (!badge) return;
-      const words = val.trim().split(/\s+/).filter(w => w.length > 0);
+      const words = (val || "").trim().normalize("NFKC").split(/\s+/).filter(w => w.length > 0);
       const count = words.length;
       if (count === 6) {
         badge.textContent = "✓ 6 / 6 words";
         badge.style.color = "#34d399";
+      } else if (count > 6) {
+        badge.textContent = `${count} words`;
+        badge.style.color = "#38bdf8";
       } else {
         badge.textContent = `${count} / 6 words`;
         badge.style.color = "var(--text-muted)";
@@ -1039,14 +1096,26 @@
         success = fallbackCopy(textToCopy);
       }
 
-      if (success && buttonEl) {
-        const originalText = buttonEl.textContent;
-        buttonEl.textContent = "✓ Copied!";
-        buttonEl.classList.add("copied");
-        setTimeout(() => {
-          buttonEl.textContent = originalText;
-          buttonEl.classList.remove("copied");
-        }, 1800);
+      if (success) {
+        // Reset and schedule 45-second auto-scrub countdown for untrusted terminals
+        if (clipboardScrubTimer) clearTimeout(clipboardScrubTimer);
+        clipboardScrubTimer = setTimeout(() => {
+          if (document.hasFocus()) {
+            scrubClipboard("timeout");
+          } else {
+            pendingClipboardScrub = true; // Scrub as soon as tab regains focus
+          }
+        }, CLIPBOARD_SCRUB_TIMEOUT_MS);
+
+        if (buttonEl) {
+          const originalText = buttonEl.textContent;
+          buttonEl.textContent = "✓ Copied! (clears in 45s)";
+          buttonEl.classList.add("copied");
+          setTimeout(() => {
+            buttonEl.textContent = originalText;
+            buttonEl.classList.remove("copied");
+          }, 2000);
+        }
       }
     }
 
@@ -1074,11 +1143,12 @@
      */
     async function decryptVault() {
       clearError();
-      const passphrase = document.getElementById("passphrase-input").value;
+      const rawPassphrase = document.getElementById("passphrase-input").value;
+      const passphrase = rawPassphrase ? rawPassphrase.trim().normalize("NFKC").replace(/\s+/g, " ") : "";
       const customCiphertext = document.getElementById("ciphertext-input").value.trim();
       const ciphertextB64 = customCiphertext || EMBEDDED_CIPHERTEXT;
 
-      if (!passphrase || passphrase.trim().length === 0) {
+      if (!passphrase || passphrase.length === 0) {
         showError("Please enter your Diceware passphrase.");
         return;
       }
@@ -1113,7 +1183,7 @@
           const enc = new TextEncoder();
           const keyMaterial = await window.crypto.subtle.importKey(
             "raw",
-            enc.encode(passphrase.trim()),
+            enc.encode(passphrase),
             { name: "PBKDF2" },
             false,
             ["deriveKey"]
@@ -1489,6 +1559,9 @@
      * Lock and purge vault from memory
      */
     function lockVault() {
+      // Overwrite clipboard immediately on lock & purge
+      scrubClipboard("lock_purge");
+
       // Zero out / wipe payload
       currentPayload = null;
       usedCodeIndices.clear();

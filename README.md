@@ -56,7 +56,7 @@ identity-recovery/
 |         v                                                               |
 |  ./scripts/deploy.sh payload.json                                       |
 |    - Validates payload schema and JSON syntax                           |
-|    - Secure masked passphrase prompt with typo-prevention confirmation  |
+|    - Masked passphrase prompt with typo confirmation & entropy check    |
 |    - PBKDF2-SHA-256 (600,000 rounds) + 16-byte salt                     |
 |    - AES-GCM-256 Encryption + 12-byte IV                                |
 |    - Injects Base64 into public/index.html                              |
@@ -235,15 +235,18 @@ python3 -m http.server 8080 --directory public
    - **Session Persistence**: Strikethrough progress is preserved in `sessionStorage` (scoped to the vault's canary code) so accidental tab reloads do not lose track of burned codes.
    - **Reset Tracker**: Button to clear all strikethrough marks.
 
-5. **Universal One-Click Copy Buttons**:
+5. **Universal One-Click Copy & Untrusted Terminal Clipboard Scrubbing**:
    - Dedicated copy buttons for 1Password email, secret key, account hint, canary code, emergency notes, and each backup code.
    - Uses `navigator.clipboard.writeText` with legacy `document.execCommand('copy')` fallback for restricted kiosk environments.
-   - Visual feedback (`✓ Copied!`) on the clicked button.
+   - Visual feedback (`✓ Copied! (clears in 45s)`).
+   - **45s Timed Auto-Scrubbing**: Schedules an automatic clipboard wipe (overwrites with blank space `" "`) after 45 seconds to prevent next kiosk users from retrieving secrets.
+   - **Focus-Catchup Scrubbing**: If the user is on another tab (e.g. Google login) when the 45s timer expires, the clipboard is immediately scrubbed upon re-focusing the recovery tab.
+   - **"🧹 Clear Clipboard" Action Button**: Allows immediate manual wiping of copied credentials on demand.
 
 6. **Hardened Edge & Memory Security**:
-   - Browser-native WebCrypto API (`window.crypto.subtle`).
+   - Browser-native WebCrypto API (`window.crypto.subtle`) with Unicode NFKC & whitespace normalization.
    - Strict Content Security Policy (`CSP`) restricting outbound traffic exclusively to trusted anycast DoH resolvers (`https://cloudflare-dns.com https://dns.google`).
-   - **"🔒 Lock & Purge"** button: Completely zeroes out sensitive memory structures, clears DOM elements, resets inputs, and wipes session storage.
+   - **"🔒 Lock & Purge"** button: Actively scrubs the OS clipboard, completely zeroes out sensitive memory structures, clears DOM elements, resets inputs, and wipes session storage.
 
 ---
 
