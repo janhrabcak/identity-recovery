@@ -7,8 +7,34 @@ Stateless, zero-hardware emergency credential recovery protocol designed to rest
 - **Disaster Scenario:** Total physical hardware loss (no phone, no YubiKey, no wallet, no trusted devices).
 - **Cryptography:** AES-GCM-256 with PBKDF2-SHA-256 (600,000 iterations, 16-byte random salt, 12-byte random IV).
 - **Key Material:** Memorized 6-word Diceware passphrase (~77 bits entropy).
-- **Runtime:** Standalone, single-file zero-dependency `index.html` using browser-native WebCrypto (`window.crypto.subtle`).
+- **Runtime:** Standalone, single-file zero-dependency `public/index.html` using browser-native WebCrypto (`window.crypto.subtle`).
 - **Hosting Target:** Cloudflare Pages / Workers (recommended) or GitHub Pages served over HTTPS via custom domain (`sos.<domain>.com`).
+
+---
+
+## 📁 Repository Directory Structure
+
+```text
+identity-recovery/
+├── public/                       # 🌐 Publicly deployed to Cloudflare Edge
+│   ├── index.html                # Recovery terminal client (contains encrypted ciphertext)
+│   └── _headers                  # HTTP security headers (CSP, HSTS, no-store, anti-clickjacking)
+│
+├── scripts/                      # 🛠️ Private offline tools (runs on trusted machine only)
+│   ├── deploy.sh                 # Hardened 7-step rotation & publish pipeline
+│   └── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
+│
+├── templates/                    # 📋 Safe dummy templates
+│   └── sample-payload.json       # Template recovery schema
+│
+├── tests/                        # 🧪 Verification suite
+│   └── test-suite.js             # Automated crypto & parity tests
+│
+├── wrangler.json                 # Cloudflare config: assets directory -> "./public"
+├── .gitignore                    # Security boundary (blocks unencrypted payload.json)
+├── README.md                     # Operational documentation & quick run commands
+└── SPEC.md                       # Full cryptographic & architectural specification
+```
 
 ---
 
@@ -23,24 +49,26 @@ Stateless, zero-hardware emergency credential recovery protocol designed to rest
 |  [6-word Diceware Passphrase] (~77 bits entropy)                        |
 |         |                                                               |
 |         v                                                               |
-|  node encrypt.js --embed-html index.html                                |
+|  ./scripts/deploy.sh payload.json                                       |
+|    - Validates payload schema and JSON syntax                           |
+|    - Secure masked passphrase prompt with typo-prevention confirmation  |
 |    - PBKDF2-SHA-256 (600,000 rounds) + 16-byte salt                     |
 |    - AES-GCM-256 Encryption + 12-byte IV                                |
-|    - Produces Base64: [16b salt][12b IV][ciphertext + 16b tag]          |
-|    - Injects into index.html                                            |
-|         |                                                               |
-|         v                                                               |
-|  git push origin main (Private GitHub Repo)                             |
+|    - Injects Base64 into public/index.html                              |
+|    - Runs tests/test-suite.js                                           |
+|    - Stages strictly public/index.html (guarantees no secret leaks)     |
+|    - Commits & pushes to origin main                                    |
+|    - Securely shreds plaintext payload.json (3 passes + zero-fill)      |
 +-------------------------------------------------------------------------+
                                   |
                                   v
 +-------------------------------------------------------------------------+
 | CLOUDFLARE EDGE (Anycast Global CDN)                                    |
 |                                                                         |
-|  - Reads wrangler.json & .assetsignore                                  |
-|  - Deploys static assets globally (<50ms cold load anywhere in world)   |
-|  - Serves _headers (Strict CSP, HSTS, no-store, anti-clickjacking)      |
-|  - Accessible at: https://sos.<domain>.com                              |
+|  - Reads wrangler.json (assets pointing to ./public)                    |
+|  - Only public/ files are deployed; scripts & tests remain private      |
+|  - Serves public/_headers (Strict CSP, HSTS, no-store, anti-clickjacking)|
+|  - Accessible globally at: https://sos.<domain>.com                     |
 +-------------------------------------------------------------------------+
                                   |
                                   v
@@ -62,9 +90,9 @@ Stateless, zero-hardware emergency credential recovery protocol designed to rest
 ## 🚀 Quick Run Commands
 
 ### ⚡ Automated Rotation & Deploy Script (Recommended)
-To rotate your credentials, verify the crypto, commit strictly `index.html`, push to Cloudflare, and securely shred the unencrypted JSON payload in a single hardened command:
+To rotate your credentials, verify the crypto, commit strictly `public/index.html`, push to Cloudflare, and securely shred the unencrypted JSON payload in a single hardened command:
 ```bash
-./deploy.sh [path-to-payload.json]
+./scripts/deploy.sh [path-to-payload.json]
 ```
 *(If no payload file is passed as an argument, it automatically uses `payload.json` or prompts for a path. In Step 7, secure plaintext shredding defaults to **Yes**).*
 
@@ -73,56 +101,56 @@ To rotate your credentials, verify the crypto, commit strictly `index.html`, pus
 ### Manual Step-by-Step Workflow
 
 #### 1. Generate a Sample Recovery Payload
-Generate a template `sample-payload.json` matching the specification schema:
+Generate a template `templates/sample-payload.json` matching the specification schema:
 ```bash
 # Generate a fresh sample payload (generated 5 days ago)
-node encrypt.js --sample fresh
+node scripts/encrypt.js --sample fresh
 
 # Or generate a stale sample payload (generated 7 months ago) to test the warning banner
-node encrypt.js --sample stale
+node scripts/encrypt.js --sample stale
 ```
 
-### 2. Encrypt & Embed Directly into `index.html`
-Derive key material via PBKDF2 (600,000 iterations), encrypt the payload with AES-GCM-256, and inject the Base64 ciphertext into `index.html`:
+#### 2. Encrypt & Embed Directly into `public/index.html`
+Derive key material via PBKDF2 (600,000 iterations), encrypt the payload with AES-GCM-256, and inject the Base64 ciphertext into `public/index.html`:
 ```bash
-node encrypt.js -i sample-payload.json -p "correct horse battery staple zebra guitar" --embed-html index.html
+node scripts/encrypt.js -i templates/sample-payload.json -p "correct horse battery staple zebra guitar" --embed-html public/index.html
 ```
 
-### 3. Encrypt to Standalone Output File or Terminal
+#### 3. Encrypt to Standalone Output File or Terminal
 ```bash
 # Output base64 ciphertext to file
-node encrypt.js -i sample-payload.json -p "correct horse battery staple zebra guitar" -o ciphertext.b64
+node scripts/encrypt.js -i templates/sample-payload.json -p "correct horse battery staple zebra guitar" -o ciphertext.b64
 
 # Print base64 ciphertext directly to stdout
-node encrypt.js -i sample-payload.json -p "correct horse battery staple zebra guitar"
+node scripts/encrypt.js -i templates/sample-payload.json -p "correct horse battery staple zebra guitar"
 ```
 
-### 4. Verify Decryption via CLI
+#### 4. Verify Decryption via CLI
 Verify that a ciphertext string decrypts correctly with the passphrase:
 ```bash
-node encrypt.js --decrypt "$(cat ciphertext.b64)" -p "correct horse battery staple zebra guitar"
+node scripts/encrypt.js --decrypt "$(cat ciphertext.b64)" -p "correct horse battery staple zebra guitar"
 ```
 
-### 5. Run the Automated Test Suite
+#### 5. Run the Automated Test Suite
 Execute end-to-end cryptographic parity, staleness logic, corrupted payload rejection, and zero-dependency checks:
 ```bash
-node test-suite.js
+node tests/test-suite.js
 ```
 
-### 6. Preview / Test Recovery Terminal Locally
-Because `index.html` is strictly self-contained with no external dependencies or runtime network calls, you can open it directly in any browser:
+#### 6. Preview / Test Recovery Terminal Locally
+Because `public/index.html` is strictly self-contained with no external dependencies or runtime network calls, you can open it directly in any browser:
 ```bash
 # Direct browser opening (Linux)
-xdg-open index.html
+xdg-open public/index.html
 
 # Or serve via lightweight local HTTP server
-python3 -m http.server 8080
+python3 -m http.server 8080 --directory public
 # Open http://localhost:8080 in your browser
 ```
 
 ---
 
-## 📋 Payload Schema (`sample-payload.json`)
+## 📋 Payload Schema (`templates/sample-payload.json`)
 
 ```json
 {
@@ -154,7 +182,7 @@ python3 -m http.server 8080
 
 ---
 
-## 🛡️ Core Features in `index.html`
+## 🛡️ Core Features in `public/index.html`
 
 1. **Staleness-Check Banner**:
    - Calculates exact elapsed time since `metadata.generatedAt`.
@@ -170,7 +198,7 @@ python3 -m http.server 8080
    - Clicking any code or checkbox strikes it through (`text-decoration: line-through` + dimmed opacity) and marks it as `USED`.
    - Real-time remaining count tracker (`X / Y remaining`).
    - **"⚡ Copy Next Unused Code"** button: Automatically finds the next unstruck code, copies it to clipboard, and highlights it.
-   - **Session Persistence**: Strikethrough progress is preserved in `sessionStorage` (scoped to `recovery_used_codes_<canaryCode>`) so accidental tab reloads do not lose track of burned codes.
+   - **Session Persistence**: Strikethrough progress is preserved in `sessionStorage` (scoped to the vault's canary code) so accidental tab reloads do not lose track of burned codes.
    - **Reset Tracker**: Button to clear all strikethrough marks.
 
 3. **Universal One-Click Copy Buttons**:
@@ -192,10 +220,10 @@ When backing up or hosting this project on GitHub (e.g. for the Tier 1 dead-drop
 ### 1. ⚠️ CRITICAL: Never Commit Plaintext Credentials (`payload.json`)
 - **Never** commit unencrypted JSON files containing real Google backup codes, 1Password secret keys, master password hints, or private contact numbers.
 - A strict `.gitignore` is configured to prevent files like `payload.json`, `my-payload.json`, `*secret*`, and private environment files from ever being tracked.
-- `sample-payload.json` is safe to commit because it contains only dummy placeholder values.
+- `templates/sample-payload.json` is safe to commit because it contains only dummy placeholder values.
 
-### 2. Encrypted Ciphertext (`index.html`) is Safe for Dead-Drop Hosting
-- The embedded payload in `index.html` is protected by AES-GCM-256 and PBKDF2-SHA-256 (600,000 rounds) derived from a memorized 6-word Diceware passphrase (~77 bits of entropy).
+### 2. Encrypted Ciphertext (`public/index.html`) is Safe for Dead-Drop Hosting
+- The embedded payload in `public/index.html` is protected by AES-GCM-256 and PBKDF2-SHA-256 (600,000 rounds) derived from a memorized 6-word Diceware passphrase (~77 bits of entropy).
 - As specified in the threat model, the ciphertext is cryptographically safe to host on GitHub and serve globally via Cloudflare or GitHub Pages.
 
 ### 3. Repository Visibility
@@ -203,7 +231,7 @@ When backing up or hosting this project on GitHub (e.g. for the Tier 1 dead-drop
 - **Public Repository**: Only needed if using free-tier GitHub Pages.
 
 ### 4. Offline Key Ingestion
-- Always run `encrypt.js` locally on a trusted machine to generate the encrypted payload. Never paste plaintext secrets into untrusted tools or online WebCrypto playgrounds.
+- Always run `scripts/encrypt.js` locally on a trusted machine to generate the encrypted payload. Never paste plaintext secrets into untrusted tools or online WebCrypto playgrounds.
 
 ---
 
@@ -212,7 +240,7 @@ When backing up or hosting this project on GitHub (e.g. for the Tier 1 dead-drop
 Cloudflare Pages is the optimal hosting platform for this protocol because it supports **private repositories for free**, provides instant global Anycast routing (<50ms globally), automated SSL, and response-level security headers.
 
 ### Deployment Configuration
-The repository includes pre-configured [`wrangler.json`](wrangler.json), [`_headers`](_headers), and [`.assetsignore`](.assetsignore) files.
+The repository is configured via [`wrangler.json`](wrangler.json) to deploy strictly `./public` to the edge.
 
 1. In the **Cloudflare Dashboard**, navigate to **Workers & Pages** → **Create application** → **Connect to Git**.
 2. Authorize your private GitHub repository `identity-recovery`.
@@ -225,7 +253,7 @@ The repository includes pre-configured [`wrangler.json`](wrangler.json), [`_head
 5. **Custom Domain (`sos.<domain>.com`)**:
    - Go to your project → **Custom domains** tab → **Set up a custom domain**.
    - Enter `sos.<yourdomain>.com`. Cloudflare will automatically configure the DNS record and TLS certificate.
-6. **Security Headers**: The committed `_headers` file automatically applies strict CSP, HSTS, `no-store` cache control, and anti-clickjacking headers to all requests.
+6. **Security Headers**: The committed `public/_headers` file automatically applies strict CSP, HSTS, `no-store` cache control, and anti-clickjacking headers to all requests.
 
 ---
 
@@ -233,14 +261,13 @@ The repository includes pre-configured [`wrangler.json`](wrangler.json), [`_head
 
 | File | Purpose | Security / Privacy Classification |
 |---|---|---|
-| [`index.html`](index.html) | Standalone recovery terminal UI with zero-dependency WebCrypto AES-GCM decryption, staleness banner, copy buttons, and backup code strikethrough tracker. | Public / Deployable (contains only encrypted ciphertext) |
-| [`deploy.sh`](deploy.sh) | Hardened Bash deployment script: validates payload, ingests passphrase with typo confirmation, embeds ciphertext, tests, commits, pushes, and shreds plaintext. | Private Tooling (Automation) |
-| [`encrypt.js`](encrypt.js) | Node.js 18+ CLI utility to derive PBKDF2-600k keys, encrypt JSON payloads, inject Base64 into `index.html`, or verify offline decryption. | Private Tooling (Zero npm dependencies) |
+| [`public/index.html`](public/index.html) | Standalone recovery terminal UI with zero-dependency WebCrypto AES-GCM decryption, staleness banner, copy buttons, and backup code strikethrough tracker. | Public / Deployable (contains only encrypted ciphertext) |
+| [`public/_headers`](public/_headers) | Cloudflare HTTP response headers enforcing CSP, anti-clickjacking (`DENY`), `no-store` cache control, and HSTS. | Web Infrastructure (Edge Security) |
+| [`scripts/deploy.sh`](scripts/deploy.sh) | Hardened Bash deployment script: validates payload, ingests passphrase with typo confirmation, embeds ciphertext, tests, commits, pushes, and shreds plaintext. | Private Tooling (Automation) |
+| [`scripts/encrypt.js`](scripts/encrypt.js) | Node.js 18+ CLI utility to derive PBKDF2-600k keys, encrypt JSON payloads, inject Base64 into `public/index.html`, or verify offline decryption. | Private Tooling (Zero npm dependencies) |
+| [`templates/sample-payload.json`](templates/sample-payload.json) | Dummy schema-compliant template payload for testing. | Dummy Data (Safe to commit) |
+| [`tests/test-suite.js`](tests/test-suite.js) | Automated test suite validating cryptographic parity, error handling, staleness calculations, and CSP rules. | Verification |
+| [`wrangler.json`](wrangler.json) | Cloudflare Workers & Pages configuration pointing assets directory strictly to `./public`. | Deployment Configuration |
+| [`.gitignore`](.gitignore) | Enforces that real unencrypted `payload.json`, secrets, and temporary ciphertext dumps are never committed to Git. | Security Boundary |
 | [`SPEC.md`](SPEC.md) | Architectural specification, cryptographic definitions, schema, and threat model. | Documentation |
 | [`README.md`](README.md) | Operational guide, quick run commands, security rules, and deployment instructions. | Documentation |
-| [`_headers`](_headers) | Cloudflare HTTP response headers enforcing CSP, anti-clickjacking (`DENY`), `no-store` cache control, and HSTS. | Web Infrastructure |
-| [`wrangler.json`](wrangler.json) | Cloudflare Workers & Pages configuration defining static assets directory. | Deployment Configuration |
-| [`.assetsignore`](.assetsignore) | Instructs Cloudflare to publish only `index.html` and `_headers`, keeping scripts and documentation off the public web root. | Deployment Filter |
-| [`sample-payload.json`](sample-payload.json) | Dummy schema-compliant template payload for testing. | Dummy Data (Safe to commit) |
-| [`test-suite.js`](test-suite.js) | Automated test suite validating cryptographic parity, error handling, staleness calculations, and CSP rules. | Verification |
-| [`.gitignore`](.gitignore) | Enforces that real unencrypted `payload.json`, secrets, and temporary ciphertext dumps are never committed to Git. | Security Boundary |

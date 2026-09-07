@@ -5,7 +5,7 @@
 # Automates:
 #   1. Pre-flight verification (git status, payload validation)
 #   2. Secure masked passphrase ingestion with typo confirmation
-#   3. PBKDF2-600k + AES-GCM-256 encryption & HTML injection
+#   3. PBKDF2-600k + AES-GCM-256 encryption & HTML injection into public/index.html
 #   4. Test suite validation (prevents deploying broken payloads)
 #   5. Strict git staging (guarantees no plaintext secrets are committed)
 #   6. Git commit & push to main (triggers Cloudflare Edge deployment)
@@ -13,6 +13,11 @@
 # ==============================================================================
 
 set -eo pipefail
+
+# Find repository root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
 
 # Colors
 C_RESET='\033[0m'
@@ -100,17 +105,17 @@ while true; do
 done
 
 # ------------------------------------------------------------------------------
-# 3. Encrypt & Inject into index.html
+# 3. Encrypt & Inject into public/index.html
 # ------------------------------------------------------------------------------
-echo -e "${C_BOLD}[3/7] Encrypting payload & injecting into index.html...${C_RESET}"
-node encrypt.js -i "$PAYLOAD_FILE" -p "$PASSPHRASE" --embed-html index.html
+echo -e "${C_BOLD}[3/7] Encrypting payload & injecting into public/index.html...${C_RESET}"
+node scripts/encrypt.js -i "$PAYLOAD_FILE" -p "$PASSPHRASE" --embed-html public/index.html
 echo -e "${C_GREEN}✓ Encryption and HTML injection complete.${C_RESET}\n"
 
 # ------------------------------------------------------------------------------
 # 4. Verification & Integrity Tests
 # ------------------------------------------------------------------------------
 echo -e "${C_BOLD}[4/7] Running test suite verification...${C_RESET}"
-node test-suite.js
+node tests/test-suite.js
 echo -e "${C_GREEN}✓ Test suite passed completely.${C_RESET}\n"
 
 # ------------------------------------------------------------------------------
@@ -131,9 +136,9 @@ if git diff --cached --name-only | grep -E "payload|secret|\.env" >/dev/null 2>&
   exit 1
 fi
 
-# Stage ONLY index.html
-git add index.html
-echo -e "${C_GREEN}✓ Only index.html staged for commit.${C_RESET}\n"
+# Stage ONLY public/index.html
+git add public/index.html
+echo -e "${C_GREEN}✓ Only public/index.html staged for commit.${C_RESET}\n"
 
 # ------------------------------------------------------------------------------
 # 6. Git Commit & Push
@@ -142,7 +147,7 @@ echo -e "${C_BOLD}[6/7] Committing and pushing to remote...${C_RESET}"
 TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
 
 if git diff --cached --quiet; then
-  echo -e "${C_YELLOW}Notice: index.html has no changes to commit.${C_RESET}"
+  echo -e "${C_YELLOW}Notice: public/index.html has no changes to commit.${C_RESET}"
 else
   git commit -m "vault: rotate encrypted recovery payload ($TIMESTAMP)"
   git push origin main
@@ -155,9 +160,9 @@ fi
 # ------------------------------------------------------------------------------
 echo -e "${C_BOLD}[7/7] Plaintext Credential Cleanup${C_RESET}"
 
-# Protect sample file from accidental shredding
-if [[ "$PAYLOAD_FILE" == "sample-payload.json" ]]; then
-  echo -e "${C_CYAN}Skipping shredding for sample template 'sample-payload.json'.${C_RESET}"
+# Protect template files from accidental shredding
+if [[ "$PAYLOAD_FILE" == *"sample-payload.json"* ]]; then
+  echo -e "${C_CYAN}Skipping shredding for sample template '$PAYLOAD_FILE'.${C_RESET}"
 else
   echo -e "${C_YELLOW}WARNING: Leaving unencrypted plaintext credentials ('$PAYLOAD_FILE') on disk is a security risk.${C_RESET}"
   read -rp "Securely shred and permanently remove '$PAYLOAD_FILE'? [Y/n]: " SHRED_CHOICE

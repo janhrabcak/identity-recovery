@@ -266,7 +266,10 @@ async function main() {
   if (sampleIdx !== -1) {
     const type = args[sampleIdx + 1] === 'stale' ? 'stale' : 'fresh';
     const sample = createSamplePayload(type === 'fresh');
-    const outPath = path.resolve(process.cwd(), 'sample-payload.json');
+    const targetDir = fs.existsSync(path.resolve(process.cwd(), 'templates'))
+      ? path.resolve(process.cwd(), 'templates')
+      : process.cwd();
+    const outPath = path.resolve(targetDir, 'sample-payload.json');
     fs.writeFileSync(outPath, JSON.stringify(sample, null, 2), 'utf8');
     console.log(`✓ Sample payload (${type}) written to: ${outPath}`);
     return;
@@ -313,11 +316,15 @@ async function main() {
     // Read from pipe / stdin
     payloadContent = fs.readFileSync(0, 'utf-8');
   } else {
-    // If no input file specified, check if sample-payload.json exists or create in-memory sample
-    if (fs.existsSync(path.resolve(process.cwd(), 'sample-payload.json'))) {
-      inputPath = path.resolve(process.cwd(), 'sample-payload.json');
+    // If no input file specified, check if payload.json or templates/sample-payload.json exists
+    if (fs.existsSync(path.resolve(process.cwd(), 'payload.json'))) {
+      inputPath = path.resolve(process.cwd(), 'payload.json');
       payloadContent = fs.readFileSync(inputPath, 'utf8');
       console.log(`Using existing payload file: ${inputPath}`);
+    } else if (fs.existsSync(path.resolve(process.cwd(), 'templates/sample-payload.json'))) {
+      inputPath = path.resolve(process.cwd(), 'templates/sample-payload.json');
+      payloadContent = fs.readFileSync(inputPath, 'utf8');
+      console.log(`Using existing template file: ${inputPath}`);
     } else {
       console.log('No input file provided. Creating fresh sample payload...');
       payloadContent = JSON.stringify(createSamplePayload(true), null, 2);
@@ -358,7 +365,13 @@ async function main() {
   // Handle Embed into HTML
   const embedIdx = args.findIndex(a => a === '--embed-html');
   if (embedIdx !== -1) {
-    const htmlPath = path.resolve(process.cwd(), args[embedIdx + 1] || 'index.html');
+    let targetHtml = args[embedIdx + 1];
+    if (!targetHtml) {
+      targetHtml = fs.existsSync(path.resolve(process.cwd(), 'public/index.html'))
+        ? 'public/index.html'
+        : 'index.html';
+    }
+    const htmlPath = path.resolve(process.cwd(), targetHtml);
     if (!fs.existsSync(htmlPath)) {
       console.error(`Error: Target HTML file not found: ${htmlPath}`);
       process.exit(1);

@@ -11,10 +11,33 @@
 ## 2. Recovery Architecture: Tier 1 Stateless Encrypted Dead-Drop
 
 ### 2.1 Hosting Target & Runtime Model
-- **Hosting Target:** Cloudflare Pages (recommended) or GitHub Pages served over HTTPS via custom domain (`sos.<domain>.com`).
-- **Runtime Model:** Standalone, single-file zero-dependency `index.html` executing pure browser-native WebCrypto (`window.crypto.subtle`). No external CDNs, JavaScript frameworks, remote fonts, or runtime network calls.
+- **Hosting Target:** Cloudflare Pages / Workers (recommended) or GitHub Pages served over HTTPS via custom domain (`sos.<domain>.com`).
+- **Runtime Model:** Standalone, single-file zero-dependency `public/index.html` executing pure browser-native WebCrypto (`window.crypto.subtle`). No external CDNs, JavaScript frameworks, remote fonts, or runtime network calls.
 
-### 2.2 Cryptographic Specification
+### 2.2 Repository Organization
+```text
+identity-recovery/
+├── public/                       # 🌐 Public edge deployment (Cloudflare Pages / Workers)
+│   ├── index.html                # Recovery terminal client (contains encrypted ciphertext)
+│   └── _headers                  # HTTP security headers (CSP, HSTS, no-store, anti-clickjacking)
+│
+├── scripts/                      # 🛠️ Private offline tools (runs on trusted machine only)
+│   ├── deploy.sh                 # Hardened 7-step rotation & publish pipeline
+│   └── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
+│
+├── templates/                    # 📋 Safe dummy templates
+│   └── sample-payload.json       # Template recovery schema
+│
+├── tests/                        # 🧪 Verification suite
+│   └── test-suite.js             # Automated crypto & parity tests
+│
+├── wrangler.json                 # Cloudflare config: assets directory -> "./public"
+├── .gitignore                    # Security boundary (blocks unencrypted payload.json)
+├── README.md                     # Operational documentation & quick run commands
+└── SPEC.md                       # Full cryptographic & architectural specification
+```
+
+### 2.3 Cryptographic Specification
 - **Cipher:** AES-GCM-256 (authenticated encryption with 128-bit authentication tag).
 - **Initialization Vector (IV):** 12 bytes (96 bits), cryptographically secure random (`crypto.getRandomValues`).
 - **Key Derivation Function (KDF):** PBKDF2 with HMAC-SHA-256.
@@ -27,7 +50,7 @@
   ```
   Encoded as standard RFC 4648 Base64 string.
 
-### 2.3 Payload Schema
+### 2.4 Payload Schema
 ```json
 {
   "metadata": {
@@ -51,7 +74,7 @@
 
 ---
 
-## 3. Client-Side Runtime & Recovery Interface (`index.html`)
+## 3. Client-Side Runtime & Recovery Interface (`public/index.html`)
 
 ### 3.1 Decryption Engine
 - Executes asynchronously using WebCrypto `window.crypto.subtle`.
@@ -100,7 +123,7 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
   default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';
   ```
   Completely forbids outbound network calls (`fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, beacons, or DNS prefetch). Even on a compromised or malicious network, the page cannot exfiltrate decrypted secrets.
-- **HTTP Response Security Headers (`_headers`):**
+- **HTTP Response Security Headers (`public/_headers`):**
   - `X-Frame-Options: DENY`: Defends against iframe overlay and clickjacking attacks.
   - `Cache-Control: no-cache, no-store, must-revalidate`: Prevents public kiosk or retail terminals from writing decrypted content to disk cache.
   - `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`: Enforces strict TLS.
@@ -110,45 +133,45 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
 - **No Disk Persistence:** Unencrypted payload data is never written to `localStorage` or IndexedDB. Only ephemeral used-code indices are stored in `sessionStorage` (scoped to `recovery_used_codes_<canaryCode>`).
 - **Memory Purge Protocol:** The "Lock & Purge" procedure nullifies JavaScript heap references, wipes DOM nodes, and clears session storage.
 
-### 4.2 Dead-Drop Storage & Asset Isolation
+### 4.2 Dead-Drop Storage & Edge Asset Isolation
 - **Public vs. Private Repository:**
   - Plaintext credential files (`payload.json`) are barred by `.gitignore`.
-  - The embedded Base64 ciphertext in `index.html` is cryptographically secure against offline brute-force attacks assuming $\ge 77$ bits entropy (PBKDF2 600k rounds + AES-GCM-256).
-- **Edge Asset Isolation (`.assetsignore`):**
-  - Cloudflare deployment publishes strictly `index.html` and `_headers`. Internal tools (`encrypt.js`, test suites, specification docs) are excluded from the public edge web root.
+  - The embedded Base64 ciphertext in `public/index.html` is cryptographically secure against offline brute-force attacks assuming $\ge 77$ bits entropy (PBKDF2 600k rounds + AES-GCM-256).
+- **Physical Edge Isolation (`wrangler.json`):**
+  - Cloudflare deployment publishes strictly `./public` (`index.html` and `_headers`). Internal tools (`scripts/encrypt.js`, `scripts/deploy.sh`, test suites, specification docs) are physically separated and never uploaded to the public web root.
 
 ---
 
 ## 5. Offline Ingestion & Deployment Tooling
 
-### 5.1 Encryption Utility (`encrypt.js`)
+### 5.1 Encryption Utility (`scripts/encrypt.js`)
 - **Environment:** Node.js 18+ standard library using `node:crypto` (`subtle` and `getRandomValues`). Zero third-party npm packages.
 - **Command-Line Interface:**
-  - `--sample [fresh|stale]`: Creates a schema-compliant `sample-payload.json`.
+  - `--sample [fresh|stale]`: Creates a schema-compliant `templates/sample-payload.json`.
   - `-i, --input <file>`: Reads plaintext JSON payload.
   - `-p, --passphrase <phrase>`: Accepts Diceware passphrase (masked interactive prompt if omitted).
   - `-o, --output <file>`: Writes Base64 ciphertext to file.
-  - `--embed-html <file>`: Automatically injects the Base64 ciphertext into `const EMBEDDED_CIPHERTEXT = "..."` within `index.html`.
+  - `--embed-html <file>`: Automatically injects the Base64 ciphertext into `const EMBEDDED_CIPHERTEXT = "..."` within `public/index.html`.
   - `--decrypt <base64>`: Decrypts and outputs formatted JSON to verify payload integrity offline.
 
-### 5.2 Automated Deployment Script (`deploy.sh`)
+### 5.2 Automated Deployment Script (`scripts/deploy.sh`)
 Hardened Bash orchestration script for rotation and production publishing:
 1. **Pre-flight Checks:** Validates git repository, remote connectivity, and payload schema completeness.
 2. **Passphrase Ingestion:** Prompts for Diceware passphrase with masked input and typo-prevention confirmation.
-3. **Encryption & HTML Embedding:** Invokes `encrypt.js` to derive PBKDF2-600k keys and inject the Base64 ciphertext into `index.html`.
-4. **Pre-Deploy Verification:** Executes `test-suite.js` to guarantee cryptographic and runtime validity before staging.
-5. **Git Safety Guard:** Audits git staging area to prevent accidental credential leaks; stages strictly `index.html`.
+3. **Encryption & HTML Embedding:** Invokes `scripts/encrypt.js` to derive PBKDF2-600k keys and inject the Base64 ciphertext into `public/index.html`.
+4. **Pre-Deploy Verification:** Executes `tests/test-suite.js` to guarantee cryptographic and runtime validity before staging.
+5. **Git Safety Guard:** Audits git staging area to prevent accidental credential leaks; stages strictly `public/index.html`.
 6. **Commit & Push:** Commits with UTC timestamp and pushes to `origin main`, triggering Cloudflare Anycast edge deployment.
 7. **Plaintext Destruction:** Securely shreds and unlinks the plaintext payload file using `shred -u -z -n 3` (3-pass random overwrite + zero fill), defaulting to **Yes**.
 
 ---
 
-## 6. Verification Suite (`test-suite.js`)
+## 6. Verification Suite (`tests/test-suite.js`)
 
 Automated test runner verifying:
 1. End-to-end cryptographic parity between Node WebCrypto and browser WebCrypto.
 2. Rejection of invalid passphrases via AES-GCM authentication tag failure.
 3. Rejection of corrupted or tampered ciphertext bytes.
 4. Staleness classification logic (`FRESH`, `EXPIRING_SOON`, `STALE`).
-5. Zero-dependency integrity check verifying no external scripts, CDNs, or styles exist in `index.html`.
+5. Zero-dependency integrity check verifying no external scripts, CDNs, or styles exist in `public/index.html`.
 6. Automated HTML embedding regex verification.

@@ -1,5 +1,12 @@
-import { encryptPayload, decryptPayload, createSamplePayload } from './encrypt.js';
+import { encryptPayload, decryptPayload, createSamplePayload } from '../scripts/encrypt.js';
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const REPO_ROOT = path.resolve(__dirname, '..');
+const HTML_PATH = path.join(REPO_ROOT, 'public', 'index.html');
 
 async function runTests() {
   console.log("=== RUNNING TEST SUITE ===");
@@ -73,9 +80,12 @@ async function runTests() {
     throw new Error(`Test 4 Failed: Expected FRESH/EXPIRING_SOON/STALE, got ${statusFresh}/${statusExpiring}/${statusStale}`);
   }
 
-  // Test 5: Verify index.html contains zero external dependencies
-  console.log("\n[Test 5] Zero-Dependency and Security Check in index.html");
-  const html = fs.readFileSync('index.html', 'utf8');
+  // Test 5: Verify public/index.html contains zero external dependencies
+  console.log("\n[Test 5] Zero-Dependency and Security Check in public/index.html");
+  if (!fs.existsSync(HTML_PATH)) {
+    throw new Error(`Test 5 Failed: index.html not found at ${HTML_PATH}`);
+  }
+  const html = fs.readFileSync(HTML_PATH, 'utf8');
 
   if (/<script\s+src=/i.test(html)) {
     throw new Error("Test 5 Failed: index.html has external <script src=...>!");
@@ -89,11 +99,10 @@ async function runTests() {
   if (!html.includes('EMBEDDED_CIPHERTEXT')) {
     throw new Error("Test 5 Failed: index.html missing EMBEDDED_CIPHERTEXT constant!");
   }
-  console.log("✓ Test 5 Passed: Strict zero-dependency CSP & self-contained rules verified in index.html.");
+  console.log("✓ Test 5 Passed: Strict zero-dependency CSP & self-contained rules verified in public/index.html.");
 
   // Test 6: Embed CLI workflow test
   console.log("\n[Test 6] CLI Embed Workflow Test");
-  // Check that encryptPayload can embed into index.html
   const samplePayload = createSamplePayload(true);
   const b64 = await encryptPayload(samplePayload, passphrase);
   const updatedHtml = html.replace(/const\s+EMBEDDED_CIPHERTEXT\s*=\s*["'][^"']*["'];/, `const EMBEDDED_CIPHERTEXT = "${b64}";`);
