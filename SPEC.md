@@ -100,13 +100,22 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
   default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';
   ```
   Completely forbids outbound network calls (`fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, beacons, or DNS prefetch). Even on a compromised or malicious network, the page cannot exfiltrate decrypted secrets.
+- **HTTP Response Security Headers (`_headers`):**
+  - `X-Frame-Options: DENY`: Defends against iframe overlay and clickjacking attacks.
+  - `Cache-Control: no-cache, no-store, must-revalidate`: Prevents public kiosk or retail terminals from writing decrypted content to disk cache.
+  - `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`: Enforces strict TLS.
+  - `Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=()`: Revokes all unnecessary browser device capabilities.
+  - `X-Content-Type-Options: nosniff`: Prevents MIME-type sniffing.
 - **DOM XSS Protection:** Decrypted strings are injected solely via `textContent` or text node creation—never via `innerHTML` or string interpolation.
-- **No Disk Persistence:** Unencrypted payload data is never written to `localStorage` or IndexedDB. Only ephemeral used-code indices are stored in `sessionStorage`.
+- **No Disk Persistence:** Unencrypted payload data is never written to `localStorage` or IndexedDB. Only ephemeral used-code indices are stored in `sessionStorage` (scoped to `recovery_used_codes_<canaryCode>`).
+- **Memory Purge Protocol:** The "Lock & Purge" procedure nullifies JavaScript heap references, wipes DOM nodes, and clears session storage.
 
-### 4.2 Dead-Drop Storage Security
+### 4.2 Dead-Drop Storage & Asset Isolation
 - **Public vs. Private Repository:**
   - Plaintext credential files (`payload.json`) are barred by `.gitignore`.
   - The embedded Base64 ciphertext in `index.html` is cryptographically secure against offline brute-force attacks assuming $\ge 77$ bits entropy (PBKDF2 600k rounds + AES-GCM-256).
+- **Edge Asset Isolation (`.assetsignore`):**
+  - Cloudflare deployment publishes strictly `index.html` and `_headers`. Internal tools (`encrypt.js`, test suites, specification docs) are excluded from the public edge web root.
 
 ---
 
