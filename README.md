@@ -162,3 +162,21 @@ gh repo create identity-recovery --private --source=. --remote=origin --push
 # Option B: Public repository (if deploying directly to free GitHub Pages)
 gh repo create identity-recovery --public --source=. --remote=origin --push
 ```
+
+---
+
+## 🌐 Deploying to Cloudflare Pages (Recommended)
+
+Cloudflare Pages is the optimal hosting platform for this protocol because it supports **private repositories for free**, provides instant global Anycast routing, automated SSL, and response-level security headers.
+
+1. In the **Cloudflare Dashboard**, navigate to **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**.
+2. Select your GitHub account and authorize `identity-recovery`.
+3. Configure the build settings:
+   - **Framework preset:** `None`
+   - **Build command:** *(leave empty)*
+   - **Build output directory:** `.`
+4. Click **Save and Deploy**. Your site will be live at `https://identity-recovery.pages.dev`.
+5. **Custom Domain (`sos.<domain>.com`)**:
+   - Go to your Pages project → **Custom domains** tab → **Set up a custom domain**.
+   - Enter `sos.<yourdomain>.com`. Cloudflare will automatically configure the DNS record and TLS certificate.
+6. **Security Headers**: The committed `_headers` file automatically applies strict CSP, HSTS, `no-store` cache control, and anti-clickjacking headers to all requests.

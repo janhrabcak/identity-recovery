@@ -11,7 +11,7 @@
 ## 2. Recovery Architecture: Tier 1 Stateless Encrypted Dead-Drop
 
 ### 2.1 Hosting Target & Runtime Model
-- **Hosting Target:** GitHub Pages served over HTTPS via custom domain (`sos.<domain>.com`).
+- **Hosting Target:** Cloudflare Pages (recommended) or GitHub Pages served over HTTPS via custom domain (`sos.<domain>.com`).
 - **Runtime Model:** Standalone, single-file zero-dependency `index.html` executing pure browser-native WebCrypto (`window.crypto.subtle`). No external CDNs, JavaScript frameworks, remote fonts, or runtime network calls.
 
 ### 2.2 Cryptographic Specification
