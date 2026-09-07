@@ -6,6 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';">
   <meta name="vault-generated-at" content="2026-09-02T07:18:48.955Z">
   <meta name="vault-stale-after-months" content="6">
+  <meta name="recovery-dns-domain" content="recovery.hrabcak.com">
   <title>SOS Recovery Protocol | Cold-Start Identity Recovery</title>
   <style>
     :root {
@@ -697,7 +698,7 @@
                 id="fetch-dns-btn"
                 onclick="fetchPayloadFromDns()" 
                 style="background: none; border: none; color: #38bdf8; font-size: 0.725rem; cursor: pointer; text-decoration: underline; padding: 0;"
-              >⚡ Fetch from recovery.hrabcak.com</button>
+              >⚡ Fetch from DNS</button>
             </div>
             <textarea id="ciphertext-input" rows="3" placeholder="Paste alternative base64 payload here" style="font-family: var(--font-mono); font-size: 0.8rem;"></textarea>
             <div id="dns-status-msg" style="font-size: 0.725rem; margin-top: 4px; display: none;"></div>
@@ -864,6 +865,10 @@
     const SALT_BYTES = 16;
     const IV_BYTES = 12;
 
+    // Configurable recovery DNS domain (retrieved from <meta> or URL ?dns=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const RECOVERY_DNS_DOMAIN = urlParams.get("dns") || document.querySelector('meta[name="recovery-dns-domain"]')?.content || "recovery.hrabcak.com";
+
     let currentPayload = null;
     let usedCodeIndices = new Set();
     let vaultSessionStorageKey = "recovery_used_codes";
@@ -873,6 +878,10 @@
       const textarea = document.getElementById("ciphertext-input");
       if (EMBEDDED_CIPHERTEXT && EMBEDDED_CIPHERTEXT.length > 0) {
         textarea.value = EMBEDDED_CIPHERTEXT;
+      }
+      const dnsBtn = document.getElementById("fetch-dns-btn");
+      if (dnsBtn && RECOVERY_DNS_DOMAIN) {
+        dnsBtn.textContent = `⚡ Fetch from ${RECOVERY_DNS_DOMAIN}`;
       }
     });
 
@@ -937,23 +946,28 @@
     }
 
     /**
-     * Fetch encrypted payload from recovery.hrabcak.com TXT record via DNS-over-HTTPS (DoH)
+     * Fetch encrypted payload from DNS TXT record via DNS-over-HTTPS (DoH)
      */
     async function fetchPayloadFromDns() {
+      const domain = RECOVERY_DNS_DOMAIN;
       const btn = document.getElementById("fetch-dns-btn");
       const status = document.getElementById("dns-status-msg");
       const textarea = document.getElementById("ciphertext-input");
+
+      if (!domain) {
+        showError("No recovery DNS domain configured.");
+        return;
+      }
 
       btn.disabled = true;
       btn.textContent = "Querying DNS...";
       status.style.display = "block";
       status.style.color = "var(--text-muted)";
-      status.textContent = "Querying DoH for recovery.hrabcak.com...";
+      status.textContent = `Querying DoH for ${domain}...`;
 
-      const domain = "recovery.hrabcak.com";
       const endpoints = [
-        `https://cloudflare-dns.com/dns-query?name=${domain}&type=TXT`,
-        `https://dns.google/resolve?name=${domain}&type=TXT`
+        `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=TXT`,
+        `https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=TXT`
       ];
 
       let rawData = null;
@@ -974,11 +988,11 @@
       }
 
       btn.disabled = false;
-      btn.textContent = "⚡ Fetch from recovery.hrabcak.com";
+      btn.textContent = `⚡ Fetch from ${domain}`;
 
       if (!rawData) {
         status.style.color = "var(--accent-danger)";
-        status.textContent = "Failed to retrieve TXT record from DNS.";
+        status.textContent = `Failed to retrieve TXT record for ${domain}.`;
         return;
       }
 
@@ -988,7 +1002,7 @@
 
       textarea.value = ciphertext;
       status.style.color = "#34d399";
-      status.textContent = `✓ Loaded ${ciphertext.length} chars from DNS (recovery.hrabcak.com)`;
+      status.textContent = `✓ Loaded ${ciphertext.length} chars from DNS (${domain})`;
       document.getElementById("passphrase-input").focus();
     }
 

@@ -19,6 +19,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
+# Load environment configuration if present
+if [[ -f "$REPO_ROOT/.env" ]]; then
+  RECOVERY_DOMAIN_ENV=$(grep -E '^\s*RECOVERY_DOMAIN=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
+fi
+
+# Detect from index.html meta tag if not in environment
+META_DOMAIN=$(grep -o 'name="recovery-dns-domain" content="[^"]*"' "$REPO_ROOT/public/index.html" | cut -d'"' -f4 || true)
+
+RECOVERY_DOMAIN="${RECOVERY_DOMAIN:-${RECOVERY_DOMAIN_ENV:-${META_DOMAIN:-recovery.hrabcak.com}}}"
+
 # Colors
 C_RESET='\033[0m'
 C_BOLD='\033[1m'
@@ -108,7 +118,7 @@ done
 # 3. Encrypt & Inject into public/index.html
 # ------------------------------------------------------------------------------
 echo -e "${C_BOLD}[3/7] Encrypting payload & injecting into public/index.html...${C_RESET}"
-node scripts/encrypt.js -i "$PAYLOAD_FILE" -p "$PASSPHRASE" --embed-html public/index.html
+node scripts/encrypt.js -i "$PAYLOAD_FILE" -p "$PASSPHRASE" --domain "$RECOVERY_DOMAIN" --embed-html public/index.html
 echo -e "${C_GREEN}✓ Encryption and HTML injection complete.${C_RESET}\n"
 
 # ------------------------------------------------------------------------------
@@ -184,10 +194,11 @@ fi
 # Optional secondary DNS Dead-Drop info
 B64_CIPHERTEXT=$(grep -o 'const EMBEDDED_CIPHERTEXT = "[^"]*"' public/index.html | cut -d'"' -f2)
 if [[ -n "$B64_CIPHERTEXT" ]]; then
-  echo -e "\n${C_CYAN}${C_BOLD}DNS TXT Dead-Drop Record (recovery.hrabcak.com):${C_RESET}"
+  RECORD_NAME=$(echo "$RECOVERY_DOMAIN" | cut -d'.' -f1)
+  echo -e "\n${C_CYAN}${C_BOLD}DNS TXT Dead-Drop Record (${RECOVERY_DOMAIN}):${C_RESET}"
   echo -e "To sync your secondary dead-drop, add or update this TXT record in Cloudflare DNS:"
   echo -e "  ${C_BOLD}Type:${C_RESET}    TXT"
-  echo -e "  ${C_BOLD}Name:${C_RESET}    recovery"
+  echo -e "  ${C_BOLD}Name:${C_RESET}    $RECORD_NAME"
   echo -e "  ${C_BOLD}TTL:${C_RESET}     Auto (or 300s)"
   echo -e "  ${C_BOLD}Content:${C_RESET} $B64_CIPHERTEXT"
 fi

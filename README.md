@@ -32,9 +32,10 @@ identity-recovery/
 │   └── sample-payload.json       # Template recovery schema
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # Automated crypto & parity tests (8 automated tests)
+│   └── test-suite.js             # Automated crypto & parity tests (9 automated tests)
 │
 ├── wrangler.json                 # Cloudflare config: assets directory -> "./public"
+├── .env.example                  # Environment configuration template (RECOVERY_DOMAIN)
 ├── .gitignore                    # Security boundary (blocks unencrypted payload.json)
 ├── README.md                     # Operational documentation & quick run commands
 └── SPEC.md                       # Full cryptographic & architectural specification
@@ -102,6 +103,16 @@ To rotate your credentials, verify the crypto, commit strictly `public/index.htm
 
 ---
 
+### 🌐 Transferability & Custom Domain Configuration
+The entire repository is fully portable to any custom domain:
+- **Environment file (`.env`)**: Copy `.env.example` to `.env` and set `RECOVERY_DOMAIN=recovery.yourdomain.com`.
+- **Inline CLI variable**: Pass `RECOVERY_DOMAIN=recovery.yourdomain.com ./scripts/deploy.sh`.
+- **CLI Flag**: Run `node scripts/encrypt.js --domain recovery.yourdomain.com --embed-html public/index.html`.
+- **HTML Meta Tag**: Set `<meta name="recovery-dns-domain" content="recovery.yourdomain.com">` in `public/index.html`.
+- **On-the-Fly URL Parameter**: Visit `https://sos.<domain>.com/?dns=recovery.yourdomain.com` to query an arbitrary recovery domain without code changes.
+
+---
+
 ### Manual Step-by-Step Workflow
 
 #### 1. Generate a Sample Recovery Payload
@@ -146,7 +157,7 @@ Execute end-to-end cryptographic parity, staleness logic, corrupted payload reje
 ```bash
 node tests/test-suite.js
 ```
-*(Runs 8 automated test suites ensuring zero regressions).*
+*(Runs 9 automated test suites ensuring zero regressions).*
 
 #### 7. Preview / Test Recovery Terminal Locally
 Because `public/index.html` is strictly self-contained with no external build tools, you can open it directly in any browser:
@@ -309,6 +320,7 @@ node scripts/check-staleness.js
 | [`templates/sample-payload.json`](templates/sample-payload.json) | Dummy schema-compliant template payload for testing. | Dummy Data (Safe to commit) |
 | [`tests/test-suite.js`](tests/test-suite.js) | Automated test suite validating cryptographic parity, error handling, staleness calculations, and CSP rules. | Verification |
 | [`wrangler.json`](wrangler.json) | Cloudflare Workers & Pages configuration pointing assets directory strictly to `./public`. | Deployment Configuration |
+| [`.env.example`](.env.example) | Environment template documenting configurable variables like `RECOVERY_DOMAIN`. | Configuration Template |
 | [`.gitignore`](.gitignore) | Enforces that real unencrypted `payload.json`, secrets, and temporary ciphertext dumps are never committed to Git. | Security Boundary |
 | [`SPEC.md`](SPEC.md) | Architectural specification, cryptographic definitions, schema, and threat model. | Documentation |
 | [`README.md`](README.md) | Operational guide, quick run commands, security rules, and deployment instructions. | Documentation |

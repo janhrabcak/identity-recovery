@@ -12,7 +12,7 @@
 
 ### 2.1 Hosting Target & Runtime Model
 - **Primary Hosting Target:** Cloudflare Pages / Workers (recommended) or GitHub Pages served over HTTPS via custom domain (`sos.<domain>.com`).
-- **Secondary Dead-Drop:** RFC 1035 DNS TXT record hosted on `recovery.hrabcak.com`, queryable via RFC 8484 DNS-over-HTTPS (DoH) through public anycast resolvers (`cloudflare-dns.com` and `dns.google`) or standard terminal DNS utilities (`dig`, `nslookup`).
+- **Secondary Dead-Drop:** RFC 1035 DNS TXT record hosted on `recovery.<domain>.com` (configurable, default: `recovery.hrabcak.com`), queryable via RFC 8484 DNS-over-HTTPS (DoH) through public anycast resolvers (`cloudflare-dns.com` and `dns.google`) or standard terminal DNS utilities (`dig`, `nslookup`).
 - **Runtime Model:** Standalone, single-file zero-dependency `public/index.html` executing pure browser-native WebCrypto (`window.crypto.subtle`). No external CDNs, JavaScript frameworks, or remote fonts. Network egress is restricted exclusively to public DoH resolvers.
 
 ### 2.2 Repository Organization
@@ -34,9 +34,10 @@ identity-recovery/
 │   └── sample-payload.json       # Template recovery schema
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # Automated crypto & parity tests (8 automated tests)
+│   └── test-suite.js             # Automated crypto & parity tests (9 automated tests)
 │
 ├── wrangler.json                 # Cloudflare config: assets directory -> "./public"
+├── .env.example                  # Environment configuration template (RECOVERY_DOMAIN)
 ├── .gitignore                    # Security boundary (blocks unencrypted payload.json)
 ├── README.md                     # Operational documentation & quick run commands
 └── SPEC.md                       # Full cryptographic & architectural specification
@@ -119,7 +120,12 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
   6. Returns the UI to the locked screen state.
 
 ### 3.6 DNS-over-HTTPS (DoH) Secondary Dead-Drop Fetcher
-- Allows on-demand retrieval of the encrypted ciphertext directly from the `recovery.hrabcak.com` DNS TXT record.
+- Allows on-demand retrieval of the encrypted ciphertext directly from the recovery DNS TXT record.
+- **Configurable Domain Hierarchy:**
+  1. URL Query Parameter (`?dns=recovery.yourdomain.com` overrides without code modification)
+  2. HTML Meta Tag (`<meta name="recovery-dns-domain" content="...">`)
+  3. Build/Deployment Environment (`RECOVERY_DOMAIN` in `.env` or CLI)
+  4. Default Fallback (`recovery.hrabcak.com`)
 - **Dual Anycast Resolver Redundancy:** Queries Cloudflare DoH (`https://cloudflare-dns.com/dns-query`) first with automated failover to Google Public DoH (`https://dns.google/resolve`).
 - **RFC 1035 Chunk Stitching:** Normalizes and stitches multiple 255-byte DNS text chunks into the unified RFC 4648 Base64 ciphertext string.
 
@@ -200,3 +206,4 @@ Automated test runner verifying:
 6. Automated HTML embedding regex verification.
 7. Staleness evaluator unit tests (`scripts/check-staleness.js`) across all freshness states.
 8. DNS-over-HTTPS (DoH) multi-chunk parsing logic parity across Cloudflare and Google DoH formats.
+9. Configurable recovery DNS domain meta tag and `RECOVERY_DNS_DOMAIN` variable verification.

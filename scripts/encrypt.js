@@ -241,6 +241,7 @@ Options:
   -i, --input <file>         Path to JSON payload file to encrypt
   -p, --passphrase <phrase>  Diceware passphrase (prompted securely if omitted)
   -o, --output <file>        Output file for base64 ciphertext (prints to stdout if omitted)
+  -d, --domain <domain>      Recovery DNS domain name (embeds into recovery-dns-domain meta tag)
   --embed-html <file>        Inject encrypted base64 payload into specified index.html
   --sample [fresh|stale]     Generate a sample payload.json in current directory
   --decrypt <base64>         Decrypt and display a ciphertext payload
@@ -403,6 +404,19 @@ async function main() {
               `<meta name="vault-stale-after-months" content="${parsedPayload.metadata.staleAfterMonths}">`
             );
           }
+        }
+      }
+
+      // Handle optional recovery DNS domain update
+      const domainIdx = args.findIndex(a => a === '-d' || a === '--domain');
+      const targetDomain = domainIdx !== -1 ? args[domainIdx + 1] : process.env.RECOVERY_DOMAIN;
+      if (targetDomain) {
+        const domainMetaRegex = /<meta\s+name=["']recovery-dns-domain["']\s+content=["'][^"']*["']\s*\/?>/i;
+        if (domainMetaRegex.test(htmlContent)) {
+          htmlContent = htmlContent.replace(
+            domainMetaRegex,
+            `<meta name="recovery-dns-domain" content="${targetDomain.trim()}">`
+          );
         }
       }
 

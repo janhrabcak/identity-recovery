@@ -151,6 +151,16 @@ async function runTests() {
     throw new Error("Test 8 Failed: DoH chunk parser mismatch!");
   }
 
+  // Test 9: Configurable Recovery DNS Domain check
+  console.log("\n[Test 9] Configurable Recovery DNS Domain Verification");
+  if (!html.includes('name="recovery-dns-domain"')) {
+    throw new Error("Test 9 Failed: index.html missing recovery-dns-domain meta tag!");
+  }
+  if (!html.includes('RECOVERY_DNS_DOMAIN')) {
+    throw new Error("Test 9 Failed: index.html missing RECOVERY_DNS_DOMAIN constant!");
+  }
+  console.log("✓ Test 9 Passed: Recovery DNS domain meta tag and RECOVERY_DNS_DOMAIN variable verified.");
+
   console.log("\n==========================================");
   console.log("ALL TESTS PASSED SUCCESSFULLY! ✓");
   console.log("==========================================");
