@@ -252,8 +252,24 @@ The repository is configured via [`wrangler.json`](wrangler.json) to deploy stri
 4. Click **Save and Deploy**. Your site will be live at `https://identity-recovery.pages.dev`.
 5. **Custom Domain (`sos.<domain>.com`)**:
    - Go to your project → **Custom domains** tab → **Set up a custom domain**.
-   - Enter `sos.<yourdomain>.com`. Cloudflare will automatically configure the DNS record and TLS certificate.
-6. **Security Headers**: The committed `public/_headers` file automatically applies strict CSP, HSTS, `no-store` cache control, and anti-clickjacking headers to all requests.
+---
+
+## ⏰ Automated Staleness Monitoring (GitHub Actions)
+
+To prevent the common operational failure of forgetting to rotate backup codes before they expire, an automated GitHub Actions workflow is provided:
+
+- **Workflow File:** [`.github/workflows/staleness-check.yml`](.github/workflows/staleness-check.yml)
+- **Evaluator Script:** [`scripts/check-staleness.js`](scripts/check-staleness.js)
+- **Cadence:** Automatically runs on a schedule (1st and 15th of every month at 09:00 UTC) and on pushes to `main`. Can also be manually triggered via `workflow_dispatch`.
+- **Zero-Knowledge Architecture:** Does **not** require any decryption passphrase or secrets. Reads the non-sensitive public metadata tags (`vault-generated-at` and `vault-stale-after-months`) embedded in `public/index.html`.
+- **Automated Alerts:**
+  - If the vault is within 30 days of expiration or stale: Opens/updates an Issue labeled `vault-staleness`, sending an automated email notification to the repository owner.
+  - If the vault was recently rotated and fresh: Automatically closes any open staleness issues.
+
+Run locally anytime:
+```bash
+node scripts/check-staleness.js
+```
 
 ---
 
@@ -265,6 +281,8 @@ The repository is configured via [`wrangler.json`](wrangler.json) to deploy stri
 | [`public/_headers`](public/_headers) | Cloudflare HTTP response headers enforcing CSP, anti-clickjacking (`DENY`), `no-store` cache control, and HSTS. | Web Infrastructure (Edge Security) |
 | [`scripts/deploy.sh`](scripts/deploy.sh) | Hardened Bash deployment script: validates payload, ingests passphrase with typo confirmation, embeds ciphertext, tests, commits, pushes, and shreds plaintext. | Private Tooling (Automation) |
 | [`scripts/encrypt.js`](scripts/encrypt.js) | Node.js 18+ CLI utility to derive PBKDF2-600k keys, encrypt JSON payloads, inject Base64 into `public/index.html`, or verify offline decryption. | Private Tooling (Zero npm dependencies) |
+| [`scripts/check-staleness.js`](scripts/check-staleness.js) | Evaluates vault freshness and outputs status for GitHub Actions alerting without decrypting ciphertext. | Private Tooling (Zero npm dependencies) |
+| [`.github/workflows/staleness-check.yml`](.github/workflows/staleness-check.yml) | Scheduled GitHub Actions workflow monitoring vault age and opening automated alert issues. | CI/CD Automation |
 | [`templates/sample-payload.json`](templates/sample-payload.json) | Dummy schema-compliant template payload for testing. | Dummy Data (Safe to commit) |
 | [`tests/test-suite.js`](tests/test-suite.js) | Automated test suite validating cryptographic parity, error handling, staleness calculations, and CSP rules. | Verification |
 | [`wrangler.json`](wrangler.json) | Cloudflare Workers & Pages configuration pointing assets directory strictly to `./public`. | Deployment Configuration |

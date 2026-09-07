@@ -383,8 +383,31 @@ async function main() {
         placeholderRegex,
         `const EMBEDDED_CIPHERTEXT = "${ciphertextB64}";`
       );
+
+      // Update metadata meta tags if present in parsed payload
+      if (parsedPayload.metadata) {
+        if (parsedPayload.metadata.generatedAt) {
+          const genMetaRegex = /<meta\s+name=["']vault-generated-at["']\s+content=["'][^"']*["']\s*\/?>/i;
+          if (genMetaRegex.test(htmlContent)) {
+            htmlContent = htmlContent.replace(
+              genMetaRegex,
+              `<meta name="vault-generated-at" content="${parsedPayload.metadata.generatedAt}">`
+            );
+          }
+        }
+        if (parsedPayload.metadata.staleAfterMonths !== undefined) {
+          const staleMetaRegex = /<meta\s+name=["']vault-stale-after-months["']\s+content=["'][^"']*["']\s*\/?>/i;
+          if (staleMetaRegex.test(htmlContent)) {
+            htmlContent = htmlContent.replace(
+              staleMetaRegex,
+              `<meta name="vault-stale-after-months" content="${parsedPayload.metadata.staleAfterMonths}">`
+            );
+          }
+        }
+      }
+
       fs.writeFileSync(htmlPath, htmlContent, 'utf8');
-      console.log(`✓ Injected encrypted payload into ${htmlPath}`);
+      console.log(`✓ Injected encrypted payload and metadata into ${htmlPath}`);
     } else {
       console.warn(`Warning: Could not find 'const EMBEDDED_CIPHERTEXT = "...";' in ${htmlPath}`);
     }

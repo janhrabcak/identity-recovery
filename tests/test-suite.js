@@ -111,6 +111,29 @@ async function runTests() {
   }
   console.log("✓ Test 6 Passed: CLI HTML embedding pattern verified.");
 
+  // Test 7: Staleness evaluator unit tests
+  console.log("\n[Test 7] Staleness Evaluator (scripts/check-staleness.js) Test");
+  const { evaluateVaultFreshness } = await import('../scripts/check-staleness.js');
+
+  const simulatedFreshHtml = `<meta name="vault-generated-at" content="${new Date().toISOString()}"><meta name="vault-stale-after-months" content="6">`;
+  const evalFresh = evaluateVaultFreshness(simulatedFreshHtml);
+  if (evalFresh.status !== "FRESH") {
+    throw new Error(`Test 7 Failed: Expected FRESH, got ${evalFresh.status}`);
+  }
+
+  const simulatedExpiringHtml = `<meta name="vault-generated-at" content="${new Date(Date.now() - 160 * 24 * 3600 * 1000).toISOString()}"><meta name="vault-stale-after-months" content="6">`;
+  const evalExpiring = evaluateVaultFreshness(simulatedExpiringHtml);
+  if (evalExpiring.status !== "EXPIRING_SOON") {
+    throw new Error(`Test 7 Failed: Expected EXPIRING_SOON, got ${evalExpiring.status}`);
+  }
+
+  const simulatedStaleHtml = `<meta name="vault-generated-at" content="${new Date(Date.now() - 210 * 24 * 3600 * 1000).toISOString()}"><meta name="vault-stale-after-months" content="6">`;
+  const evalStale = evaluateVaultFreshness(simulatedStaleHtml);
+  if (evalStale.status !== "STALE") {
+    throw new Error(`Test 7 Failed: Expected STALE, got ${evalStale.status}`);
+  }
+  console.log("✓ Test 7 Passed: evaluateVaultFreshness verified across FRESH, EXPIRING_SOON, and STALE.");
+
   console.log("\n==========================================");
   console.log("ALL TESTS PASSED SUCCESSFULLY! ✓");
   console.log("==========================================");

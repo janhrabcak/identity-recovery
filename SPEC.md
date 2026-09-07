@@ -164,6 +164,13 @@ Hardened Bash orchestration script for rotation and production publishing:
 6. **Commit & Push:** Commits with UTC timestamp and pushes to `origin main`, triggering Cloudflare Anycast edge deployment.
 7. **Plaintext Destruction:** Securely shreds and unlinks the plaintext payload file using `shred -u -z -n 3` (3-pass random overwrite + zero fill), defaulting to **Yes**.
 
+### 5.3 Automated Staleness Monitoring (`scripts/check-staleness.js`, `.github/workflows/staleness-check.yml`)
+- **Zero-Knowledge Principle:** Evaluates vault age without accessing private key material or decrypting ciphertext by reading the public `<meta name="vault-generated-at">` tag in `public/index.html`.
+- **Scheduled CI Automation:** Runs on the 1st and 15th of every month via GitHub Actions (`cron: '0 9 1,15 * *'`).
+- **Issue Lifecycle Management:**
+  - Automatically creates/updates an issue labeled `vault-staleness` when the vault is within 30 days of staleness or expired.
+  - Automatically closes open staleness issues when a newly rotated vault is deployed (`status == FRESH`).
+
 ---
 
 ## 6. Verification Suite (`tests/test-suite.js`)
