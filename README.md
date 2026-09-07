@@ -32,7 +32,7 @@ identity-recovery/
 │   └── sample-payload.json       # Template recovery schema
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # Automated crypto & parity tests (9 automated tests)
+│   └── test-suite.js             # Automated crypto & parity tests (15 automated tests)
 │
 ├── wrangler.json                 # Cloudflare config: assets directory -> "./public"
 ├── .env.example                  # Environment configuration template (RECOVERY_DOMAIN)
@@ -160,7 +160,7 @@ Execute end-to-end cryptographic parity, staleness logic, corrupted payload reje
 ```bash
 node tests/test-suite.js
 ```
-*(Runs 9 automated test suites ensuring zero regressions).*
+*(Runs 15 automated test suites ensuring zero regressions).*
 
 #### 7. Preview / Test Recovery Terminal Locally
 Because `public/index.html` is strictly self-contained with no external build tools, you can open it directly in any browser:

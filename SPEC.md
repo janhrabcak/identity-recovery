@@ -34,7 +34,7 @@ identity-recovery/
 │   └── sample-payload.json       # Template recovery schema
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # Automated crypto & parity tests (9 automated tests)
+│   └── test-suite.js             # Automated crypto & parity tests (15 automated tests)
 │
 ├── wrangler.json                 # Cloudflare config: assets directory -> "./public"
 ├── .env.example                  # Environment configuration template (RECOVERY_DOMAIN)

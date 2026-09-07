@@ -14,6 +14,7 @@ import { subtle, getRandomValues } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
+import { fileURLToPath } from 'node:url';
 
 const PBKDF2_ITERATIONS = 600000;
 const SALT_BYTES = 16;
@@ -308,6 +309,7 @@ Usage:
 Options:
   -i, --input <file>         Path to JSON payload file to encrypt
   -p, --passphrase <phrase>  Diceware passphrase (prompted securely if omitted)
+                             Prefer ENCRYPT_PASSPHRASE env var to avoid process list exposure
   -o, --output <file>        Output file for base64 ciphertext (prints to stdout if omitted)
   -d, --domain <domain>      Recovery DNS domain name (embeds into recovery-dns-domain meta tag)
   --allow-low-entropy        Allow passphrases that do not meet 6-word Diceware entropy rules
@@ -417,9 +419,12 @@ async function main() {
     console.warn('Warning: Payload missing recommended fields (onePassword, googleBackupCodes).');
   }
 
-  // Passphrase
+  // Passphrase: prefer env var (avoids exposure in process list), then -p flag, then interactive prompt
   const pIdx = args.findIndex(a => a === '-p' || a === '--passphrase');
-  let pass = pIdx !== -1 ? args[pIdx + 1] : null;
+  let pass = process.env.ENCRYPT_PASSPHRASE || (pIdx !== -1 ? args[pIdx + 1] : null);
+  if (pass && pIdx !== -1 && !process.env.ENCRYPT_PASSPHRASE) {
+    console.warn('Warning: Passphrase passed via CLI argument is visible in process list. Consider using ENCRYPT_PASSPHRASE env var.');
+  }
   if (!pass) {
     while (true) {
       pass = await promptUser('Enter 6-word Diceware passphrase: ', true);
@@ -528,7 +533,7 @@ async function main() {
 }
 
 // Only run CLI when invoked directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === new URL(process.argv[1], 'file://').href) {
   main().catch((err) => {
     console.error('Fatal error:', err);
     process.exit(1);

@@ -679,7 +679,7 @@
         color: #000000 !important;
         padding: 8px 12px !important;
       }
-      .backup-codes-grid {
+      #backup-codes-container {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 6px !important;
@@ -995,8 +995,12 @@
         scrubbed = fallbackCopy(" ");
       }
 
-      if (scrubbed && reason !== "lock_purge") {
+      if (reason === "lock_purge") return;
+
+      if (scrubbed) {
         showClipboardNotice("✓ Clipboard scrubbed: credentials cleared from OS clipboard");
+      } else {
+        showClipboardNotice("⚠ Auto-scrub blocked by browser — use 🧹 Clear Clipboard manually");
       }
     }
 
@@ -1117,7 +1121,11 @@
           const res = await fetch(url, { headers: { "Accept": "application/dns-json" } });
           if (res.ok) {
             const json = await res.json();
-            const txtAnswer = json.Answer?.find(a => a.type === 16);
+            const txtAnswers = (json.Answer || []).filter(a => a.type === 16);
+            // Find the TXT record containing base64 ciphertext (longest record matching base64 charset)
+            const txtAnswer = txtAnswers
+              .sort((a, b) => (b.data || '').length - (a.data || '').length)
+              .find(a => a.data && a.data.replace(/["\s]/g, '').length > 100 && /^["A-Za-z0-9+/=\s]+$/.test(a.data));
             if (txtAnswer && txtAnswer.data) {
               rawData = txtAnswer.data;
               break;
@@ -1132,7 +1140,7 @@
       btn.textContent = `⚡ Fetch from ${domain}`;
 
       if (!rawData) {
-        status.style.color = "var(--accent-danger)";
+        status.style.color = "var(--status-red-text)";
         status.textContent = `Failed to retrieve TXT record for ${domain}.`;
         return;
       }
@@ -1649,6 +1657,7 @@
       // Zero out / wipe payload
       currentPayload = null;
       usedCodeIndices.clear();
+      try { sessionStorage.removeItem(vaultSessionStorageKey); } catch (e) {}
 
       // Clear DOM
       document.getElementById("op-email").textContent = "-";

@@ -7,7 +7,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { execSync, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,7 +16,9 @@ const __dirname = path.dirname(__filename);
 function getArgValue(flag) {
   const args = process.argv.slice(2);
   const idx = args.indexOf(flag);
-  return idx !== -1 ? args[idx + 1] : null;
+  if (idx === -1 || idx + 1 >= args.length) return null;
+  const val = args[idx + 1];
+  return val.startsWith('--') ? null : val;
 }
 
 function resolveHtmlPath() {
@@ -123,8 +125,8 @@ function manageGitHubIssue(result) {
   console.log('\n--- Managing GitHub Staleness Issues ---');
   let existingIssueNum = null;
   try {
-    const issueOutput = execSync(
-      'gh issue list --label "vault-staleness" --state open --json number --jq ".[0].number"',
+    const issueOutput = execFileSync(
+      'gh', ['issue', 'list', '--label', 'vault-staleness', '--state', 'open', '--json', 'number', '--jq', '.[0].number'],
       { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }
     ).trim();
     if (issueOutput && !isNaN(parseInt(issueOutput, 10))) {
@@ -174,16 +176,16 @@ function manageGitHubIssue(result) {
 
     if (existingIssueNum) {
       console.log(`Updating existing open issue #${existingIssueNum}...`);
-      execSync(`gh issue edit ${existingIssueNum} --title "${title.replace(/"/g, '\\"')}" --body "${body.replace(/"/g, '\\"')}"`, { stdio: 'inherit' });
-      execSync(`gh issue comment ${existingIssueNum} --body "⏱️ **Staleness Reminder:** Current status is **${status}** with **${daysUntilStale} days** remaining until expiration (\`${expireDate}\`)."`, { stdio: 'inherit' });
+      execFileSync('gh', ['issue', 'edit', String(existingIssueNum), '--title', title, '--body', body], { stdio: 'inherit' });
+      execFileSync('gh', ['issue', 'comment', String(existingIssueNum), '--body', `⏱️ **Staleness Reminder:** Current status is **${status}** with **${daysUntilStale} days** remaining until expiration (${expireDate}).`], { stdio: 'inherit' });
     } else {
       console.log('Creating new staleness alert issue...');
-      execSync(`gh issue create --title "${title.replace(/"/g, '\\"')}" --body "${body.replace(/"/g, '\\"')}" --label "vault-staleness"`, { stdio: 'inherit' });
+      execFileSync('gh', ['issue', 'create', '--title', title, '--body', body, '--label', 'vault-staleness'], { stdio: 'inherit' });
     }
   } else if (status === 'FRESH') {
     if (existingIssueNum) {
       console.log(`Closing resolved issue #${existingIssueNum}...`);
-      execSync(`gh issue close ${existingIssueNum} --comment "✓ **Resolved:** Recovery vault was rotated on \`${generatedAt}\`. Current vault is **FRESH** (${daysUntilStale} days remaining until staleness threshold). Closing alert."`, { stdio: 'inherit' });
+      execFileSync('gh', ['issue', 'close', String(existingIssueNum), '--comment', `✓ **Resolved:** Recovery vault was rotated on ${generatedAt}. Current vault is **FRESH** (${daysUntilStale} days remaining until staleness threshold). Closing alert.`], { stdio: 'inherit' });
     } else {
       console.log(`Vault is fresh (${daysUntilStale} days remaining). No open issues to resolve.`);
     }
@@ -341,7 +343,7 @@ async function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === new URL(process.argv[1], 'file://').href) {
   main().catch((err) => {
     console.error('Fatal error:', err);
     process.exit(1);

@@ -78,14 +78,15 @@ if [[ ! -f "$PAYLOAD_FILE" ]]; then
 fi
 
 # Validate JSON format
-if ! node -e "JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'))" "$PAYLOAD_FILE" >/dev/null 2>&1; then
+if ! node -e "import('node:fs').then(fs=>JSON.parse(fs.readFileSync(process.argv[1],'utf8')))" "$PAYLOAD_FILE" >/dev/null 2>&1; then
   echo -e "${C_RED}✗ Error: '$PAYLOAD_FILE' is not valid JSON.${C_RESET}"
   exit 1
 fi
 
 # Check required fields
 node -e "
-  const p = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'));
+  const fs = await import('node:fs');
+  const p = JSON.parse(fs.readFileSync(process.argv[1], 'utf8'));
   if (!p.onePassword || !p.googleBackupCodes) {
     console.error('Warning: Payload is missing onePassword or googleBackupCodes!');
     process.exit(1);
@@ -140,7 +141,7 @@ done
 # 3. Encrypt & Inject into public/index.html
 # ------------------------------------------------------------------------------
 echo -e "${C_BOLD}[3/7] Encrypting payload & injecting into public/index.html...${C_RESET}"
-node scripts/encrypt.js -i "$PAYLOAD_FILE" -p "$PASSPHRASE" --domain "$RECOVERY_DOMAIN" --embed-html public/index.html
+ENCRYPT_PASSPHRASE="$PASSPHRASE" node scripts/encrypt.js -i "$PAYLOAD_FILE" --domain "$RECOVERY_DOMAIN" --embed-html public/index.html
 echo -e "${C_GREEN}✓ Encryption and HTML injection complete.${C_RESET}\n"
 
 # ------------------------------------------------------------------------------
@@ -161,15 +162,20 @@ if [[ ! -f ".gitignore" ]]; then
   exit 1
 fi
 
-# Explicitly check that PAYLOAD_FILE is not staged
-if git diff --cached --name-only | grep -E "payload|secret|\.env" >/dev/null 2>&1; then
-  echo -e "${C_RED}✗ CRITICAL: Sensitive files detected in git staging! Unstaging immediately.${C_RESET}"
-  git reset
+# Clear ALL staged changes first to guarantee a clean staging area
+git reset --quiet 2>/dev/null || true
+
+# Stage ONLY public/index.html — nothing else touches the commit
+git add public/index.html
+
+# Final safety audit: verify only public/index.html is staged
+STAGED_FILES=$(git diff --cached --name-only)
+if [[ "$STAGED_FILES" != "public/index.html" && -n "$STAGED_FILES" ]]; then
+  echo -e "${C_RED}✗ CRITICAL: Unexpected files in staging area! Aborting.${C_RESET}"
+  echo -e "${C_RED}Staged files: ${STAGED_FILES}${C_RESET}"
+  git reset --quiet
   exit 1
 fi
-
-# Stage ONLY public/index.html
-git add public/index.html
 echo -e "${C_GREEN}✓ Only public/index.html staged for commit.${C_RESET}\n"
 
 # ------------------------------------------------------------------------------
@@ -216,7 +222,7 @@ fi
 # Optional secondary DNS Dead-Drop Synchronization
 B64_CIPHERTEXT=$(grep -o 'const EMBEDDED_CIPHERTEXT = "[^"]*"' public/index.html | cut -d'"' -f2)
 if [[ -n "$B64_CIPHERTEXT" ]]; then
-  RECORD_NAME=$(echo "$RECOVERY_DOMAIN" | cut -d'.' -f1)
+  RECORD_NAME="$RECOVERY_DOMAIN"
 
   if [[ -n "$CLOUDFLARE_API_TOKEN" && -n "$CLOUDFLARE_ZONE_ID" ]]; then
     echo -e "\n${C_CYAN}${C_BOLD}Synchronizing Cloudflare DNS TXT Dead-Drop (${RECOVERY_DOMAIN})...${C_RESET}"

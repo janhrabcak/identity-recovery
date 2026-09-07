@@ -1,0 +1,12 @@
+{
+  "name": "identity-recovery",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cold-Start Identity Recovery Protocol — zero-dependency AES-GCM-256 encrypted credential vault",
+  "scripts": {
+    "test": "node tests/test-suite.js",
+    "check-staleness": "node scripts/check-staleness.js",
+    "encrypt": "node scripts/encrypt.js"
+  }
+}
