@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';">
   <meta name="vault-generated-at" content="2026-09-02T07:18:48.955Z">
   <meta name="vault-stale-after-months" content="6">
   <title>SOS Recovery Protocol | Cold-Start Identity Recovery</title>
@@ -690,8 +690,17 @@
           </div>
 
           <div id="custom-payload-container" class="hidden" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color);">
-            <label for="ciphertext-input" style="font-size: 0.725rem; color: var(--text-muted);">Base64 Ciphertext</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label for="ciphertext-input" style="font-size: 0.725rem; color: var(--text-muted); margin-bottom: 0;">Base64 Ciphertext</label>
+              <button 
+                type="button" 
+                id="fetch-dns-btn"
+                onclick="fetchPayloadFromDns()" 
+                style="background: none; border: none; color: #38bdf8; font-size: 0.725rem; cursor: pointer; text-decoration: underline; padding: 0;"
+              >⚡ Fetch from recovery.hrabcak.com</button>
+            </div>
             <textarea id="ciphertext-input" rows="3" placeholder="Paste alternative base64 payload here" style="font-family: var(--font-mono); font-size: 0.8rem;"></textarea>
+            <div id="dns-status-msg" style="font-size: 0.725rem; margin-top: 4px; display: none;"></div>
           </div>
         </form>
       </div>
@@ -925,6 +934,62 @@
       if (!isHidden) {
         document.getElementById("ciphertext-input")?.focus();
       }
+    }
+
+    /**
+     * Fetch encrypted payload from recovery.hrabcak.com TXT record via DNS-over-HTTPS (DoH)
+     */
+    async function fetchPayloadFromDns() {
+      const btn = document.getElementById("fetch-dns-btn");
+      const status = document.getElementById("dns-status-msg");
+      const textarea = document.getElementById("ciphertext-input");
+
+      btn.disabled = true;
+      btn.textContent = "Querying DNS...";
+      status.style.display = "block";
+      status.style.color = "var(--text-muted)";
+      status.textContent = "Querying DoH for recovery.hrabcak.com...";
+
+      const domain = "recovery.hrabcak.com";
+      const endpoints = [
+        `https://cloudflare-dns.com/dns-query?name=${domain}&type=TXT`,
+        `https://dns.google/resolve?name=${domain}&type=TXT`
+      ];
+
+      let rawData = null;
+      for (const url of endpoints) {
+        try {
+          const res = await fetch(url, { headers: { "Accept": "application/dns-json" } });
+          if (res.ok) {
+            const json = await res.json();
+            const txtAnswer = json.Answer?.find(a => a.type === 16);
+            if (txtAnswer && txtAnswer.data) {
+              rawData = txtAnswer.data;
+              break;
+            }
+          }
+        } catch (e) {
+          // Try next endpoint on failure
+        }
+      }
+
+      btn.disabled = false;
+      btn.textContent = "⚡ Fetch from recovery.hrabcak.com";
+
+      if (!rawData) {
+        status.style.color = "var(--accent-danger)";
+        status.textContent = "Failed to retrieve TXT record from DNS.";
+        return;
+      }
+
+      // Concatenate any multi-chunk strings: "chunk1" "chunk2" ...
+      const chunks = [...rawData.matchAll(/"([^"]*)"/g)].map(m => m[1]);
+      const ciphertext = chunks.length > 0 ? chunks.join("") : rawData.replace(/["\s]/g, "");
+
+      textarea.value = ciphertext;
+      status.style.color = "#34d399";
+      status.textContent = `✓ Loaded ${ciphertext.length} chars from DNS (recovery.hrabcak.com)`;
+      document.getElementById("passphrase-input").focus();
     }
 
     /**

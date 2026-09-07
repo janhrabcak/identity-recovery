@@ -134,6 +134,23 @@ async function runTests() {
   }
   console.log("✓ Test 7 Passed: evaluateVaultFreshness verified across FRESH, EXPIRING_SOON, and STALE.");
 
+  // Test 8: DNS-over-HTTPS (DoH) parser verification
+  console.log("\n[Test 8] DNS-over-HTTPS (DoH) Multi-Chunk Parser Test");
+  function parseDnsChunks(rawData) {
+    const chunks = [...rawData.matchAll(/"([^"]*)"/g)].map(m => m[1]);
+    return chunks.length > 0 ? chunks.join("") : rawData.replace(/["\s]/g, "");
+  }
+
+  const sampleB64Data = "SZZE4GwWbrmJPW0fQBU0ivfOgFYnuPElmWotUz1LnPiPo9sGnuaPHxkxOrEqK1xr";
+  const cfFormat = `"${sampleB64Data.slice(0, 30)}" "${sampleB64Data.slice(30)}"`;
+  const googleFormat = sampleB64Data;
+
+  if (parseDnsChunks(cfFormat) === sampleB64Data && parseDnsChunks(googleFormat) === sampleB64Data) {
+    console.log("✓ Test 8 Passed: DoH parser accurately handles Cloudflare and Google DoH formats.");
+  } else {
+    throw new Error("Test 8 Failed: DoH chunk parser mismatch!");
+  }
+
   console.log("\n==========================================");
   console.log("ALL TESTS PASSED SUCCESSFULLY! ✓");
   console.log("==========================================");

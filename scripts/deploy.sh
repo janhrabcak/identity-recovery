@@ -181,6 +181,17 @@ else
   fi
 fi
 
+# Optional secondary DNS Dead-Drop info
+B64_CIPHERTEXT=$(grep -o 'const EMBEDDED_CIPHERTEXT = "[^"]*"' public/index.html | cut -d'"' -f2)
+if [[ -n "$B64_CIPHERTEXT" ]]; then
+  echo -e "\n${C_CYAN}${C_BOLD}DNS TXT Dead-Drop Record (recovery.hrabcak.com):${C_RESET}"
+  echo -e "To sync your secondary dead-drop, add or update this TXT record in Cloudflare DNS:"
+  echo -e "  ${C_BOLD}Type:${C_RESET}    TXT"
+  echo -e "  ${C_BOLD}Name:${C_RESET}    recovery"
+  echo -e "  ${C_BOLD}TTL:${C_RESET}     Auto (or 300s)"
+  echo -e "  ${C_BOLD}Content:${C_RESET} $B64_CIPHERTEXT"
+fi
+
 echo
 echo -e "${C_GREEN}${C_BOLD}================================================================="
 echo "   DEPLOYMENT COMPLETE: Recovery Vault Updated Successfully!    "
