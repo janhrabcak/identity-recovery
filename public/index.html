@@ -633,27 +633,22 @@
 <body>
 
   <div class="container">
-    <header>
-      <div class="brand-badge">Tier 1 Cold-Start Dead-Drop</div>
-      <h1>Identity Recovery Protocol</h1>
-      <p class="subtitle">Stateless zero-hardware emergency credential vault. Zero external dependencies, pure browser WebCrypto.</p>
+    <header style="margin-bottom: 24px;">
+      <h1 style="font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px;">Recovery Vault</h1>
+      <p class="subtitle" style="font-size: 0.875rem; color: var(--text-muted);">Enter your recovery passphrase to access credentials.</p>
     </header>
 
     <!-- UNLOCK / DECRYPTION VIEW -->
     <section id="lock-screen">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <span>🔒</span> Decrypt Recovery Vault
-          </div>
-          <span style="font-size: 0.775rem; color: var(--text-muted);">AES-GCM-256 + PBKDF2 (600k)</span>
-        </div>
-
+      <div class="card" style="max-width: 460px; margin: 0 auto 20px auto; padding: 28px 24px;">
         <div id="error-message" class="error-banner" role="alert"></div>
 
         <form id="decrypt-form" onsubmit="event.preventDefault(); decryptVault();">
-          <div class="form-group">
-            <label for="passphrase-input">6-Word Diceware Passphrase</label>
+          <div class="form-group" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label for="passphrase-input" style="margin-bottom: 0;">Passphrase</label>
+              <span id="word-count-badge" style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">0 / 6 words</span>
+            </div>
             <div class="input-wrapper">
               <input 
                 type="password" 
@@ -665,6 +660,8 @@
                 spellcheck="false" 
                 required 
                 autofocus
+                oninput="updateWordCount(this.value)"
+                style="padding: 12px 64px 12px 14px; font-size: 1rem;"
               >
               <button 
                 type="button" 
@@ -672,30 +669,30 @@
                 id="toggle-passphrase-btn" 
                 onclick="togglePassphraseVisibility()" 
                 title="Toggle passphrase visibility"
+                style="right: 12px; font-weight: 600;"
               >Show</button>
             </div>
-            <p style="font-size: 0.775rem; color: var(--text-muted); margin-top: 6px;">
-              Enter the memorized 6-word Diceware recovery phrase (~77 bits entropy). This derives the AES-256 key via PBKDF2-SHA-256 (600,000 iterations).
-            </p>
           </div>
 
-          <div style="display: flex; gap: 12px; align-items: center; margin-top: 20px;">
-            <button type="submit" id="decrypt-btn" class="btn btn-primary" style="flex: 1; padding: 12px;">
-              <span id="btn-spinner" class="spinner hidden"></span>
-              <span id="btn-text">Decrypt Recovery Vault</span>
-            </button>
+          <button type="submit" id="decrypt-btn" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 0.95rem;">
+            <span id="btn-spinner" class="spinner hidden"></span>
+            <span id="btn-text">Unlock Vault</span>
+          </button>
+
+          <!-- Discreet Collapsible: Custom Payload Input -->
+          <div style="text-align: center; margin-top: 18px;">
+            <button 
+              type="button" 
+              id="toggle-custom-payload-btn"
+              onclick="toggleCustomPayload()" 
+              style="background: none; border: none; color: var(--text-muted); font-size: 0.775rem; cursor: pointer; text-decoration: underline;"
+            >Paste alternative payload</button>
           </div>
 
-          <!-- Collapsible: Custom Payload Input -->
-          <details style="margin-top: 18px;">
-            <summary>Advanced: Custom Payload Ciphertext</summary>
-            <div class="details-content">
-              <p style="font-size: 0.775rem; color: var(--text-muted); margin-bottom: 8px;">
-                By default, this page attempts to decrypt the pre-embedded ciphertext. You can paste an alternative base64 payload below:
-              </p>
-              <textarea id="ciphertext-input" rows="3" placeholder="Base64 encoded [16-byte salt][12-byte IV][ciphertext]"></textarea>
-            </div>
-          </details>
+          <div id="custom-payload-container" class="hidden" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+            <label for="ciphertext-input" style="font-size: 0.725rem; color: var(--text-muted);">Base64 Ciphertext</label>
+            <textarea id="ciphertext-input" rows="3" placeholder="Paste alternative base64 payload here" style="font-family: var(--font-mono); font-size: 0.8rem;"></textarea>
+          </div>
         </form>
       </div>
     </section>
@@ -840,7 +837,7 @@
     </main>
 
     <footer>
-      Cold-Start Identity Recovery Protocol &bull; Zero CDN &bull; Browser-Native WebCrypto AES-GCM-256
+      Cold-Start Identity Recovery
     </footer>
   </div>
 
@@ -896,6 +893,37 @@
       } else {
         input.type = "password";
         btn.textContent = "Show";
+      }
+    }
+
+    /**
+     * Live word counter for Diceware recovery phrase
+     */
+    function updateWordCount(val) {
+      const badge = document.getElementById("word-count-badge");
+      if (!badge) return;
+      const words = val.trim().split(/\s+/).filter(w => w.length > 0);
+      const count = words.length;
+      if (count === 6) {
+        badge.textContent = "✓ 6 / 6 words";
+        badge.style.color = "#34d399";
+      } else {
+        badge.textContent = `${count} / 6 words`;
+        badge.style.color = "var(--text-muted)";
+      }
+    }
+
+    /**
+     * Toggle collapsible custom payload input
+     */
+    function toggleCustomPayload() {
+      const container = document.getElementById("custom-payload-container");
+      const btn = document.getElementById("toggle-custom-payload-btn");
+      if (!container || !btn) return;
+      const isHidden = container.classList.toggle("hidden");
+      btn.textContent = isHidden ? "Paste alternative payload" : "Hide alternative payload";
+      if (!isHidden) {
+        document.getElementById("ciphertext-input")?.focus();
       }
     }
 
@@ -987,7 +1015,7 @@
 
       decryptBtn.disabled = true;
       btnSpinner.classList.remove("hidden");
-      btnText.textContent = "Deriving Key (PBKDF2 600,000 rounds)...";
+      btnText.textContent = "Unlocking...";
 
       // Allow DOM to update spinner before heavy crypto execution
       setTimeout(async () => {
@@ -1026,8 +1054,6 @@
             ["decrypt"]
           );
 
-          btnText.textContent = "Decrypting AES-GCM...";
-
           // Decrypt payload
           const decryptedBuffer = await window.crypto.subtle.decrypt(
             { name: "AES-GCM", iv: iv },
@@ -1060,7 +1086,7 @@
         } finally {
           decryptBtn.disabled = false;
           btnSpinner.classList.add("hidden");
-          btnText.textContent = "Decrypt Recovery Vault";
+          btnText.textContent = "Unlock Vault";
         }
       }, 20);
     }
@@ -1395,6 +1421,7 @@
       document.getElementById("backup-codes-container").innerHTML = "";
       document.getElementById("emergency-notes").textContent = "-";
       document.getElementById("passphrase-input").value = "";
+      updateWordCount("");
       clearError();
 
       // Switch screen back to lock screen
