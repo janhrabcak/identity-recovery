@@ -117,6 +117,9 @@ while true; do
         process.exit(1);
       }
       console.log(res.wordCount);
+    }).catch(e => {
+      console.error('Failed to load encrypt.js:', e.message);
+      process.exit(1);
     });
   " "$PASSPHRASE" 2>&1) || ENTROPY_STATUS=$?
 

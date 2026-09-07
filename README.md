@@ -294,8 +294,11 @@ The repository is configured via [`wrangler.json`](wrangler.json) to deploy stri
    - **Framework preset:** `None`
    - **Build command:** *(leave empty)*
    - **Deploy command:** `npx wrangler deploy` (or leave default)
-   - **Build output directory / Root directory:** `.`
+   - **Build output directory:** `public`
 4. Click **Save and Deploy**. Your site will be live at `https://identity-recovery.pages.dev`.
+
+> [!WARNING]
+> You must set the output directory to `public`. Setting it to `.` will publicly expose your `scripts/` directory and bypass the `_headers` CSP rules!
 5. **Custom Domain (`sos.<domain>.com`)**:
    - Go to your project → **Custom domains** tab → **Set up a custom domain**.
 ---

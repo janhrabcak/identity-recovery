@@ -264,24 +264,28 @@ function promptUser(query, hideInput = false) {
       // Basic masked prompt
       process.stdout.write(query);
       let input = '';
-      const onData = (char) => {
-        char = char.toString();
-        if (char === '\n' || char === '\r' || char === '\u0004') {
-          process.stdin.removeListener('data', onData);
-          process.stdin.setRawMode(false);
-          rl.close();
-          process.stdout.write('\n');
-          resolve(input);
-        } else if (char === '\u0003') {
-          process.exit();
-        } else if (char === '\u007f' || char === '\b') {
-          if (input.length > 0) {
-            input = input.slice(0, -1);
-            process.stdout.write('\b \b');
+      const onData = (data) => {
+        const str = data.toString();
+        for (let i = 0; i < str.length; i++) {
+          const char = str[i];
+          if (char === '\n' || char === '\r' || char === '\u0004') {
+            process.stdin.removeListener('data', onData);
+            process.stdin.setRawMode(false);
+            rl.close();
+            process.stdout.write('\n');
+            resolve(input);
+            return;
+          } else if (char === '\u0003') {
+            process.exit();
+          } else if (char === '\u007f' || char === '\b') {
+            if (input.length > 0) {
+              input = input.slice(0, -1);
+              process.stdout.write('\b \b');
+            }
+          } else {
+            input += char;
+            process.stdout.write('*');
           }
-        } else {
-          input += char;
-          process.stdout.write('*');
         }
       };
 

@@ -180,6 +180,11 @@ function manageGitHubIssue(result) {
       execFileSync('gh', ['issue', 'comment', String(existingIssueNum), '--body', `⏱️ **Staleness Reminder:** Current status is **${status}** with **${daysUntilStale} days** remaining until expiration (${expireDate}).`], { stdio: 'inherit' });
     } else {
       console.log('Creating new staleness alert issue...');
+      try {
+        execFileSync('gh', ['label', 'create', 'vault-staleness', '--description', 'Identity Recovery Vault Staleness Alerts', '--color', 'B60205'], { stdio: 'ignore' });
+      } catch (e) {
+        // Label likely already exists, ignore
+      }
       execFileSync('gh', ['issue', 'create', '--title', title, '--body', body, '--label', 'vault-staleness'], { stdio: 'inherit' });
     }
   } else if (status === 'FRESH') {

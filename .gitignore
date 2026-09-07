@@ -13,3 +13,14 @@ ciphertext.b64
 .DS_Store
 Thumbs.db
 *.log
+
+# Implicit Files and Editor Backups
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+node_modules/
+desktop.ini
+.env.*
+!.env.example

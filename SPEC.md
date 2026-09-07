@@ -167,7 +167,7 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
   - `X-Content-Type-Options: nosniff`: Prevents MIME-type sniffing.
 - **DOM XSS Protection:** Decrypted strings are injected solely via `textContent` or text node creation—never via `innerHTML` or string interpolation.
 - **No Disk Persistence:** Unencrypted payload data is never written to `localStorage` or IndexedDB. Only ephemeral used-code indices are stored in `sessionStorage` (scoped to `recovery_used_codes_<canaryCode>`).
-- **Memory Purge Protocol:** The "Lock & Purge" procedure nullifies JavaScript heap references, wipes DOM nodes, and clears session storage.
+- **Memory Purge Protocol:** The "Lock & Purge" procedure nullifies JavaScript heap references, wipes DOM nodes, and clears session storage. While JavaScript's non-deterministic garbage collection prevents guaranteed immediate zeroing of string primitives in the V8 heap, all accessible references are severed to protect against logical access.
 
 ### 4.2 Dead-Drop Storage & Edge Asset Isolation
 - **Public vs. Private Repository:**
