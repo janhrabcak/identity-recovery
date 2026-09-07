@@ -11,8 +11,9 @@
 ## 2. Recovery Architecture: Tier 1 Stateless Encrypted Dead-Drop
 
 ### 2.1 Hosting Target & Runtime Model
-- **Hosting Target:** Cloudflare Pages / Workers (recommended) or GitHub Pages served over HTTPS via custom domain (`sos.<domain>.com`).
-- **Runtime Model:** Standalone, single-file zero-dependency `public/index.html` executing pure browser-native WebCrypto (`window.crypto.subtle`). No external CDNs, JavaScript frameworks, remote fonts, or runtime network calls.
+- **Primary Hosting Target:** Cloudflare Pages / Workers (recommended) or GitHub Pages served over HTTPS via custom domain (`sos.<domain>.com`).
+- **Secondary Dead-Drop:** RFC 1035 DNS TXT record hosted on `recovery.hrabcak.com`, queryable via RFC 8484 DNS-over-HTTPS (DoH) through public anycast resolvers (`cloudflare-dns.com` and `dns.google`) or standard terminal DNS utilities (`dig`, `nslookup`).
+- **Runtime Model:** Standalone, single-file zero-dependency `public/index.html` executing pure browser-native WebCrypto (`window.crypto.subtle`). No external CDNs, JavaScript frameworks, or remote fonts. Network egress is restricted exclusively to public DoH resolvers.
 
 ### 2.2 Repository Organization
 ```text
@@ -23,13 +24,17 @@ identity-recovery/
 │
 ├── scripts/                      # 🛠️ Private offline tools (runs on trusted machine only)
 │   ├── deploy.sh                 # Hardened 7-step rotation & publish pipeline
-│   └── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
+│   ├── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
+│   └── check-staleness.js        # Zero-knowledge staleness evaluator for CI
+│
+├── .github/workflows/            # ⏰ Scheduled monitoring
+│   └── staleness-check.yml       # Monthly automated staleness alert workflow
 │
 ├── templates/                    # 📋 Safe dummy templates
 │   └── sample-payload.json       # Template recovery schema
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # Automated crypto & parity tests
+│   └── test-suite.js             # Automated crypto & parity tests (8 automated tests)
 │
 ├── wrangler.json                 # Cloudflare config: assets directory -> "./public"
 ├── .gitignore                    # Security boundary (blocks unencrypted payload.json)
@@ -109,9 +114,20 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
   1. Overwrites and nullifies the in-memory payload reference (`currentPayload = null`).
   2. Clears all tracked backup code indices.
   3. Replaces all DOM text nodes containing decrypted credentials with placeholders (`-`).
-  4. Clears the passphrase input value.
+  4. Clears the passphrase input value and resets the live word counter badge.
   5. Cleans up `sessionStorage`.
   6. Returns the UI to the locked screen state.
+
+### 3.6 DNS-over-HTTPS (DoH) Secondary Dead-Drop Fetcher
+- Allows on-demand retrieval of the encrypted ciphertext directly from the `recovery.hrabcak.com` DNS TXT record.
+- **Dual Anycast Resolver Redundancy:** Queries Cloudflare DoH (`https://cloudflare-dns.com/dns-query`) first with automated failover to Google Public DoH (`https://dns.google/resolve`).
+- **RFC 1035 Chunk Stitching:** Normalizes and stitches multiple 255-byte DNS text chunks into the unified RFC 4648 Base64 ciphertext string.
+
+### 3.7 Minimalist Lock Screen & Live Diceware Counter
+- Low-stress, distraction-free interface eliminating cryptographic jargon and developer noise.
+- Live `X / 6 words` counter badge that highlights green (`✓ 6 / 6 words`) upon entering all 6 words to prevent whitespace and counting mistakes.
+- Masked input with instant Show/Hide toggle.
+- Streamlined button states (`Unlock Vault` and `Unlocking...`).
 
 ---
 
@@ -120,9 +136,9 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
 ### 4.1 Untrusted Terminal Mitigations
 - **Content Security Policy (CSP):**
   ```http
-  default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';
+  default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';
   ```
-  Completely forbids outbound network calls (`fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, beacons, or DNS prefetch). Even on a compromised or malicious network, the page cannot exfiltrate decrypted secrets.
+  Outbound network access is strictly locked down: all external scripts, styles, objects, workers, frames, and arbitrary network destinations are completely blocked. `connect-src` is restricted exclusively to trusted public anycast DoH resolvers (`cloudflare-dns.com` and `dns.google`) solely for secondary dead-drop ciphertext retrieval. Decrypted secrets can never be exfiltrated to arbitrary servers.
 - **HTTP Response Security Headers (`public/_headers`):**
   - `X-Frame-Options: DENY`: Defends against iframe overlay and clickjacking attacks.
   - `Cache-Control: no-cache, no-store, must-revalidate`: Prevents public kiosk or retail terminals from writing decrypted content to disk cache.
@@ -162,7 +178,7 @@ Hardened Bash orchestration script for rotation and production publishing:
 4. **Pre-Deploy Verification:** Executes `tests/test-suite.js` to guarantee cryptographic and runtime validity before staging.
 5. **Git Safety Guard:** Audits git staging area to prevent accidental credential leaks; stages strictly `public/index.html`.
 6. **Commit & Push:** Commits with UTC timestamp and pushes to `origin main`, triggering Cloudflare Anycast edge deployment.
-7. **Plaintext Destruction:** Securely shreds and unlinks the plaintext payload file using `shred -u -z -n 3` (3-pass random overwrite + zero fill), defaulting to **Yes**.
+7. **Plaintext Destruction & DNS Dead-Drop Info:** Securely shreds and unlinks the plaintext payload file using `shred -u -z -n 3` (3-pass random overwrite + zero fill, defaulting to **Yes**), and outputs the formatted DNS TXT record for `recovery.hrabcak.com`.
 
 ### 5.3 Automated Staleness Monitoring (`scripts/check-staleness.js`, `.github/workflows/staleness-check.yml`)
 - **Zero-Knowledge Principle:** Evaluates vault age without accessing private key material or decrypting ciphertext by reading the public `<meta name="vault-generated-at">` tag in `public/index.html`.
@@ -182,3 +198,5 @@ Automated test runner verifying:
 4. Staleness classification logic (`FRESH`, `EXPIRING_SOON`, `STALE`).
 5. Zero-dependency integrity check verifying no external scripts, CDNs, or styles exist in `public/index.html`.
 6. Automated HTML embedding regex verification.
+7. Staleness evaluator unit tests (`scripts/check-staleness.js`) across all freshness states.
+8. DNS-over-HTTPS (DoH) multi-chunk parsing logic parity across Cloudflare and Google DoH formats.

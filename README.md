@@ -22,13 +22,17 @@ identity-recovery/
 │
 ├── scripts/                      # 🛠️ Private offline tools (runs on trusted machine only)
 │   ├── deploy.sh                 # Hardened 7-step rotation & publish pipeline
-│   └── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
+│   ├── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
+│   └── check-staleness.js        # Zero-knowledge staleness evaluator for CI
+│
+├── .github/workflows/            # ⏰ Scheduled monitoring
+│   └── staleness-check.yml       # Monthly automated staleness alert workflow
 │
 ├── templates/                    # 📋 Safe dummy templates
 │   └── sample-payload.json       # Template recovery schema
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # Automated crypto & parity tests
+│   └── test-suite.js             # Automated crypto & parity tests (8 automated tests)
 │
 ├── wrangler.json                 # Cloudflare config: assets directory -> "./public"
 ├── .gitignore                    # Security boundary (blocks unencrypted payload.json)
@@ -131,14 +135,21 @@ Verify that a ciphertext string decrypts correctly with the passphrase:
 node scripts/encrypt.js --decrypt "$(cat ciphertext.b64)" -p "correct horse battery staple zebra guitar"
 ```
 
-#### 5. Run the Automated Test Suite
-Execute end-to-end cryptographic parity, staleness logic, corrupted payload rejection, and zero-dependency checks:
+#### 5. Query Ciphertext from Secondary DNS Dead-Drop
+If web browsing is blocked or Cloudflare Pages is unavailable, retrieve the ciphertext via DNS:
+```bash
+dig +short TXT recovery.hrabcak.com | tr -d ' "\n'
+```
+
+#### 6. Run the Automated Test Suite
+Execute end-to-end cryptographic parity, staleness logic, corrupted payload rejection, zero-dependency checks, and DoH chunk parsing:
 ```bash
 node tests/test-suite.js
 ```
+*(Runs 8 automated test suites ensuring zero regressions).*
 
-#### 6. Preview / Test Recovery Terminal Locally
-Because `public/index.html` is strictly self-contained with no external dependencies or runtime network calls, you can open it directly in any browser:
+#### 7. Preview / Test Recovery Terminal Locally
+Because `public/index.html` is strictly self-contained with no external build tools, you can open it directly in any browser:
 ```bash
 # Direct browser opening (Linux)
 xdg-open public/index.html
@@ -184,7 +195,19 @@ python3 -m http.server 8080 --directory public
 
 ## 🛡️ Core Features in `public/index.html`
 
-1. **Staleness-Check Banner**:
+1. **Minimalist Lock Screen & Live Diceware Counter**:
+   - Clean, distraction-free interface free of developer jargon.
+   - Real-time `X / 6 words` counter badge that turns green (`✓ 6 / 6 words`) upon entering all 6 words.
+   - Masked passphrase input with quick Show/Hide toggle.
+   - Streamlined button states (`Unlock Vault` and `Unlocking...`).
+
+2. **DNS-over-HTTPS (DoH) Dead-Drop Fetcher**:
+   - Secondary dead-drop hosted on `recovery.hrabcak.com` TXT record.
+   - Clicking **"⚡ Fetch from recovery.hrabcak.com"** fetches the latest ciphertext via RFC 8484 DNS-over-HTTPS.
+   - Dual-resolver redundancy: queries Cloudflare 1.1.1.1 first with automatic failover to Google 8.8.8.8 if blocked.
+   - Automatically stitches RFC 1035 255-byte DNS chunks and populates the vault input.
+
+3. **Staleness-Check Banner**:
    - Calculates exact elapsed time since `metadata.generatedAt`.
    - Compares with `metadata.staleAfterMonths` (defaults to 6 months).
    - Displays real-time status:
@@ -193,7 +216,7 @@ python3 -m http.server 8080 --directory public
      - `STALE / EXPIRED` (Pulsating Red): Danger alert warning that backup codes or credentials may have expired or rotated.
    - Shows UTC timestamp, local time, vault age, and canary code.
 
-2. **Single-Use Backup Code Strikethrough Tracker**:
+4. **Single-Use Backup Code Strikethrough Tracker**:
    - Google Backup Codes are single-use 8-digit codes.
    - Clicking any code or checkbox strikes it through (`text-decoration: line-through` + dimmed opacity) and marks it as `USED`.
    - Real-time remaining count tracker (`X / Y remaining`).
@@ -201,14 +224,14 @@ python3 -m http.server 8080 --directory public
    - **Session Persistence**: Strikethrough progress is preserved in `sessionStorage` (scoped to the vault's canary code) so accidental tab reloads do not lose track of burned codes.
    - **Reset Tracker**: Button to clear all strikethrough marks.
 
-3. **Universal One-Click Copy Buttons**:
+5. **Universal One-Click Copy Buttons**:
    - Dedicated copy buttons for 1Password email, secret key, account hint, canary code, emergency notes, and each backup code.
    - Uses `navigator.clipboard.writeText` with legacy `document.execCommand('copy')` fallback for restricted kiosk environments.
    - Visual feedback (`✓ Copied!`) on the clicked button.
 
-4. **Zero-Dependency Security**:
+6. **Hardened Edge & Memory Security**:
    - Browser-native WebCrypto API (`window.crypto.subtle`).
-   - Strict Content Security Policy (`CSP`) meta tag blocking all external requests, styles, and scripts.
+   - Strict Content Security Policy (`CSP`) restricting outbound traffic exclusively to trusted anycast DoH resolvers (`https://cloudflare-dns.com https://dns.google`).
    - **"🔒 Lock & Purge"** button: Completely zeroes out sensitive memory structures, clears DOM elements, resets inputs, and wipes session storage.
 
 ---
