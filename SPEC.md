@@ -27,16 +27,16 @@ identity-recovery/
 │   ├── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
 │   └── check-staleness.js        # Zero-knowledge staleness evaluator for CI
 │
-├── .github/workflows/            # ⏰ Scheduled monitoring
+├── .github/workflows/            # ⏰ CI & scheduled monitoring
+│   ├── ci.yml                    # Automated matrix CI testing (Node 18, 20, 22)
 │   └── staleness-check.yml       # Monthly automated staleness alert workflow
 │
 ├── templates/                    # 📋 Safe dummy templates
 │   └── sample-payload.json       # Template recovery schema
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # Automated crypto & parity tests (15 automated tests)
+│   └── test-suite.js             # Automated crypto & parity tests (16 automated tests)
 │
-├── wrangler.json                 # Cloudflare config: assets directory -> "./public"
 ├── .env.example                  # Environment configuration template (RECOVERY_DOMAIN)
 ├── .gitignore                    # Security boundary (blocks unencrypted payload.json)
 ├── README.md                     # Operational documentation & quick run commands
@@ -177,7 +177,7 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
 - **Public vs. Private Repository:**
   - Plaintext credential files (`payload.json`) are barred by `.gitignore`.
   - The embedded Base64 ciphertext in `public/index.html` is cryptographically secure against offline brute-force attacks assuming $\ge 77$ bits entropy (PBKDF2 600k rounds + AES-GCM-256).
-- **Physical Edge Isolation (`wrangler.json`):**
+- **Physical Edge Isolation (Cloudflare Pages):**
   - Cloudflare deployment publishes strictly `./public` (`index.html` and `_headers`). Internal tools (`scripts/encrypt.js`, `scripts/deploy.sh`, test suites, specification docs) are physically separated and never uploaded to the public web root.
 
 ---
