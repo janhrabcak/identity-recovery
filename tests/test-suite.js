@@ -1,4 +1,5 @@
 import { encryptPayload, decryptPayload, createSamplePayload, normalizePassphrase, evaluatePassphraseEntropy } from '../scripts/encrypt.js';
+import { subtle } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -333,14 +334,14 @@ async function runTests() {
 
   async function generateTOTP(base32Secret, epochMs = Date.now()) {
     const keyBuffer = base32ToBuffer(base32Secret);
-    const key = await crypto.subtle.importKey(
+    const key = await subtle.importKey(
       "raw", keyBuffer, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]
     );
     const timeStep = Math.floor(epochMs / 30000);
     const timeBuffer = new ArrayBuffer(8);
     const timeView = new DataView(timeBuffer);
     timeView.setUint32(4, timeStep, false);
-    const signature = await crypto.subtle.sign("HMAC", key, timeBuffer);
+    const signature = await subtle.sign("HMAC", key, timeBuffer);
     const sigView = new Uint8Array(signature);
     const offset = sigView[sigView.length - 1] & 0x0f;
     const code = (
