@@ -31,6 +31,11 @@ identity-recovery/
 │   ├── ci.yml                    # Automated matrix CI testing (Node 18, 20, 22)
 │   └── staleness-check.yml       # Monthly automated staleness alert workflow
 │
+├── docs/                         # 📖 In-depth guides
+│   ├── DEPLOYMENT.md             # Cloudflare Pages & DNS setup
+│   ├── CLI_REFERENCE.md          # Manual CLI flags & offline workflow
+│   └── FEATURES.md               # UI features (TOTP, QR, panic keybind)
+│
 ├── templates/                    # 📋 Safe dummy templates
 │   └── sample-payload.json       # Template recovery schema
 │
