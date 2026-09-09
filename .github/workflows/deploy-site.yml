@@ -43,8 +43,13 @@ jobs:
         run: npm run build
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy site --project-name=idrecoverykit --branch=main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "=== Checking Accessible Cloudflare Pages Projects ==="
+          npx wrangler pages project list || true
+          echo "=== Ensuring Cloudflare Pages Project Exists ==="
+          npx wrangler pages project create idrecoverykit --production-branch=main || true
+          echo "=== Deploying site to Cloudflare Pages ==="
+          npx wrangler pages deploy site --project-name=idrecoverykit --branch=main --commit-dirty=true
