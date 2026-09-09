@@ -1,2 +1,3 @@
-# Cloudflare Pages redirects
-https://www.idrecoverykit.com/* https://idrecoverykit.com/:splat 301!
+# Cloudflare redirects for idrecoverykit.com
+/vault /app/ 301
+/builder /app/ 301

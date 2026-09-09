@@ -47,10 +47,11 @@ export class CloudflareProvider extends BaseProvider {
 
     this.writeFile(targetDir, '_headers', headersContent);
 
-    // 2. Generate _redirects (for web platform domain canonicalization)
-    if (!isVault && domain) {
-      const redirectsContent = `# Cloudflare Pages redirects
-https://www.${domain}/* https://${domain}/:splat 301!
+    // 2. Generate _redirects (Cloudflare requires all redirect paths to be relative)
+    if (!isVault) {
+      const redirectsContent = `# Cloudflare redirects for ${domain}
+/vault /app/ 301
+/builder /app/ 301
 `;
       this.writeFile(targetDir, '_redirects', redirectsContent);
     }
