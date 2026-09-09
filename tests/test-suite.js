@@ -591,7 +591,36 @@ async function runTests() {
   if (!siteHeaders.includes("default-src 'none'") || !siteHeaders.includes("/app/*") || !siteHeaders.includes("no-store")) {
     throw new Error("Test 20 Failed: site/_headers missing CSP or /app/* no-store rules!");
   }
-  console.log("✓ Test 20 Passed: Public product hub (site/) and web app (/app/) parity verified.");
+
+  // Verify GitHub Pages (docs/) parity
+  const DOCS_INDEX_PATH = path.join(REPO_ROOT, 'docs', 'index.html');
+  const DOCS_APP_INDEX_PATH = path.join(REPO_ROOT, 'docs', 'app', 'index.html');
+  if (!fs.existsSync(DOCS_INDEX_PATH)) {
+    throw new Error("Test 20 Failed: docs/index.html not found! Run npm run build.");
+  }
+  if (!fs.existsSync(DOCS_APP_INDEX_PATH)) {
+    throw new Error("Test 20 Failed: docs/app/index.html not found! Run npm run build.");
+  }
+  const docsIndexContent = fs.readFileSync(DOCS_INDEX_PATH, 'utf8');
+  if (docsIndexContent !== siteIndexContent) {
+    throw new Error("Test 20 Failed: docs/index.html does not match site/index.html! Run npm run build.");
+  }
+  const docsAppContent = fs.readFileSync(DOCS_APP_INDEX_PATH, 'utf8');
+  if (docsAppContent !== expectedBuilderHtml) {
+    throw new Error("Test 20 Failed: docs/app/index.html does not match tools/builder.html! Run npm run build.");
+  }
+
+  // Verify PWA and Community files
+  if (!fs.existsSync(path.join(REPO_ROOT, 'docs', 'manifest.json')) ||
+      !fs.existsSync(path.join(REPO_ROOT, 'docs', 'sw.js')) ||
+      !fs.existsSync(path.join(REPO_ROOT, 'docs', 'social-preview.png'))) {
+    throw new Error("Test 20 Failed: Missing PWA manifest, service worker, or social preview in docs/!");
+  }
+  if (!fs.existsSync(path.join(REPO_ROOT, 'LICENSE')) || !fs.existsSync(path.join(REPO_ROOT, 'SECURITY.md'))) {
+    throw new Error("Test 20 Failed: Missing LICENSE or SECURITY.md in repo root!");
+  }
+
+  console.log("✓ Test 20 Passed: Public product hub (site/), GitHub Pages (docs/), and repository trust assets verified.");
 }
 
 runTests().catch(err => {

@@ -6,6 +6,19 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data: https:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none';">
   <title>ID Recovery Kit — Cold-Start Identity Recovery Protocol</title>
   <meta name="description" content="Zero-dependency, offline AES-GCM-256 encrypted credential vault for physical disaster recovery. Access master passwords, 2FA backup codes, and TOTP seeds from any browser.">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="manifest" href="./manifest.json">
+
+  <!-- Open Graph & Social Cards -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ID Recovery Kit — Zero-Hardware Credential Recovery Protocol">
+  <meta property="og:description" content="Stateless, zero-dependency AES-GCM-256 encrypted credential vault. Recover master passwords, backup codes, seed phrases & TOTP from any browser.">
+  <meta property="og:url" content="https://janhrabcak.github.io/identity-recovery/">
+  <meta property="og:image" content="https://janhrabcak.github.io/identity-recovery/social-preview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ID Recovery Kit — Zero-Hardware Credential Recovery Protocol">
+  <meta name="twitter:description" content="Stateless, zero-dependency AES-GCM-256 encrypted credential vault. Recover master passwords, backup codes, seed phrases & TOTP from any browser.">
+  <meta name="twitter:image" content="https://janhrabcak.github.io/identity-recovery/social-preview.png">
 
   <style>
     :root {
@@ -560,6 +573,10 @@
       </nav>
 
       <div class="nav-actions">
+        <div id="net-status-badge" style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; padding: 4px 10px; border-radius: 9999px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); color: var(--accent-emerald);">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+          <span id="net-status-text">Client-Side Verified</span>
+        </div>
         <a href="./app/" class="btn btn-primary">
           <span>🚀 Launch Web App</span>
         </a>
@@ -837,6 +854,32 @@ vim payload.json
         });
       }
     }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    function updateNetStatus() {
+      const text = document.getElementById('net-status-text');
+      const badge = document.getElementById('net-status-badge');
+      if (!text || !badge) return;
+      if (navigator.onLine) {
+        badge.style.background = 'rgba(16, 185, 129, 0.1)';
+        badge.style.borderColor = 'rgba(16, 185, 129, 0.25)';
+        badge.style.color = '#34d399';
+        text.innerText = 'Client-Side Verified';
+      } else {
+        badge.style.background = 'rgba(56, 189, 248, 0.15)';
+        badge.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+        badge.style.color = '#38bdf8';
+        text.innerText = '100% Offline Mode';
+      }
+    }
+    window.addEventListener('online', updateNetStatus);
+    window.addEventListener('offline', updateNetStatus);
+    updateNetStatus();
   </script>
 </body>
 </html>

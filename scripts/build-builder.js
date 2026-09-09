@@ -1830,6 +1830,8 @@ const outputPath = path.join(toolsDir, 'builder.html');
 fs.writeFileSync(outputPath, BUILDER_HTML, 'utf8');
 console.log(`✓ Generated tools/builder.html (${(fs.statSync(outputPath).size / 1024).toFixed(1)} KB)`);
 
-const docsOutputPath = path.join(REPO_ROOT, 'docs', 'index.html');
-fs.writeFileSync(docsOutputPath, BUILDER_HTML, 'utf8');
-console.log(`✓ Generated docs/index.html (${(fs.statSync(docsOutputPath).size / 1024).toFixed(1)} KB)`);
+const docsAppDir = path.join(REPO_ROOT, 'docs', 'app');
+if (!fs.existsSync(docsAppDir)) fs.mkdirSync(docsAppDir, { recursive: true });
+const docsAppOutputPath = path.join(docsAppDir, 'index.html');
+fs.writeFileSync(docsAppOutputPath, BUILDER_HTML, 'utf8');
+console.log(`✓ Generated docs/app/index.html (${(fs.statSync(docsAppOutputPath).size / 1024).toFixed(1)} KB)`);

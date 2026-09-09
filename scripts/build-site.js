@@ -17,17 +17,44 @@ const SITE_APP_DIR = path.join(SITE_DIR, 'app');
 const BUILDER_SRC = path.join(REPO_ROOT, 'tools', 'builder.html');
 const SITE_APP_INDEX = path.join(SITE_APP_DIR, 'index.html');
 
-// Ensure site/ and site/app/ exist
-fs.mkdirSync(SITE_APP_DIR, { recursive: true });
+const DOCS_DIR = path.join(REPO_ROOT, 'docs');
+const DOCS_APP_DIR = path.join(DOCS_DIR, 'app');
 
-// Copy builder.html to site/app/index.html
+// Ensure site/, site/app/, and docs/app/ exist
+fs.mkdirSync(SITE_APP_DIR, { recursive: true });
+fs.mkdirSync(DOCS_APP_DIR, { recursive: true });
+
+// Copy builder.html to site/app/index.html and docs/app/index.html
 if (fs.existsSync(BUILDER_SRC)) {
   fs.copyFileSync(BUILDER_SRC, SITE_APP_INDEX);
   console.log(`✓ Synchronized tools/builder.html -> site/app/index.html (${(fs.statSync(SITE_APP_INDEX).size / 1024).toFixed(1)} KB)`);
+  
+  const docsAppIndex = path.join(DOCS_APP_DIR, 'index.html');
+  fs.copyFileSync(BUILDER_SRC, docsAppIndex);
+  console.log(`✓ Synchronized tools/builder.html -> docs/app/index.html (${(fs.statSync(docsAppIndex).size / 1024).toFixed(1)} KB)`);
 } else {
   console.error(`Error: ${BUILDER_SRC} not found. Run scripts/build-builder.js first.`);
   process.exit(1);
 }
+
+// Copy site/index.html to docs/index.html (product landing page for GitHub Pages)
+const SITE_INDEX = path.join(SITE_DIR, 'index.html');
+const DOCS_INDEX = path.join(DOCS_DIR, 'index.html');
+if (fs.existsSync(SITE_INDEX)) {
+  fs.copyFileSync(SITE_INDEX, DOCS_INDEX);
+  console.log(`✓ Synchronized site/index.html -> docs/index.html (GitHub Pages landing hub)`);
+}
+
+// Synchronize PWA and branding assets
+const staticAssets = ['manifest.json', 'sw.js', 'icon-192.png', 'icon-512.png', 'social-preview.png'];
+for (const asset of staticAssets) {
+  const src = path.join(SITE_DIR, asset);
+  const dest = path.join(DOCS_DIR, asset);
+  if (fs.existsSync(src)) {
+    fs.copyFileSync(src, dest);
+  }
+}
+console.log('✓ Synchronized PWA, manifest, and branding assets to docs/');
 
 // Generate site/_headers for Cloudflare / Netlify edge security
 const headersContent = `/*
@@ -44,7 +71,8 @@ const headersContent = `/*
 `;
 
 fs.writeFileSync(path.join(SITE_DIR, '_headers'), headersContent, 'utf8');
-console.log('✓ Generated site/_headers (with edge security & app no-store rules)');
+fs.writeFileSync(path.join(DOCS_DIR, '_headers'), headersContent, 'utf8');
+console.log('✓ Generated site/_headers and docs/_headers (with edge security & app no-store rules)');
 
 // Generate site/vercel.json for Vercel edge deployment
 const vercelConfig = {

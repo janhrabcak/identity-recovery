@@ -1,14 +1,26 @@
 # Cold-Start Identity Recovery Protocol
 
 [![CI & Integrity Tests](https://github.com/janhrabcak/identity-recovery/actions/workflows/ci.yml/badge.svg)](https://github.com/janhrabcak/identity-recovery/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-2ea44f?style=flat-square&logo=github)](https://janhrabcak.github.io/identity-recovery/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![Staleness Monitor](https://github.com/janhrabcak/identity-recovery/actions/workflows/staleness-check.yml/badge.svg)](https://github.com/janhrabcak/identity-recovery/actions/workflows/staleness-check.yml)
 ![Dependencies](https://img.shields.io/badge/dependencies-0-success?style=flat-square&logo=npm)
 ![Node Support](https://img.shields.io/badge/node-%3E%3D18-informational?style=flat-square&logo=node.js)
 ![Cryptography](https://img.shields.io/badge/cipher-AES--GCM--256-blue?style=flat-square)
 ![KDF](https://img.shields.io/badge/KDF-PBKDF2--SHA--256%20(600k%20rounds)-blueviolet?style=flat-square)
-![Edge Deployment](https://img.shields.io/badge/edge%20deployment-Cloudflare%20%7C%20Netlify%20%7C%20Vercel-orange?style=flat-square)
 
 Stateless, zero-hardware emergency credential recovery protocol designed to restore primary identity and root-of-trust access from an untrusted terminal or newly procured device anywhere in the world.
+
+> **🌐 Live Web App:** [**janhrabcak.github.io/identity-recovery**](https://janhrabcak.github.io/identity-recovery/) &bull; [**Open Web Builder**](https://janhrabcak.github.io/identity-recovery/app/)
+
+### ⚡ 1-Click Edge Deployment
+Deploy your private, encrypted recovery terminal to your preferred serverless edge network in seconds:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/janhrabcak/identity-recovery)
+&nbsp;
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository_url=https://github.com/janhrabcak/identity-recovery)
+&nbsp;
+[![Deploy to Cloudflare Pages](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/janhrabcak/identity-recovery)
 
 <p align="center">
   <img src="docs/demo.gif" alt="Identity Recovery Protocol Web Builder Demo" width="800">
@@ -18,7 +30,7 @@ Stateless, zero-hardware emergency credential recovery protocol designed to rest
 
 | Dimension | Indicator | Operational Guarantee |
 |---|---|---|
-| **Cryptographic Parity** | `🟢 19/19 Passed` | Node.js WebCrypto $\leftrightarrow$ Browser WebCrypto end-to-end verified |
+| **Cryptographic Parity** | `🟢 20/20 Passed` | Node.js WebCrypto $\leftrightarrow$ Browser WebCrypto end-to-end verified |
 | **Supply Chain Risk** | `🟢 0 Dependencies` | Pure Node.js standard libraries & browser-native APIs (zero npm attack surface) |
 | **Edge Header Security** | `🟢 Hardened` | Strict CSP (`default-src 'none'`), `no-store` cache control, anti-clickjacking (`DENY`) |
 | **Vault Freshness** | `🟢 Automated` | Bi-monthly GitHub Actions audit + multi-channel push alerts (ntfy/Discord/Slack) |
