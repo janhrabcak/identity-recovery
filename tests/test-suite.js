@@ -661,8 +661,8 @@ async function runTests() {
     throw new Error("Test 20 Failed: wrangler.toml missing!");
   }
   const wranglerConfig = fs.readFileSync(WRANGLER_CONFIG_PATH, 'utf8');
-  if (!wranglerConfig.includes("pages_build_output_dir") || !wranglerConfig.includes("idrecoverykit")) {
-    throw new Error("Test 20 Failed: wrangler.toml missing pages_build_output_dir or project name!");
+  if ((!wranglerConfig.includes("pages_build_output_dir") && !wranglerConfig.includes("[assets]")) || !wranglerConfig.includes("idrecoverykit")) {
+    throw new Error("Test 20 Failed: wrangler.toml missing assets/pages_build_output_dir or project name!");
   }
 
   const DEPLOY_SITE_SCRIPT = path.join(REPO_ROOT, 'scripts', 'deploy-site.sh');
