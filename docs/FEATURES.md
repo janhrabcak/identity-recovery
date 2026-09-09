@@ -28,7 +28,7 @@
 
 ## 4. 📱 Offline QR Code Generator
 - Generates high-contrast QR codes directly on an HTML5 `<canvas>` using an inlined, heavily audited Nayuki QR library.
-- Click **"📱 QR"** next to your 1Password Secret Key or notes to scan credentials onto a newly procured phone camera without typing 34 characters manually.
+- Click **"📱 QR"** next to your password manager secret key, seed phrase, or notes to scan credentials onto a newly procured phone camera without typing long characters manually.
 - 100% offline—no third-party image generation APIs or CDN requests.
 
 ---
@@ -41,7 +41,7 @@
 ---
 
 ## 6. Single-Use Backup Code Strikethrough Tracker
-- Google 2SV backup codes are single-use. The tracker helps prevent burning or re-trying used codes under stress.
+- 2SV backup codes (Google, GitHub, Apple, etc.) are single-use. The tracker helps prevent burning or re-trying used codes under stress.
 - Clicking any code strikes it through (`text-decoration: line-through`) and marks it `[USED]`.
 - **"⚡ Copy Next Unused Code":** One-click button copies the next unstruck code, scrolls it into view, and highlights it.
 - **Session Persistence:** Preserved in `sessionStorage` (scoped to `recovery_used_codes_<canaryCode>`) so accidental browser refreshes do not lose your place.

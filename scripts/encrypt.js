@@ -266,7 +266,7 @@ export function createSamplePayload(isFresh = true) {
         id: "notes-1",
         type: "notes",
         title: "Emergency Instructions & Contacts",
-        content: "Emergency contact: Alice (+1-555-0199). Recovery protocol: Recover Google account first using backup codes, then sign in to 1Password at my.1password.com."
+        content: "Emergency contact: Alice (+1-555-0199). Recovery protocol: Recover primary email first using backup codes, then sign in to password manager."
       }
     ],
     onePassword: {
@@ -286,7 +286,7 @@ export function createSamplePayload(isFresh = true) {
       "01234567",
       "12345670"
     ],
-    notes: "Emergency contact: Alice (+1-555-0199). Recovery protocol: Recover Google account first using backup codes, then sign in to 1Password at my.1password.com."
+    notes: "Emergency contact: Alice (+1-555-0199). Recovery protocol: Recover primary email first using backup codes, then sign in to password manager."
   };
 }
 

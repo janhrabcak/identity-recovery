@@ -1,8 +1,8 @@
 # Project Specification: Cold-Start Identity Recovery Protocol
 
 ## 1. System Overview & Constraints
-- **Root of Trust:** 1Password (holds all credentials, Google backup codes, and downstream accounts).
-- **Primary Identity:** Google (@gmail.com, standard consumer account with 2SV enabled).
+- **Root of Trust:** Primary Password Manager (e.g. 1Password, Bitwarden, KeePassXC — holds master credentials, keys, and downstream accounts).
+- **Primary Identity:** Primary Identity Provider (e.g. Google, Apple, Microsoft, Proton with 2SV enabled).
 - **Disaster Scenario:** Total hardware and physical loss ("lost everything", no phone, no YubiKey, no wallet).
 - **Recovery Requirement:** Global, location-independent recovery from an untrusted terminal or newly procured retail device.
 
@@ -66,7 +66,7 @@ identity-recovery/
 - **Key Derivation Function (KDF):** PBKDF2 with HMAC-SHA-256.
   - **Iterations:** 600,000 rounds (exceeding OWASP password storage recommendations).
   - **Salt:** 16 bytes (128 bits), cryptographically secure random.
-- **Key Material:** Memorized 6-word Diceware passphrase (~77 bits of entropy), strictly distinct from the 1Password master password.
+- **Key Material:** Memorized 6-word Diceware passphrase (~77 bits of entropy), strictly distinct from your password manager master password.
   - **Entropy Validation Rules:** Validated at generation time for $\ge 6$ whitespace-delimited words, $\ge 20$ characters total length, $\ge 4$ unique words, and $\ge 2$ characters per token.
   - **Normalization:** Passphrases undergo Unicode NFKC normalization, leading/trailing whitespace trimming, and collapse of consecutive whitespace (`\s+` to `\u0020`) before key derivation to guarantee consistency across terminals.
 - **Serialized Binary Format:**
@@ -217,7 +217,7 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
 - Dedicated print formatting tailored for high-stress scenarios where terminal access is constrained or unsecure.
 - Strips all dark-mode styling down to high-contrast black text on white paper.
 - Hides interactive buttons, DNS tools, inputs, badges, and footers.
-- Formats 1Password credentials, emergency notes, and Google backup codes into a clean 2-column card grid with `page-break-inside: avoid`.
+- Formats password manager credentials, emergency notes, seed phrases, and backup codes into a clean 2-column card grid with `page-break-inside: avoid`.
 - Displays a prominent confidential watermark header and strikes through burned codes with `[USED]` labels.
 - Triggerable via a dedicated `🖨️ Print Sheet` button in the unlocked view or standard browser print shortcut (`Ctrl+P`).
 

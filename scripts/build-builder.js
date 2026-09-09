@@ -1471,7 +1471,7 @@ function loadSampleData() {
 
   addCard('notes', {
     title: 'Emergency Instructions & Contacts',
-    content: 'Emergency contact: Alice (+1-555-0199). Recovery protocol: Recover Google account first using backup codes, then sign in to 1Password at my.1password.com.'
+    content: 'Emergency contact: Alice (+1-555-0199). Recovery protocol: Recover primary email first using backup codes, then sign in to password manager.'
   });
 
   document.getElementById('recovery-domain').value = 'recovery.yourdomain.com';

@@ -79,8 +79,8 @@ Deploy your private, encrypted recovery terminal to your preferred serverless ed
    1. Visit https://sos.<yourdomain>.com (or query DNS TXT)
    2. Enter memorized 6-word passphrase
    3. In-browser WebCrypto decrypts payload client-side
-   4. Copy single-use Google backup code or view live TOTP
-   5. Sign in to Google -> Access 1Password -> Recover all accounts
+   4. Copy single-use 2SV backup code or view live TOTP
+   5. Sign in to primary identity (e.g. Google / Apple) -> Access password manager -> Recover all accounts
    6. Click "Lock & Purge" (or press Escape x3) to wipe all memory
 ```
 
