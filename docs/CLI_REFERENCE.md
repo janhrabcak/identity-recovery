@@ -9,24 +9,37 @@ All offline scripts are strictly zero-dependency, running exclusively on the Nod
 The recommended way to rotate credentials and publish to the edge in one hardened operation:
 
 ```bash
-./scripts/deploy.sh [path-to-payload.json]
+./scripts/deploy.sh [options] [path-to-payload.json]
 ```
+
+### Options & Flags
+- `--project <name>`: Deploy directly to Cloudflare Pages edge (zero git persistence).
+- `--direct-upload`: Use Cloudflare Pages Direct Upload (default when `CLOUDFLARE_PAGES_PROJECT` is set in `.env`).
+- `--git`: Force Git commit & push mode (for private repositories).
+
+### Deployment Modes
+1. **Direct Edge Upload Mode (Default when `CLOUDFLARE_PAGES_PROJECT` is set):**
+   Encrypts the payload inside an ephemeral staging directory, verifies tests, and uploads directly to Cloudflare Pages edge via Wrangler. `public/index.html` in Git is never modified or committed, keeping public repositories 100% clean of personal data.
+2. **Git Push Mode (Fallback for private repositories):**
+   Encrypts into `public/index.html`, runs test verification, strictly stages only `public/index.html`, commits, and pushes to `origin main`.
 
 ### What `deploy.sh` Does Automatically:
 1. **Pre-flight Checks:** Verifies Git repository status, remote connectivity, and payload schema completeness.
 2. **Passphrase Ingestion:** Prompts with masked input, calculates Diceware entropy (~77 bits required), and requires confirmation to avoid typos.
-3. **Offline WebCrypto Encryption:** Derives PBKDF2-600k keys and injects ciphertext directly into `public/index.html`.
-4. **Automated Verification:** Runs all 16 automated tests in `tests/test-suite.js` to guarantee cryptographic and runtime integrity before committing.
-5. **Git Safety Guard:** Audits the Git staging area; resets any pre-existing staged files and stages **strictly** `public/index.html`.
-6. **Commit & Push:** Commits with UTC timestamp and pushes to `origin main`, triggering Cloudflare edge deployment.
-7. **Plaintext Shredding:** Offers to permanently shred the unencrypted source file (3-pass random overwrite + zero-fill), defaulting to **Yes**.
-8. **Cloudflare DNS Dead-Drop Sync:** Automatically updates the secondary DNS TXT record via Cloudflare API v4 if configured in `.env`.
+3. **Offline WebCrypto Encryption:** Derives PBKDF2-600k keys and injects ciphertext directly into HTML.
+4. **Automated Verification:** Runs all 17 automated tests in `tests/test-suite.js` to guarantee cryptographic and runtime integrity.
+5. **Edge Deployment:** Deploys directly via Wrangler or pushes to Git.
+6. **Plaintext Shredding:** Offers to permanently shred the unencrypted source file (3-pass random overwrite + zero-fill), defaulting to **Yes**.
+7. **Cloudflare DNS Dead-Drop Sync:** Automatically updates the secondary DNS TXT record via Cloudflare API v4 if configured in `.env`.
 
 ---
 
 ## 2. Encryption CLI (`scripts/encrypt.js`)
 
 Standalone Node.js CLI utility implementing PBKDF2-SHA-256 (600,000 rounds) and AES-GCM-256:
+
+> [!TIP]
+> **Prefer a GUI?** If you do not want to use the Node.js CLI, open [`tools/builder.html`](../tools/builder.html) directly in any web browser to compile your vault client-side with interactive Diceware generation and zero terminal usage.
 
 ```bash
 node scripts/encrypt.js [options]
@@ -90,7 +103,7 @@ Does **not** require any decryption passphrase. It inspects the public `<meta na
 
 ## 4. Test Suite (`tests/test-suite.js`)
 
-Runs end-to-end cryptographic and structural tests across 16 test suites:
+Runs end-to-end cryptographic and structural tests across 17 test suites:
 
 ```bash
 npm test
@@ -114,3 +127,17 @@ npm test
 14. Paper printout stylesheet (`@media print`) and layout integrity.
 15. Multi-channel push notification formatters (ntfy, Discord, Slack).
 16. In-browser TOTP HMAC-SHA1 mathematical validation.
+17. Offline Vault Builder (`tools/builder.html`) security, CSP, and parity check.
+
+---
+
+## 5. Builder Generator (`scripts/build-builder.js`)
+
+Recompiles the standalone `tools/builder.html` tool, embedding the latest base64 template from `public/index.html` and updating the Diceware dictionary:
+
+```bash
+npm run build:builder
+# or: node scripts/build-builder.js
+```
+
+Run this command whenever you make improvements to `public/index.html` or styles to keep the offline web builder in sync.

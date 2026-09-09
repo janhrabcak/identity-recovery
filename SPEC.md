@@ -22,7 +22,11 @@ identity-recovery/
 │   ├── index.html                # Recovery terminal client (contains encrypted ciphertext)
 │   └── _headers                  # HTTP security headers (CSP, HSTS, no-store, anti-clickjacking)
 │
+├── tools/                        # 🖥️ Offline client-side browser tools
+│   └── builder.html              # Standalone web compiler to generate index.html offline
+│
 ├── scripts/                      # 🛠️ Private offline tools (runs on trusted machine only)
+│   ├── build-builder.js          # Generator script to refresh tools/builder.html
 │   ├── deploy.sh                 # Hardened 7-step rotation & publish pipeline
 │   ├── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
 │   └── check-staleness.js        # Zero-knowledge staleness evaluator for CI
@@ -40,7 +44,7 @@ identity-recovery/
 │   └── sample-payload.json       # Template recovery schema
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # Automated crypto & parity tests (16 automated tests)
+│   └── test-suite.js             # Automated crypto & parity tests (17 automated tests)
 │
 ├── .env.example                  # Environment configuration template (RECOVERY_DOMAIN)
 ├── .gitignore                    # Security boundary (blocks unencrypted payload.json)
@@ -219,6 +223,15 @@ Hardened Bash orchestration script for rotation and production publishing:
   - Automatically creates/updates an issue labeled `vault-staleness` when the vault is within 30 days of staleness or expired.
   - Automatically closes open staleness issues when a newly rotated vault is deployed (`status == FRESH`).
 
+### 5.4 Offline Web Compiler (`tools/builder.html` & `scripts/build-builder.js`)
+- **Runtime & Execution Model:** Standalone, single-file zero-dependency HTML application executable in any modern web browser via `file://` or local HTTP.
+- **Security Boundary:** Bound by strict CSP (`default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';`), mathematically barring network transmission.
+- **Cryptographic Engine:** Executes browser-native WebCrypto (`window.crypto.subtle`) for PBKDF2-SHA-256 (600,000 rounds) key derivation and AES-GCM-256 authenticated encryption.
+- **CSPRNG Diceware Engine:** Generates 6-word Diceware phrases using `window.crypto.getRandomValues` and an embedded 1,000-word dictionary with real-time entropy evaluation.
+- **Pre-Flight In-Memory Round-Trip Verification:** Automatically attempts decryption against the in-memory payload and validates the canary code prior to compiling the final output.
+- **Template Embedding & Override:** Ships with `public/index.html` embedded as Base64, with interactive drag-and-drop file input allowing custom template ingestion.
+- **Deployment & Dead-Drop Assistance:** Generates a downloadable `index.html` alongside pre-formatted manual deployment guides for Cloudflare Pages (Git & Direct Upload) and DNS TXT dead-drop tables with 1-click clipboard helpers.
+
 ---
 
 ## 6. Verification Suite (`tests/test-suite.js`)
@@ -239,3 +252,5 @@ Automated test runner verifying:
 13. Automated Cloudflare DNS API dead-drop synchronization configuration and deployment logic integrity.
 14. Emergency paper printout styles (`@media print`), confidential header, and print action button verification.
 15. Multi-channel staleness push notification webhook payload generation and CI workflow integration.
+16. In-browser TOTP HMAC-SHA1 mathematical validation.
+17. Offline Vault Builder (`tools/builder.html`) security, CSP, and parity check.

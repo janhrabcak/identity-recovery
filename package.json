@@ -7,6 +7,7 @@
   "scripts": {
     "test": "node tests/test-suite.js",
     "check-staleness": "node scripts/check-staleness.js",
-    "encrypt": "node scripts/encrypt.js"
+    "encrypt": "node scripts/encrypt.js",
+    "build:builder": "node scripts/build-builder.js"
   }
 }

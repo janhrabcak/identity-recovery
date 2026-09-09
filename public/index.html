@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none';">
-  <meta name="vault-generated-at" content="2026-09-02T07:18:48.955Z">
+  <meta name="vault-generated-at" content="">
   <meta name="vault-stale-after-months" content="6">
   <meta name="recovery-dns-domain" content="recovery.yourdomain.com">
   <title>SOS Recovery Protocol | Cold-Start Identity Recovery</title>
@@ -1813,7 +1813,7 @@ var qrcodegen;
      */
 
     // Embedded ciphertext placeholder: replaced during ingestion by `encrypt.js --embed-html`
-    const EMBEDDED_CIPHERTEXT = "SZZE4GwWbrmJPW0fQBU0ivfOgFYnuPElmWotUz1LnPiPo9sGnuaPHxkxOrEqK1xr+UxHn9+mdFKMURlg0SYQnvsdhZe8Ks6i07f5zBkzEt88ysNa3taxzGeWVPAcyjkgqpoRVySY0JJNLEeDhh8sUAb3vYN8DTVEBmVTmDIwhiPAfL/GpIbwYeaosAqx8/nV5CqKUBtC6wuPaRDkHxBhEaqmSB0jOP69lXjSvB3sj9NI/JexRJw/ZSFD/c709JR8oqBwgihBtlhKqTyLRdS/E1P3RN6D22vSvRA/z54W1C4+GgYIamN7VI5AllMxGccsPjgJqAAu0s8enW6/6dj7E6kgSAju4NzVYZF1B9cIBtm43CVnbl3nEXAPBfmw4JH0eQdW/oxNbvScwkN0TjgOXjjDKaYIiEBTxawZP5Lg+VMJNALLBjqfGVO/kkFcFN0BefS78ys32vFCb6ummEUO3OXmuuDFIhBawa3tD8CMOPGvJV1ymDH9RvOKRiQUEy/XAKXay2sftcElKiPwEqJUJscdeM7FSiLlSdeX1unE9xgMjQhS8ddl2gT3PX/C1wB7BYuiQ/qCfDBlsH3/nmmaO4nbFBS2laHwbNS6Ld8xgQqHGzO5Yk+rYqEJG8FJ+PahzzocXC/IoxCK8lDQioD2McViCIkQwxxJA+nJ49Mvu8hXy4id6GC82jl81Y9MB4RZaz+OMi9NtyEKfnqymoLBUoetbqPNBNyPPcbtI/Fj4VeG7ZxPCd5Kpe+sABhx6b9YVqnITWgTfADbshv3SkPCsAD2G+X11OkPX2PKpy6E+TNP+QdCI2DDOAUIOJgJ+BmOXNHkcJquLCYqAJEn657txrstqwzFLAiP+qHWSGtSws1zyicoo6ubsd4enUUnPRnRpgoTPaO+9DP8dSfAo9956bpZaqtd5UI=";
+    const EMBEDDED_CIPHERTEXT = "";
 
     const PBKDF2_ITERATIONS = 600000;
     const SALT_BYTES = 16;
@@ -1886,6 +1886,12 @@ var qrcodegen;
       const textarea = document.getElementById("ciphertext-input");
       if (EMBEDDED_CIPHERTEXT && EMBEDDED_CIPHERTEXT.length > 0) {
         textarea.value = EMBEDDED_CIPHERTEXT;
+      } else {
+        // In template mode (no embedded ciphertext), auto-expand alternative payload input
+        const customContainer = document.getElementById("custom-payload-container");
+        const toggleBtn = document.getElementById("toggle-custom-payload-btn");
+        if (customContainer) customContainer.classList.remove("hidden");
+        if (toggleBtn) toggleBtn.textContent = "Hide alternative payload";
       }
       const dnsBtn = document.getElementById("fetch-dns-btn");
       if (dnsBtn && RECOVERY_DNS_DOMAIN) {

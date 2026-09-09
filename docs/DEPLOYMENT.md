@@ -12,7 +12,7 @@ Cloudflare Pages is the optimal hosting platform for this protocol because:
 - Automatically provisions and renews SSL/TLS certificates.
 - Natively parses and applies HTTP response headers from [`public/_headers`](../public/_headers).
 
-### Step-by-Step Setup
+### Method A: Connect to Git (Automated CI/CD)
 
 1. Push your repository to a **private** GitHub repository.
 2. Log in to the [Cloudflare Dashboard](https://dash.cloudflare.com/) and navigate to:
@@ -25,7 +25,33 @@ Cloudflare Pages is the optimal hosting platform for this protocol because:
 5. Click **Save and Deploy**. Your site will be live at `https://identity-recovery.pages.dev`.
 
 > [!WARNING]
-> **Build Output Directory:** You must set the output directory strictly to `public`. Setting it to `.` will expose your private `scripts/` directory and bypass the `_headers` Content Security Policy rules!
+> **Build Output Directory:** You must set the output directory strictly to `public`. Setting it to `.` will expose your private `scripts/` and `tools/` directories and bypass the `_headers` Content Security Policy rules!
+
+### Method B: Automated Direct Upload via Wrangler (Zero Git Secrets — Recommended)
+
+If you keep this repository **public** as an open-source tool, you should never commit your encrypted ciphertext into Git. Instead, `deploy.sh` can deploy directly to Cloudflare Pages edge:
+
+1. In the [Cloudflare Dashboard](https://dash.cloudflare.com/), navigate to:
+   **Workers & Pages** → **Create application** → **Pages** → **Direct Upload**.
+2. Name your project (e.g. `my-recovery-vault`) and complete initial creation.
+3. Configure your local `.env`:
+   ```bash
+   CLOUDFLARE_PAGES_PROJECT=my-recovery-vault
+   CLOUDFLARE_API_TOKEN=your_api_token_here
+   CLOUDFLARE_ACCOUNT_ID=your_account_id_here
+   ```
+4. Run the automated deployment script:
+   ```bash
+   ./scripts/deploy.sh payload.json
+   ```
+5. **Result:** `deploy.sh` encrypts your payload in an isolated temporary staging directory, uploads directly to Cloudflare Pages edge via Wrangler, shreds your plaintext `payload.json`, and leaves `public/index.html` in Git 100% clean with zero secrets!
+
+### Method C: Manual Drag-and-Drop Direct Upload
+
+If you compiled your vault via the offline web builder (`tools/builder.html`), you can deploy directly via the browser:
+1. Place your downloaded `index.html` and `public/_headers` into a folder.
+2. In Cloudflare Pages → your project → **Deployments** → **Create deployment**.
+3. Drag and drop the folder into the upload zone.
 
 ---
 
@@ -67,14 +93,17 @@ You can automate secondary dead-drop updates during every run of `scripts/deploy
 
 ### Manual DNS Record Configuration
 
-If you do not want to use the Cloudflare API, add the record manually in your DNS provider:
+If you do not want to use the Cloudflare API (or if you are using the offline web builder `tools/builder.html`), add the record manually in your DNS provider:
 
-| Field | Value |
-|---|---|
-| **Type** | `TXT` |
-| **Name** | `recovery.yourdomain.com` (or `@` if using root) |
-| **TTL** | `120` (or 2 minutes) |
-| **Content** | `"<base64-ciphertext>"` |
+| Field | Value | Notes |
+|---|---|---|
+| **Type** | `TXT` | Standard text record |
+| **Name** | `recovery.yourdomain.com` (or `@` if using root) | Your configured `RECOVERY_DOMAIN` |
+| **TTL** | `120` (or 2 minutes) | Low TTL ensures rapid rotation propagation |
+| **Content** | `"<base64-ciphertext>"` | Base64 string produced by `builder.html` or `encrypt.js` |
+
+> [!TIP]
+> When using `tools/builder.html`, the deployment summary screen automatically formats this exact table with **1-click Copy** buttons for each field, making manual DNS updates instantaneous.
 
 ### Querying the Dead-Drop
 

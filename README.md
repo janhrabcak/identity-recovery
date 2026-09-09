@@ -14,7 +14,7 @@ Stateless, zero-hardware emergency credential recovery protocol designed to rest
 
 | Dimension | Indicator | Operational Guarantee |
 |---|---|---|
-| **Cryptographic Parity** | `🟢 16/16 Passed` | Node.js WebCrypto $\leftrightarrow$ Browser WebCrypto end-to-end verified |
+| **Cryptographic Parity** | `🟢 17/17 Passed` | Node.js WebCrypto $\leftrightarrow$ Browser WebCrypto end-to-end verified |
 | **Supply Chain Risk** | `🟢 0 Dependencies` | Pure Node.js standard libraries & browser-native APIs (zero npm attack surface) |
 | **Edge Header Security** | `🟢 Hardened` | Strict CSP (`default-src 'none'`), `no-store` cache control, anti-clickjacking (`DENY`) |
 | **Vault Freshness** | `🟢 Automated` | Bi-monthly GitHub Actions audit + multi-channel push alerts (ntfy/Discord/Slack) |
@@ -40,14 +40,19 @@ Stateless, zero-hardware emergency credential recovery protocol designed to rest
 
 ```text
 [Trusted Local Machine]
-   payload.json + 6-word Passphrase
+   Credentials + 6-word Passphrase
          |
-         v
-   ./scripts/deploy.sh (PBKDF2-600k + AES-GCM-256)
+         +---> Option A: tools/builder.html (Offline WebCrypto GUI)
+         |        |
+         |        +---> Generates & downloads hardened index.html
+         |        +---> Deploys to Cloudflare Pages (Direct Upload or Git)
+         |        +---> Copies Base64 ciphertext for DNS TXT dead-drop
          |
-         +---> public/index.html (Pushed to Cloudflare Edge)
-         +---> DNS TXT Dead-Drop (Synced via Cloudflare API)
-         +---> Shreds plaintext payload.json (3 passes + zero-fill)
+         +---> Option B: ./scripts/deploy.sh (Automated CLI Pipeline)
+                  |
+                  +---> public/index.html (Pushed to Cloudflare Edge)
+                  +---> DNS TXT Dead-Drop (Synced via Cloudflare API)
+                  +---> Shreds plaintext payload.json (3 passes + zero-fill)
 
 [Untrusted Kiosk / Disaster Device]
    1. Visit https://sos.<yourdomain>.com (or query DNS TXT)
@@ -78,16 +83,25 @@ cp .env.example .env
 ```
 
 ### 3. Prepare Credentials & Deploy
+
+#### Option A: Offline Web Builder (No Node.js/Terminal Needed)
+Simply double-click or open `tools/builder.html` in your web browser:
+1. Enter your credentials or load from `templates/sample-payload.json`.
+2. Generate or enter your 6-word Diceware passphrase.
+3. Click **Encrypt & Build Recovery Terminal** and download `index.html`.
+4. Follow the on-screen manual instructions to update Cloudflare Pages and your DNS TXT record.
+
+#### Option B: Hardened CLI Pipeline
 ```bash
 # Generate a clean starting schema:
 node scripts/encrypt.js --sample fresh
 cp templates/sample-payload.json payload.json
 # Edit payload.json with your real secrets
 
-# Run the hardened automated deployment pipeline:
+# Run the automated deployment pipeline:
 ./scripts/deploy.sh payload.json
 ```
-The script will prompt for your 6-word passphrase, verify entropy, run 16 automated tests, commit strictly `public/index.html`, push to `main`, and securely shred `payload.json`.
+The script will prompt for your 6-word passphrase, verify entropy, run 17 automated tests, commit strictly `public/index.html`, push to `main`, and securely shred `payload.json`.
 
 ### 4. Connect Cloudflare Pages (Free)
 1. In Cloudflare Dashboard: **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**.
@@ -115,7 +129,11 @@ identity-recovery/
 │   ├── index.html                # Recovery terminal UI (contains encrypted ciphertext)
 │   └── _headers                  # Strict HTTP security headers (CSP, HSTS, no-store)
 │
+├── tools/                        # 🖥️ Offline client-side browser tools
+│   └── builder.html              # Standalone web builder to generate index.html offline
+│
 ├── scripts/                      # 🛠️ Private offline tooling (trusted machine only)
+│   ├── build-builder.js          # Generator script to refresh tools/builder.html
 │   ├── deploy.sh                 # 7-step rotation, verification, and publish pipeline
 │   ├── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
 │   └── check-staleness.js        # Zero-knowledge staleness evaluator for CI/alerts

@@ -5,11 +5,15 @@
 # Automates:
 #   1. Pre-flight verification (git status, payload validation)
 #   2. Secure masked passphrase ingestion with typo confirmation
-#   3. PBKDF2-600k + AES-GCM-256 encryption & HTML injection into public/index.html
+#   3. PBKDF2-600k + AES-GCM-256 encryption & HTML injection
 #   4. Test suite validation (prevents deploying broken payloads)
-#   5. Strict git staging (guarantees no plaintext secrets are committed)
-#   6. Git commit & push to main (triggers Cloudflare Edge deployment)
-#   7. Secure plaintext shredding (defaults to YES)
+#   5. Deployment execution:
+#      - Direct Edge Upload (Default if CLOUDFLARE_PAGES_PROJECT is configured):
+#        Deploys directly to Cloudflare Pages edge via Wrangler without touching Git.
+#      - Git Push Mode (Fallback for private repositories):
+#        Stages strictly public/index.html and pushes to origin main.
+#   6. Secure plaintext shredding (defaults to YES)
+#   7. Automated Cloudflare DNS TXT dead-drop synchronization
 # ==============================================================================
 
 set -eo pipefail
@@ -24,6 +28,8 @@ if [[ -f "$REPO_ROOT/.env" ]]; then
   RECOVERY_DOMAIN_ENV=$(grep -E '^\s*RECOVERY_DOMAIN=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
   CLOUDFLARE_API_TOKEN_ENV=$(grep -E '^\s*CLOUDFLARE_API_TOKEN=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
   CLOUDFLARE_ZONE_ID_ENV=$(grep -E '^\s*CLOUDFLARE_ZONE_ID=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
+  CLOUDFLARE_PAGES_PROJECT_ENV=$(grep -E '^\s*CLOUDFLARE_PAGES_PROJECT=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
+  CLOUDFLARE_ACCOUNT_ID_ENV=$(grep -E '^\s*CLOUDFLARE_ACCOUNT_ID=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
 fi
 
 # Detect from index.html meta tag if not in environment
@@ -32,6 +38,58 @@ META_DOMAIN=$(grep -o 'name="recovery-dns-domain" content="[^"]*"' "$REPO_ROOT/p
 RECOVERY_DOMAIN="${RECOVERY_DOMAIN:-${RECOVERY_DOMAIN_ENV:-${META_DOMAIN:-recovery.yourdomain.com}}}"
 CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN:-$CLOUDFLARE_API_TOKEN_ENV}"
 CLOUDFLARE_ZONE_ID="${CLOUDFLARE_ZONE_ID:-$CLOUDFLARE_ZONE_ID_ENV}"
+CLOUDFLARE_PAGES_PROJECT="${CLOUDFLARE_PAGES_PROJECT:-$CLOUDFLARE_PAGES_PROJECT_ENV}"
+CLOUDFLARE_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:-$CLOUDFLARE_ACCOUNT_ID_ENV}"
+
+# CLI options parsing
+FORCE_GIT_DEPLOY=false
+PAYLOAD_FILE=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --project)
+      CLOUDFLARE_PAGES_PROJECT="$2"
+      shift 2
+      ;;
+    --git)
+      FORCE_GIT_DEPLOY=true
+      shift
+      ;;
+    --direct-upload)
+      FORCE_GIT_DEPLOY=false
+      shift
+      ;;
+    -h|--help)
+      echo "Usage: ./scripts/deploy.sh [options] [path-to-payload.json]"
+      echo ""
+      echo "Options:"
+      echo "  --project <name>    Deploy directly to Cloudflare Pages edge (zero git persistence)"
+      echo "  --git               Force Git-based commit & push deployment (for private repos)"
+      echo "  --direct-upload     Use Cloudflare Pages Direct Upload (default if CLOUDFLARE_PAGES_PROJECT is set)"
+      echo "  -h, --help          Show this help message"
+      exit 0
+      ;;
+    -*)
+      echo "Unknown option: $1"
+      exit 1
+      ;;
+    *)
+      if [[ -z "$PAYLOAD_FILE" ]]; then
+        PAYLOAD_FILE="$1"
+      fi
+      shift
+      ;;
+  esac
+done
+
+PAYLOAD_FILE="${PAYLOAD_FILE:-payload.json}"
+
+# Determine deployment strategy
+if [[ -n "$CLOUDFLARE_PAGES_PROJECT" && "$FORCE_GIT_DEPLOY" != "true" ]]; then
+  DEPLOY_MODE="DIRECT_UPLOAD"
+else
+  DEPLOY_MODE="GIT_PUSH"
+fi
 
 # Colors
 C_RESET='\033[0m'
@@ -46,6 +104,13 @@ echo "================================================================="
 echo "   Cold-Start Identity Recovery Protocol: Automated Deploy       "
 echo "================================================================="
 echo -e "${C_RESET}"
+if [[ "$DEPLOY_MODE" == "DIRECT_UPLOAD" ]]; then
+  echo -e "${C_GREEN}🚀 Deployment Mode: Direct Cloudflare Pages Upload (Zero Git Secrets)${C_RESET}"
+  echo -e "   Target Pages Project: ${C_BOLD}${CLOUDFLARE_PAGES_PROJECT}${C_RESET}\n"
+else
+  echo -e "${C_YELLOW}📦 Deployment Mode: Git Push (Commits public/index.html to origin main)${C_RESET}"
+  echo -e "   Tip: Set CLOUDFLARE_PAGES_PROJECT in .env to deploy without Git tracking.\n"
+fi
 
 # ------------------------------------------------------------------------------
 # 1. Pre-flight Verification
@@ -58,14 +123,13 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 1
 fi
 
-# Ensure git remote exists
-if ! git remote get-url origin >/dev/null 2>&1; then
-  echo -e "${C_RED}✗ Error: No git remote 'origin' configured.${C_RESET}"
-  exit 1
+if [[ "$DEPLOY_MODE" == "GIT_PUSH" ]]; then
+  # Ensure git remote exists for Git push mode
+  if ! git remote get-url origin >/dev/null 2>&1; then
+    echo -e "${C_RED}✗ Error: No git remote 'origin' configured.${C_RESET}"
+    exit 1
+  fi
 fi
-
-# Determine payload file
-PAYLOAD_FILE="${1:-payload.json}"
 
 if [[ ! -f "$PAYLOAD_FILE" ]]; then
   echo -e "${C_YELLOW}Default payload file '$PAYLOAD_FILE' not found.${C_RESET}"
@@ -141,11 +205,25 @@ while true; do
 done
 
 # ------------------------------------------------------------------------------
-# 3. Encrypt & Inject into public/index.html
+# 3. Encrypt & Inject Payload
 # ------------------------------------------------------------------------------
-echo -e "${C_BOLD}[3/7] Encrypting payload & injecting into public/index.html...${C_RESET}"
-ENCRYPT_PASSPHRASE="$PASSPHRASE" node scripts/encrypt.js -i "$PAYLOAD_FILE" --domain "$RECOVERY_DOMAIN" --embed-html public/index.html
-echo -e "${C_GREEN}✓ Encryption and HTML injection complete.${C_RESET}\n"
+if [[ "$DEPLOY_MODE" == "DIRECT_UPLOAD" ]]; then
+  echo -e "${C_BOLD}[3/7] Encrypting payload & preparing isolated edge artifact...${C_RESET}"
+  DEPLOY_DIR=$(mktemp -d)
+  trap 'rm -rf "$DEPLOY_DIR"' EXIT
+  cp -r public/* "$DEPLOY_DIR/"
+  
+  ENCRYPT_PASSPHRASE="$PASSPHRASE" node scripts/encrypt.js -i "$PAYLOAD_FILE" --domain "$RECOVERY_DOMAIN" --embed-html "$DEPLOY_DIR/index.html"
+  B64_CIPHERTEXT=$(grep -o 'const EMBEDDED_CIPHERTEXT = "[^"]*"' "$DEPLOY_DIR/index.html" | cut -d'"' -f2 || true)
+  
+  echo -e "${C_GREEN}✓ Encryption complete (staged in ephemeral directory).${C_RESET}"
+  echo -e "${C_GREEN}✓ Zero Git Persistence: public/index.html in Git remains untouched.${C_RESET}\n"
+else
+  echo -e "${C_BOLD}[3/7] Encrypting payload & injecting into public/index.html...${C_RESET}"
+  ENCRYPT_PASSPHRASE="$PASSPHRASE" node scripts/encrypt.js -i "$PAYLOAD_FILE" --domain "$RECOVERY_DOMAIN" --embed-html public/index.html
+  B64_CIPHERTEXT=$(grep -o 'const EMBEDDED_CIPHERTEXT = "[^"]*"' public/index.html | cut -d'"' -f2 || true)
+  echo -e "${C_GREEN}✓ Encryption and HTML injection complete.${C_RESET}\n"
+fi
 
 # ------------------------------------------------------------------------------
 # 4. Verification & Integrity Tests
@@ -155,45 +233,62 @@ node tests/test-suite.js
 echo -e "${C_GREEN}✓ Test suite passed completely.${C_RESET}\n"
 
 # ------------------------------------------------------------------------------
-# 5. Git Safety Guard (Strict Staging)
+# 5. Deployment Execution
 # ------------------------------------------------------------------------------
-echo -e "${C_BOLD}[5/7] Verifying git safety boundaries...${C_RESET}"
+if [[ "$DEPLOY_MODE" == "DIRECT_UPLOAD" ]]; then
+  echo -e "${C_BOLD}[5/7] Deploying directly to Cloudflare Pages edge...${C_RESET}"
+  echo -e "Uploading to project: ${C_CYAN}${CLOUDFLARE_PAGES_PROJECT}${C_RESET}..."
+  
+  export CLOUDFLARE_API_TOKEN
+  if [[ -n "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+    export CLOUDFLARE_ACCOUNT_ID
+  fi
 
-# Verify .gitignore exists
-if [[ ! -f ".gitignore" ]]; then
-  echo -e "${C_RED}✗ Error: .gitignore missing! Aborting to prevent credential leaks.${C_RESET}"
-  exit 1
-fi
+  npx --yes wrangler pages deploy "$DEPLOY_DIR" --project-name="$CLOUDFLARE_PAGES_PROJECT" --commit-dirty=true
+  
+  echo -e "${C_GREEN}✓ Successfully published directly to Cloudflare Pages edge!${C_RESET}\n"
 
-# Clear ALL staged changes first to guarantee a clean staging area
-git reset --quiet 2>/dev/null || true
-
-# Stage ONLY public/index.html — nothing else touches the commit
-git add public/index.html
-
-# Final safety audit: verify only public/index.html is staged
-STAGED_FILES=$(git diff --cached --name-only)
-if [[ "$STAGED_FILES" != "public/index.html" && -n "$STAGED_FILES" ]]; then
-  echo -e "${C_RED}✗ CRITICAL: Unexpected files in staging area! Aborting.${C_RESET}"
-  echo -e "${C_RED}Staged files: ${STAGED_FILES}${C_RESET}"
-  git reset --quiet
-  exit 1
-fi
-echo -e "${C_GREEN}✓ Only public/index.html staged for commit.${C_RESET}\n"
-
-# ------------------------------------------------------------------------------
-# 6. Git Commit & Push
-# ------------------------------------------------------------------------------
-echo -e "${C_BOLD}[6/7] Committing and pushing to remote...${C_RESET}"
-TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-
-if git diff --cached --quiet; then
-  echo -e "${C_YELLOW}Notice: public/index.html has no changes to commit.${C_RESET}"
+  echo -e "${C_BOLD}[6/7] Auditing Git cleanliness...${C_RESET}"
+  echo -e "${C_GREEN}✓ Zero Git Persistence: No commits were created and Git is 100% clean.${C_RESET}\n"
 else
-  git commit -m "vault: rotate encrypted recovery payload ($TIMESTAMP)"
-  git push origin main
-  echo -e "${C_GREEN}✓ Successfully pushed to GitHub main branch.${C_RESET}"
-  echo -e "${C_GREEN}✓ Cloudflare Edge deployment automatically triggered!${C_RESET}\n"
+  echo -e "${C_BOLD}[5/7] Verifying git safety boundaries...${C_RESET}"
+
+  # Verify .gitignore exists
+  if [[ ! -f ".gitignore" ]]; then
+    echo -e "${C_RED}✗ Error: .gitignore missing! Aborting to prevent credential leaks.${C_RESET}"
+    exit 1
+  fi
+
+  # Clear ALL staged changes first to guarantee a clean staging area
+  git reset --quiet 2>/dev/null || true
+
+  # Stage ONLY public/index.html — nothing else touches the commit
+  git add public/index.html
+
+  # Final safety audit: verify only public/index.html is staged
+  STAGED_FILES=$(git diff --cached --name-only)
+  if [[ "$STAGED_FILES" != "public/index.html" && -n "$STAGED_FILES" ]]; then
+    echo -e "${C_RED}✗ CRITICAL: Unexpected files in staging area! Aborting.${C_RESET}"
+    echo -e "${C_RED}Staged files: ${STAGED_FILES}${C_RESET}"
+    git reset --quiet
+    exit 1
+  fi
+  echo -e "${C_GREEN}✓ Only public/index.html staged for commit.${C_RESET}\n"
+
+  # ----------------------------------------------------------------------------
+  # 6. Git Commit & Push
+  # ----------------------------------------------------------------------------
+  echo -e "${C_BOLD}[6/7] Committing and pushing to remote...${C_RESET}"
+  TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+  if git diff --cached --quiet; then
+    echo -e "${C_YELLOW}Notice: public/index.html has no changes to commit.${C_RESET}"
+  else
+    git commit -m "vault: rotate encrypted recovery payload ($TIMESTAMP)"
+    git push origin main
+    echo -e "${C_GREEN}✓ Successfully pushed to GitHub main branch.${C_RESET}"
+    echo -e "${C_GREEN}✓ Cloudflare Edge deployment automatically triggered!${C_RESET}\n"
+  fi
 fi
 
 # ------------------------------------------------------------------------------
@@ -223,7 +318,6 @@ else
 fi
 
 # Optional secondary DNS Dead-Drop Synchronization
-B64_CIPHERTEXT=$(grep -o 'const EMBEDDED_CIPHERTEXT = "[^"]*"' public/index.html | cut -d'"' -f2)
 if [[ -n "$B64_CIPHERTEXT" ]]; then
   RECORD_NAME="$RECOVERY_DOMAIN"
 

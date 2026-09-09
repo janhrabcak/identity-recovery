@@ -61,3 +61,13 @@
 - Strips out all interactive buttons, inputs, and dark backgrounds.
 - Used codes retain their strikethrough and receive explicit `[USED]` stamps.
 - Triggerable via the `🖨️ Print Sheet` button or standard `Ctrl+P`.
+
+---
+
+## 9. 🛠️ Standalone Offline Vault Compiler (`tools/builder.html`)
+- **100% In-Browser WebCrypto:** Encrypts `payload.json` or interactive form fields using `window.crypto.subtle` with 600,000 PBKDF2 rounds and AES-GCM-256.
+- **Strict Zero-Network CSP:** Configured with `default-src 'none'`, ensuring your credentials can never be leaked to any server.
+- **Embedded Diceware Engine:** Generates high-entropy 6-word phrases using `crypto.getRandomValues` and a curated dictionary, with live entropy indicators (words, characters, unique count).
+- **Intelligent Input Parsing:** Auto-cleans and counts pasted Google backup codes, handles dynamic TOTP account seeds, and imports/exports schema JSON files.
+- **Pre-Flight In-Memory Verification:** Cryptographically tests decryption against the canary code in memory before allowing download.
+- **Interactive Deployment & DNS Card:** Pre-computes and displays your Cloudflare DNS TXT record with 1-click copy buttons for Host, TTL, and Base64 ciphertext.

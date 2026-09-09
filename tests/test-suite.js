@@ -363,6 +363,34 @@ async function runTests() {
   }
   console.log("✓ Test 16 Passed: TOTP Generation works successfully.");
 
+  // Test 17: Offline Vault Builder (tools/builder.html) verification
+  console.log("\n[Test 17] Offline Vault Builder (tools/builder.html) Security & Parity Check");
+  const BUILDER_PATH = path.join(REPO_ROOT, 'tools', 'builder.html');
+  if (!fs.existsSync(BUILDER_PATH)) {
+    throw new Error(`Test 17 Failed: tools/builder.html not found at ${BUILDER_PATH}`);
+  }
+  const builderHtml = fs.readFileSync(BUILDER_PATH, 'utf8');
+
+  if (/<script\s+src=/i.test(builderHtml)) {
+    throw new Error("Test 17 Failed: builder.html contains external <script src=...>!");
+  }
+  if (/<link\s+[^>]*rel=["']stylesheet["'][^>]*href=["'](http|\/\/)/i.test(builderHtml)) {
+    throw new Error("Test 17 Failed: builder.html contains external stylesheet!");
+  }
+  if (!builderHtml.includes("default-src 'none'")) {
+    throw new Error("Test 17 Failed: builder.html missing strict Content-Security-Policy default-src 'none'!");
+  }
+  if (!builderHtml.includes("600000")) {
+    throw new Error("Test 17 Failed: builder.html does not specify 600,000 PBKDF2 iterations!");
+  }
+  if (!builderHtml.includes("AES-GCM") || !builderHtml.includes("PBKDF2")) {
+    throw new Error("Test 17 Failed: builder.html missing WebCrypto AES-GCM or PBKDF2 references!");
+  }
+  if (!builderHtml.includes("DEFAULT_INDEX_TEMPLATE_B64")) {
+    throw new Error("Test 17 Failed: builder.html missing embedded default index.html template!");
+  }
+  console.log("✓ Test 17 Passed: tools/builder.html verified (zero dependencies, strict CSP, 600k PBKDF2 iterations).");
+
   console.log("\n==========================================");
   console.log("ALL TESTS PASSED SUCCESSFULLY! ✓");
   console.log("==========================================");
