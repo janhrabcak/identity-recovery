@@ -424,7 +424,33 @@ async function runTests() {
   if (!netlifyToml.includes('X-Frame-Options = "DENY"')) {
     throw new Error("Test 18 Failed: netlify.toml missing X-Frame-Options = \"DENY\"!");
   }
-  console.log("✓ Test 18 Passed: Multi-provider security headers verified across Cloudflare, Vercel, and Netlify.");
+
+  // Verify Modular Provider Registry & Dynamic Command Generation
+  const { providers, listProviders, getProvider } = await import('../scripts/providers/index.js');
+  const providerList = listProviders();
+  const providerIds = providerList.map(p => p.id);
+  for (const expected of ['cloudflare', 'netlify', 'vercel', 'github-pages']) {
+    if (!providerIds.includes(expected)) {
+      throw new Error(`Test 18 Failed: Modular registry missing provider '${expected}'!`);
+    }
+  }
+
+  const cfCmd = getProvider('cloudflare').getDeployCommand('site', { project: 'test-proj', branch: 'main' });
+  if (!cfCmd.includes('wrangler') || !cfCmd.includes('test-proj')) {
+    throw new Error("Test 18 Failed: Cloudflare deploy command generator failed!");
+  }
+
+  const netlifyCmd = getProvider('netlify').getDeployCommand('site', { site: 'test-site', auth: 'test-token' });
+  if (!netlifyCmd.includes('netlify-cli') || !netlifyCmd.includes('test-site')) {
+    throw new Error("Test 18 Failed: Netlify deploy command generator failed!");
+  }
+
+  const vercelCmd = getProvider('vercel').getDeployCommand('site', { token: 'test-token' });
+  if (!vercelCmd.includes('vercel') || !vercelCmd.includes('test-token')) {
+    throw new Error("Test 18 Failed: Vercel deploy command generator failed!");
+  }
+
+  console.log("✓ Test 18 Passed: Multi-provider security headers and modular provider registry verified.");
 
   // Test 19: Modular Credential Card Architecture & Normalization Parity
   console.log("\n[Test 19] Modular Credential Card Architecture & Normalization Parity");
@@ -620,7 +646,36 @@ async function runTests() {
     throw new Error("Test 20 Failed: Missing LICENSE or SECURITY.md in repo root!");
   }
 
-  console.log("✓ Test 20 Passed: Public product hub (site/), GitHub Pages (docs/), and repository trust assets verified.");
+  // Verify Cloudflare Pages configuration & deployment tooling for idrecoverykit.com
+  const SITE_REDIRECTS_PATH = path.join(REPO_ROOT, 'site', '_redirects');
+  if (!fs.existsSync(SITE_REDIRECTS_PATH)) {
+    throw new Error("Test 20 Failed: site/_redirects not found! Run npm run build:site.");
+  }
+  const siteRedirects = fs.readFileSync(SITE_REDIRECTS_PATH, 'utf8');
+  if (!siteRedirects.includes("idrecoverykit.com")) {
+    throw new Error("Test 20 Failed: site/_redirects missing canonical redirect rule!");
+  }
+
+  const WRANGLER_CONFIG_PATH = path.join(REPO_ROOT, 'wrangler.toml');
+  if (!fs.existsSync(WRANGLER_CONFIG_PATH)) {
+    throw new Error("Test 20 Failed: wrangler.toml missing!");
+  }
+  const wranglerConfig = fs.readFileSync(WRANGLER_CONFIG_PATH, 'utf8');
+  if (!wranglerConfig.includes("pages_build_output_dir") || !wranglerConfig.includes("idrecoverykit")) {
+    throw new Error("Test 20 Failed: wrangler.toml missing pages_build_output_dir or project name!");
+  }
+
+  const DEPLOY_SITE_SCRIPT = path.join(REPO_ROOT, 'scripts', 'deploy-site.sh');
+  if (!fs.existsSync(DEPLOY_SITE_SCRIPT)) {
+    throw new Error("Test 20 Failed: scripts/deploy-site.sh missing!");
+  }
+
+  const DEPLOY_SITE_WORKFLOW = path.join(REPO_ROOT, '.github', 'workflows', 'deploy-site.yml');
+  if (!fs.existsSync(DEPLOY_SITE_WORKFLOW)) {
+    throw new Error("Test 20 Failed: .github/workflows/deploy-site.yml missing!");
+  }
+
+  console.log("✓ Test 20 Passed: Public product hub (site/), Cloudflare Pages configuration, GitHub Pages (docs/), and repository trust assets verified.");
 }
 
 runTests().catch(err => {

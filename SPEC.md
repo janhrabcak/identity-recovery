@@ -18,7 +18,7 @@
 ### 2.2 Repository Organization
 ```text
 identity-recovery/
-├── public/                       # 🌐 Public edge deployment (Cloudflare Pages / Workers)
+├── public/                       # 🌐 Public edge deployment (Cloudflare Pages / Workers / Netlify / Vercel)
 │   ├── index.html                # Recovery terminal client (contains encrypted ciphertext)
 │   └── _headers                  # HTTP security headers (CSP, HSTS, no-store, anti-clickjacking)
 │
@@ -27,16 +27,20 @@ identity-recovery/
 │
 ├── scripts/                      # 🛠️ Private offline tools (runs on trusted machine only)
 │   ├── build-builder.js          # Generator script to refresh tools/builder.html
-│   ├── deploy.sh                 # Hardened 7-step rotation & publish pipeline
+│   ├── build-site.js             # Generator script to sync site/app and edge headers
+│   ├── deploy.sh                 # Hardened 7-step rotation & publish pipeline (Direct Upload or Git)
+│   ├── deploy-site.sh            # Modular web platform deployment script (idrecoverykit.com)
 │   ├── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
-│   └── check-staleness.js        # Zero-knowledge staleness evaluator for CI
+│   ├── check-staleness.js        # Zero-knowledge staleness evaluator for CI
+│   └── providers/                # 🔌 Pluggable hosting provider framework (Cloudflare, Netlify, Vercel, etc.)
 │
 ├── .github/workflows/            # ⏰ CI & scheduled monitoring
 │   ├── ci.yml                    # Automated matrix CI testing (Node 18, 20, 22)
+│   ├── deploy-site.yml           # Automated web platform deployment to Cloudflare Pages
 │   └── staleness-check.yml       # Monthly automated staleness alert workflow
 │
 ├── docs/                         # 📖 In-depth guides
-│   ├── DEPLOYMENT.md             # Cloudflare Pages & DNS setup
+│   ├── DEPLOYMENT.md             # Cloudflare Pages, Netlify, Vercel, Caddy, Nginx & DNS setup
 │   ├── CLI_REFERENCE.md          # Manual CLI flags & offline workflow
 │   └── FEATURES.md               # UI features (TOTP, QR, panic keybind)
 │
@@ -44,6 +48,8 @@ identity-recovery/
 │   ├── index.html                # Project landing page & documentation hub
 │   ├── app/index.html            # Hosted web vault builder (synced from tools/builder.html)
 │   ├── _headers                  # Cloudflare/Netlify edge headers & app no-store rules
+│   ├── _redirects                # Canonical www to apex domain redirects
+│   ├── netlify.toml              # Netlify edge security header configuration
 │   └── vercel.json               # Vercel edge headers & app no-store rules
 │
 ├── templates/                    # 📋 Safe dummy templates
@@ -52,6 +58,7 @@ identity-recovery/
 ├── tests/                        # 🧪 Verification suite
 │   └── test-suite.js             # Automated crypto & parity tests (20 automated tests)
 │
+├── wrangler.toml                 # Cloudflare Pages configuration
 ├── vercel.json                   # Vercel edge security header configuration
 ├── netlify.toml                  # Netlify edge security header configuration
 ├── .env.example                  # Environment configuration template (RECOVERY_DOMAIN)
@@ -265,14 +272,16 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
   - `--decrypt <base64>`: Decrypts and outputs formatted JSON to verify payload integrity offline.
 
 ### 5.2 Automated Deployment Script (`scripts/deploy.sh`)
-Hardened Bash orchestration script for rotation and production publishing:
+Hardened Bash orchestration script for rotation and multi-provider production publishing:
 1. **Pre-flight Checks:** Validates git repository, remote connectivity, and payload schema completeness.
 2. **Passphrase Ingestion:** Prompts for Diceware passphrase with masked input, verifies $\ge 6$ Diceware words via `evaluatePassphraseEntropy`, and confirms input to prevent typos.
-3. **Encryption & HTML Embedding:** Invokes `scripts/encrypt.js` to derive PBKDF2-600k keys and inject the Base64 ciphertext into `public/index.html`.
-4. **Pre-Deploy Verification:** Executes `tests/test-suite.js` to guarantee cryptographic and runtime validity before staging.
-5. **Git Safety Guard:** Audits git staging area to prevent accidental credential leaks; stages strictly `public/index.html`.
-6. **Commit & Push:** Commits with UTC timestamp and pushes to `origin main`, triggering Cloudflare Anycast edge deployment.
-7. **Plaintext Destruction & Automated DNS Sync:** Securely shreds and unlinks the plaintext payload file using `shred -u -z -n 3` (3-pass random overwrite + zero fill, defaulting to **Yes**), and automatically synchronizes the secondary DNS TXT dead-drop via Cloudflare API v4 (`PUT`/`POST` to `/zones/:id/dns_records` with 120s TTL) if `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ZONE_ID` are set, or prints manual instructions.
+3. **Encryption & HTML Embedding:** Invokes `scripts/encrypt.js` to derive PBKDF2-600k keys and inject the Base64 ciphertext into `public/index.html` (or ephemeral staging directory).
+4. **Pre-Deploy Verification:** Executes `tests/test-suite.js` to guarantee cryptographic and runtime validity before deployment.
+5. **Deployment Execution:**
+   - **Direct Edge Upload Mode (Zero Git Secrets):** Deploys directly to Cloudflare Pages, Netlify, or Vercel via CLI without modifying Git history.
+   - **Git Push Mode:** Safely audits git staging area, stages strictly `public/index.html`, commits with UTC timestamp, and pushes to `origin main`.
+6. **Plaintext Destruction:** Securely shreds and unlinks the plaintext payload file using `shred -u -z -n 3` (3-pass random overwrite + zero fill, defaulting to **Yes**).
+7. **Automated DNS Sync:** Automatically synchronizes the secondary DNS TXT dead-drop via Cloudflare API v4 (`PUT`/`POST` to `/zones/:id/dns_records` with 120s TTL) if `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ZONE_ID` are set.
 
 ### 5.3 Automated Staleness Monitoring & Multi-Channel Webhooks (`scripts/check-staleness.js`, `.github/workflows/staleness-check.yml`)
 - **Zero-Knowledge Principle:** Evaluates vault age without accessing private key material or decrypting ciphertext by reading the public `<meta name="vault-generated-at">` tag in `public/index.html`.
@@ -290,6 +299,11 @@ Hardened Bash orchestration script for rotation and production publishing:
 - **Pre-Flight In-Memory Round-Trip Verification:** Automatically attempts decryption against the in-memory payload and validates the canary code prior to compiling the final output.
 - **Template Embedding & Override:** Ships with `public/index.html` embedded as Base64, with interactive drag-and-drop file input allowing custom template ingestion.
 - **Deployment & Dead-Drop Assistance:** Generates a downloadable `index.html` alongside pre-formatted manual deployment guides for Cloudflare Pages (Git & Direct Upload) and DNS TXT dead-drop tables with 1-click clipboard helpers.
+
+### 5.5 Modular Hosting Provider Framework (`scripts/providers/`, `scripts/deploy-site.sh`)
+- **Pluggable Architecture:** Standard `BaseProvider` interface with shared `SECURITY_HEADERS` single source of truth across Cloudflare Pages, Netlify, Vercel, and GitHub Pages.
+- **Dynamic Config Generation:** Automatically emits provider-specific edge security headers (`_headers`, `netlify.toml`, `vercel.json`), redirects (`_redirects`), and deployment directives.
+- **Multi-Provider Web Deployment:** Orchestrated via `scripts/deploy-site.sh` (`--provider <cloudflare|netlify|vercel>`), supporting automated CI/CD (`.github/workflows/deploy-site.yml`) and local CLI execution.
 
 ---
 
@@ -313,6 +327,6 @@ Automated test runner verifying:
 15. Multi-channel staleness push notification webhook payload generation and CI workflow integration.
 16. In-browser TOTP HMAC-SHA1 mathematical validation.
 17. Offline Vault Builder (`tools/builder.html`) security, CSP, and parity check.
-18. Multi-provider edge security parity verifying identical strict CSP, HSTS, and `Cache-Control: no-store` headers across Cloudflare (`_headers`), Vercel (`vercel.json`), and Netlify (`netlify.toml`).
+18. Multi-provider edge security parity verifying identical strict CSP, HSTS, and `Cache-Control: no-store` headers across Cloudflare (`_headers`), Vercel (`vercel.json`), and Netlify (`netlify.toml`), along with modular provider registry verification.
 19. Modular Credential Card Architecture & Normalization Parity verifying password manager, backup codes, seed phrase, TOTP group, key-value, and notes cards.
-20. Public Product Hub (`site/`) and web app (`/app/`) parity, strict CSP, and edge header verification for `idrecoverykit.com`.
+20. Public Product Hub (`site/`), Cloudflare Pages configuration, GitHub Pages (`docs/`), and repository trust assets verified for `idrecoverykit.com`.

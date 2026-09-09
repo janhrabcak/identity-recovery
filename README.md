@@ -1,7 +1,7 @@
 # Cold-Start Identity Recovery Protocol
 
 [![CI & Integrity Tests](https://github.com/janhrabcak/identity-recovery/actions/workflows/ci.yml/badge.svg)](https://github.com/janhrabcak/identity-recovery/actions/workflows/ci.yml)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-2ea44f?style=flat-square&logo=github)](https://janhrabcak.github.io/identity-recovery/)
+[![Live Web Platform](https://img.shields.io/badge/Live%20Web%20Platform-idrecoverykit.com-f38020?style=flat-square&logo=cloudflare)](https://idrecoverykit.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![Staleness Monitor](https://github.com/janhrabcak/identity-recovery/actions/workflows/staleness-check.yml/badge.svg)](https://github.com/janhrabcak/identity-recovery/actions/workflows/staleness-check.yml)
 ![Dependencies](https://img.shields.io/badge/dependencies-0-success?style=flat-square&logo=npm)
@@ -11,7 +11,7 @@
 
 Stateless, zero-hardware emergency credential recovery protocol designed to restore primary identity and root-of-trust access from an untrusted terminal or newly procured device anywhere in the world.
 
-> **🌐 Live Web App:** [**janhrabcak.github.io/identity-recovery**](https://janhrabcak.github.io/identity-recovery/) &bull; [**Open Web Builder**](https://janhrabcak.github.io/identity-recovery/app/)
+> **🌐 Official Web Platform:** [**idrecoverykit.com**](https://idrecoverykit.com/) &bull; [**Open Web Builder**](https://idrecoverykit.com/app/) &bull; *(Fallback Demo: [GitHub Pages](https://janhrabcak.github.io/identity-recovery/))*
 
 ### ⚡ 1-Click Edge Deployment
 Deploy your private, encrypted recovery terminal to your preferred serverless edge network in seconds:
@@ -154,6 +154,8 @@ identity-recovery/
 │   ├── index.html                # Project landing page & documentation hub
 │   ├── app/index.html            # Hosted web vault builder (synced from tools/builder.html)
 │   ├── _headers                  # Cloudflare/Netlify edge headers & app no-store rules
+│   ├── _redirects                # Canonical www to apex domain redirects
+│   ├── netlify.toml              # Netlify edge security header configuration
 │   └── vercel.json               # Vercel edge headers & app no-store rules
 │
 ├── tools/                        # 🖥️ Offline client-side browser tools
@@ -162,12 +164,15 @@ identity-recovery/
 ├── scripts/                      # 🛠️ Private offline tooling (trusted machine only)
 │   ├── build-builder.js          # Generator script to refresh tools/builder.html
 │   ├── build-site.js             # Generator script to sync site/app and edge headers
-│   ├── deploy.sh                 # 7-step rotation, verification, and publish pipeline
+│   ├── deploy.sh                 # 7-step rotation, verification, and publish pipeline (Direct Upload or Git)
+│   ├── deploy-site.sh            # Modular web platform deployment script (idrecoverykit.com)
 │   ├── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
-│   └── check-staleness.js        # Zero-knowledge staleness evaluator for CI/alerts
+│   ├── check-staleness.js        # Zero-knowledge staleness evaluator for CI/alerts
+│   └── providers/                # 🔌 Pluggable hosting provider framework (Cloudflare, Netlify, Vercel, etc.)
 │
 ├── .github/workflows/            # ⏰ CI & scheduled monitoring
 │   ├── ci.yml                    # Automated tests across Node 18, 20, 22
+│   ├── deploy-site.yml           # Automated web platform deployment to Cloudflare Pages
 │   └── staleness-check.yml       # Bi-monthly automated staleness alert workflow
 │
 ├── docs/                         # 📖 In-depth guides
@@ -181,6 +186,7 @@ identity-recovery/
 ├── tests/                        # 🧪 Verification suite
 │   └── test-suite.js             # 20 automated cryptographic & integrity tests
 │
+├── wrangler.toml                 # Cloudflare Pages configuration
 ├── vercel.json                   # Vercel edge security header configuration
 ├── netlify.toml                  # Netlify edge security header configuration
 ├── .env.example                  # Environment template (RECOVERY_DOMAIN)

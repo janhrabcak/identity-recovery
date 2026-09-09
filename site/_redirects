@@ -1,0 +1,2 @@
+# Cloudflare Pages redirects
+https://www.idrecoverykit.com/* https://idrecoverykit.com/:splat 301!

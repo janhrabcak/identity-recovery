@@ -37,12 +37,21 @@ if (fs.existsSync(BUILDER_SRC)) {
   process.exit(1);
 }
 
-// Copy site/index.html to docs/index.html (product landing page for GitHub Pages)
+// Stamp current release date into site/index.html and copy to docs/index.html
 const SITE_INDEX = path.join(SITE_DIR, 'index.html');
 const DOCS_INDEX = path.join(DOCS_DIR, 'index.html');
 if (fs.existsSync(SITE_INDEX)) {
+  const currentDateStr = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  let siteContent = fs.readFileSync(SITE_INDEX, 'utf8');
+  if (siteContent.includes('id="protocol-updated-date"')) {
+    siteContent = siteContent.replace(
+      /<span id="protocol-updated-date">[^<]*<\/span>/,
+      `<span id="protocol-updated-date">${currentDateStr}</span>`
+    );
+    fs.writeFileSync(SITE_INDEX, siteContent, 'utf8');
+  }
   fs.copyFileSync(SITE_INDEX, DOCS_INDEX);
-  console.log(`✓ Synchronized site/index.html -> docs/index.html (GitHub Pages landing hub)`);
+  console.log(`✓ Stamped build date (${currentDateStr}) & synchronized site/index.html -> docs/index.html`);
 }
 
 // Synchronize PWA and branding assets
@@ -56,88 +65,10 @@ for (const asset of staticAssets) {
 }
 console.log('✓ Synchronized PWA, manifest, and branding assets to docs/');
 
-// Generate site/_headers for Cloudflare / Netlify edge security
-const headersContent = `/*
-  Content-Security-Policy: default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data: https:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none';
-  X-Frame-Options: DENY
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: no-referrer
-  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=()
-  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  Cache-Control: public, max-age=3600, must-revalidate
+import { generateAllConfigs } from './providers/index.js';
 
-/app/*
-  Cache-Control: no-cache, no-store, must-revalidate
-`;
+// Generate edge security and redirect configurations via modular hosting providers
+generateAllConfigs(SITE_DIR, { hasApp: true, domain: 'idrecoverykit.com' });
+generateAllConfigs(DOCS_DIR, { hasApp: true, domain: 'idrecoverykit.com' });
+console.log('✓ Generated multi-provider edge configs (Cloudflare, Netlify, Vercel, GitHub Pages)');
 
-fs.writeFileSync(path.join(SITE_DIR, '_headers'), headersContent, 'utf8');
-fs.writeFileSync(path.join(DOCS_DIR, '_headers'), headersContent, 'utf8');
-console.log('✓ Generated site/_headers and docs/_headers (with edge security & app no-store rules)');
-
-// Generate site/vercel.json for Vercel edge deployment
-const vercelConfig = {
-  cleanUrls: true,
-  headers: [
-    {
-      source: "/(.*)",
-      headers: [
-        {
-          key: "Content-Security-Policy",
-          value: "default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data: https:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none';"
-        },
-        {
-          key: "X-Frame-Options",
-          value: "DENY"
-        },
-        {
-          key: "X-Content-Type-Options",
-          value: "nosniff"
-        },
-        {
-          key: "Referrer-Policy",
-          value: "no-referrer"
-        },
-        {
-          key: "Permissions-Policy",
-          value: "geolocation=(), camera=(), microphone=(), payment=(), usb=()"
-        },
-        {
-          key: "Strict-Transport-Security",
-          value: "max-age=31536000; includeSubDomains; preload"
-        }
-      ]
-    },
-    {
-      source: "/app/(.*)",
-      headers: [
-        {
-          key: "Cache-Control",
-          value: "no-cache, no-store, must-revalidate"
-        }
-      ]
-    }
-  ]
-};
-
-fs.writeFileSync(path.join(SITE_DIR, 'vercel.json'), JSON.stringify(vercelConfig, null, 2), 'utf8');
-console.log('✓ Generated site/vercel.json');
-
-// Generate site/netlify.toml for Netlify edge deployment
-const netlifyConfig = `[[headers]]
-  for = "/*"
-  [headers.values]
-    Content-Security-Policy = "default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data: https:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none';"
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "no-referrer"
-    Permissions-Policy = "geolocation=(), camera=(), microphone=(), payment=(), usb=()"
-    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
-
-[[headers]]
-  for = "/app/*"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-`;
-
-fs.writeFileSync(path.join(SITE_DIR, 'netlify.toml'), netlifyConfig, 'utf8');
-console.log('✓ Generated site/netlify.toml');

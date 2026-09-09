@@ -6,9 +6,8 @@ We take the security of the Cold-Start Identity Recovery Protocol seriously. If 
 
 **Please DO NOT file a public issue.**
 
-Instead, please report vulnerabilities by:
-- Using [GitHub Private Vulnerability Reporting](https://github.com/janhrabcak/identity-recovery/security/advisories/new) on this repository, OR
-- Emailing **jan@hrabcak.com** with the subject line `[SECURITY] Identity Recovery Vulnerability`.
+Instead, please report vulnerabilities responsibly by:
+- Opening a report via [GitHub Private Vulnerability Reporting](https://github.com/janhrabcak/identity-recovery/security/advisories/new) on this repository.
 
 Please include:
 - A description of the vulnerability.

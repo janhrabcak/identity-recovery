@@ -214,3 +214,97 @@ server {
 
 - **GitHub Pages:** Safe for dead-drop hosting. Set source to `/public` in repository settings.
 - **Limitation:** GitHub Pages does not support custom HTTP response headers (`Cache-Control: no-store` and `X-Frame-Options` cannot be set at the server level). Treat GitHub Pages as a secondary or emergency fallback rather than a primary production deployment.
+
+---
+
+## 8. Deploying the Web Platform to `idrecoverykit.com` (Cloudflare Pages)
+
+The public product hub and client-side web vault builder reside in the [`site/`](../site/) directory:
+- **`site/index.html`:** Product landing page, cryptographic specification, and security transparency hub.
+- **`site/app/index.html`:** Offline-capable PWA web vault builder.
+- **`site/_headers`:** Edge security headers (strict CSP, HSTS, anti-clickjacking) with `/app/*` cache prevention.
+- **`site/_redirects`:** Automatic 301 redirection from `www.idrecoverykit.com` to `idrecoverykit.com`.
+
+### Option A: Automated CI/CD via GitHub Actions (Recommended)
+
+The repository includes [`.github/workflows/deploy-site.yml`](../.github/workflows/deploy-site.yml) which automatically runs tests, builds the web platform, and deploys to Cloudflare Pages on every push to `main` touching web assets.
+
+1. In your GitHub repository, navigate to **Settings** → **Secrets and variables** → **Actions**.
+2. Add the following repository secrets:
+   - `CLOUDFLARE_API_TOKEN`: Cloudflare API Token with `Cloudflare Pages: Edit` permissions.
+   - `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare Account ID (found on the right sidebar of the Cloudflare Dashboard overview).
+3. Push to `main` or trigger manually from the **Actions** tab.
+
+### Option B: Local CLI Deployment via Wrangler
+
+You can deploy directly from your local terminal using the preconfigured deploy script:
+
+```bash
+# 1. Build and verify site integrity
+npm run build:site
+
+# 2. Deploy directly to Cloudflare Pages
+npm run deploy:site
+# Or: ./scripts/deploy-site.sh --project idrecoverykit
+```
+
+If `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are set in your local `.env`, the script deploys headlessly; otherwise, Wrangler will authenticate via your browser.
+
+### Option C: Configuring Custom Domain `idrecoverykit.com` (Cloudflare Registrar)
+
+Because your domain is registered directly with Cloudflare Registrar:
+1. Go to the [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages**.
+2. Select the **`idrecoverykit`** Pages project.
+3. Open the **Custom domains** tab and click **Set up a custom domain**.
+4. Enter `idrecoverykit.com` and click **Continue**. Cloudflare automatically adds the apex CNAME flattening record to your DNS zone.
+5. Repeat for `www.idrecoverykit.com` (handled via `site/_redirects` to point to the apex).
+6. Under **SSL/TLS** settings for your zone, ensure encryption mode is set to **Full (strict)**.
+
+---
+
+## 9. Modular Hosting Provider Architecture
+
+Hosting provider support is structured as a pluggable, modular system located in [`scripts/providers/`](../scripts/providers/):
+
+```text
+scripts/providers/
+├── base-provider.js     # Shared security headers (CSP, HSTS, no-store) & BaseProvider interface
+├── cloudflare.js        # Cloudflare Pages provider (_headers, _redirects, wrangler.toml)
+├── netlify.js           # Netlify provider (_headers, netlify.toml)
+├── vercel.js            # Vercel provider (vercel.json)
+├── github-pages.js      # GitHub Pages fallback provider (.nojekyll)
+└── index.js             # Central provider registry & CLI runner
+```
+
+### Listing Providers & Capabilities
+
+Inspect all supported providers and check which credentials are configured in your local environment:
+
+```bash
+./scripts/deploy-site.sh --list-providers
+# Or: node scripts/providers/index.js list
+```
+
+### Deploying the Web Platform to Any Provider
+
+The deployment tooling dynamically adapts to your target provider:
+
+```bash
+# Cloudflare Pages (default):
+npm run deploy:site -- --provider cloudflare
+
+# Netlify:
+npm run deploy:site -- --provider netlify
+
+# Vercel:
+npm run deploy:site -- --provider vercel
+```
+
+### Adding a New Hosting Provider
+
+To add a new provider (e.g., AWS S3/CloudFront, Firebase, Render):
+1. Create `scripts/providers/<name>.js` extending `BaseProvider`.
+2. Implement `generateConfigs(targetDir, options)` to emit edge security headers.
+3. Implement `getDeployCommand(targetDir, options)` returning the CLI deployment command.
+4. Register the new provider in [`scripts/providers/index.js`](../scripts/providers/index.js).
+

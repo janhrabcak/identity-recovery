@@ -7,18 +7,19 @@
   <title>ID Recovery Kit — Cold-Start Identity Recovery Protocol</title>
   <meta name="description" content="Zero-dependency, offline AES-GCM-256 encrypted credential vault for physical disaster recovery. Access master passwords, 2FA backup codes, and TOTP seeds from any browser.">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="canonical" href="https://idrecoverykit.com/">
   <link rel="manifest" href="./manifest.json">
 
   <!-- Open Graph & Social Cards -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="ID Recovery Kit — Zero-Hardware Credential Recovery Protocol">
   <meta property="og:description" content="Stateless, zero-dependency AES-GCM-256 encrypted credential vault. Recover master passwords, backup codes, seed phrases & TOTP from any browser.">
-  <meta property="og:url" content="https://janhrabcak.github.io/identity-recovery/">
-  <meta property="og:image" content="https://janhrabcak.github.io/identity-recovery/social-preview.png">
+  <meta property="og:url" content="https://idrecoverykit.com/">
+  <meta property="og:image" content="https://idrecoverykit.com/social-preview.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="ID Recovery Kit — Zero-Hardware Credential Recovery Protocol">
   <meta name="twitter:description" content="Stateless, zero-dependency AES-GCM-256 encrypted credential vault. Recover master passwords, backup codes, seed phrases & TOTP from any browser.">
-  <meta name="twitter:image" content="https://janhrabcak.github.io/identity-recovery/social-preview.png">
+  <meta name="twitter:image" content="https://idrecoverykit.com/social-preview.png">
 
   <style>
     :root {
@@ -203,6 +204,8 @@
       color: var(--accent-emerald);
       margin-bottom: 24px;
       font-weight: 500;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .hero-title {
@@ -521,6 +524,114 @@
       font-size: 1.05rem;
     }
 
+    /* DNS Dead-Drop Section */
+    .dns-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin-bottom: 40px;
+    }
+
+    .dual-channel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 36px;
+    }
+
+    .channel-card {
+      background: #080c14;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 24px;
+    }
+
+    .channel-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .channel-badge.tier1 {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .channel-badge.tier2 {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+
+    .dns-table-wrap {
+      overflow-x: auto;
+      margin: 20px 0;
+    }
+
+    .dns-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      text-align: left;
+    }
+
+    .dns-table th, .dns-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .dns-table th {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: rgba(11, 15, 25, 0.5);
+    }
+
+    .dns-table td {
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    .dns-table td.desc {
+      font-family: inherit;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .dns-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+
+    .info-callout {
+      background: rgba(6, 182, 212, 0.08);
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      font-size: 0.92rem;
+      color: #bae6fd;
+      line-height: 1.6;
+      margin-top: 24px;
+    }
+
     /* Footer */
     footer {
       border-top: 1px solid var(--border-subtle);
@@ -550,6 +661,7 @@
     @media (max-width: 768px) {
       .hero-title { font-size: 2.25rem; }
       .scenario-box { grid-template-columns: 1fr; }
+      .dual-channel-grid { grid-template-columns: 1fr; }
       .nav-links { display: none; }
     }
   </style>
@@ -559,7 +671,7 @@
   <!-- Navigation -->
   <header class="navbar">
     <div class="container nav-inner">
-      <a href="/" class="brand">
+      <a href="./" class="brand">
         <span class="brand-icon">🛡️</span>
         <span>ID Recovery Kit</span>
         <span class="brand-badge">v1.0</span>
@@ -567,6 +679,7 @@
 
       <nav class="nav-links">
         <a href="#features">Features</a>
+        <a href="#dns-dead-drop">DNS Dead-Drop</a>
         <a href="#disaster-model">Threat Model</a>
         <a href="#cli-quickstart">CLI Deploy</a>
         <a href="https://github.com/janhrabcak/identity-recovery" target="_blank" rel="noopener">GitHub</a>
@@ -588,11 +701,11 @@
   <section class="hero">
     <div class="container hero-content">
       <div class="pill-badge">
-        <span>🔒 Zero Runtime Dependencies</span>
+        <span>🛡️ Protocol v1.0</span>
         <span>•</span>
-        <span>600,000 PBKDF2 Rounds</span>
+        <span>Updated: <span id="protocol-updated-date">September 2026</span></span>
         <span>•</span>
-        <span>MIT Open Source</span>
+        <span style="color: var(--accent-emerald);">20/20 Tests Passing</span>
       </div>
 
       <h1 class="hero-title">When All Your Devices Are Gone, How Do You Recover Your Identity?</h1>
@@ -709,6 +822,7 @@
           <p class="card-text">
             If your web domain is blocked, censored, or unreachable, your ciphertext is queryable as a DNS TXT record via Cloudflare & Google DoH.
           </p>
+          <a href="#dns-dead-drop" style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.88rem; color: var(--accent-emerald); font-weight: 600; margin-top: 12px;">Learn how it works &rarr;</a>
         </div>
 
         <div class="card">
@@ -741,6 +855,143 @@
           <p class="card-text">
             Pressing <code>Escape x3</code> instantly flushes all decrypted secrets from DOM memory. System clipboard auto-clears after 45 seconds.
           </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Out-of-Band DNS TXT Dead-Drop Section -->
+  <section class="section" id="dns-dead-drop">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Zero-HTTP Fallback</div>
+        <h2 class="section-title">Secondary DNS TXT Dead-Drop</h2>
+        <p class="section-desc">
+          When web browsing is blocked, firewalled, or edge CDNs experience an outage, your recovery vault remains accessible worldwide over raw DNS (port 53 UDP) and DNS-over-HTTPS (DoH).
+        </p>
+      </div>
+
+      <!-- Dual-Channel Architecture Grid -->
+      <div class="dual-channel-grid">
+        <div class="channel-card">
+          <div class="channel-badge tier1">Tier 1 • Primary Web Edge</div>
+          <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">Web Terminal UI</h3>
+          <div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent-emerald); margin-bottom: 12px;">
+            https://sos.&lt;yourdomain&gt;.com
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.6;">
+            Full graphical recovery terminal hosted on Cloudflare Pages, Netlify, or Vercel. Features client-side WebCrypto decryption, live 30-second TOTP generation, single-use 2SV backup code strikethrough tracking, and panic auto-scrubbing.
+          </p>
+        </div>
+
+        <div class="channel-card">
+          <div class="channel-badge tier2">Tier 2 • Out-of-Band Dead-Drop</div>
+          <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">RFC 1035 DNS TXT Record</h3>
+          <div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent-cyan); margin-bottom: 12px;">
+            recovery.&lt;yourdomain&gt;.com (TXT)
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.6;">
+            Completely decoupled from web servers and HTTP availability. Your encrypted ciphertext is stored directly in DNS Anycast nameservers worldwide. Queryable from any minimalist terminal using standard tools (<code>dig</code>, <code>nslookup</code>, or DoH JSON APIs).
+          </p>
+        </div>
+      </div>
+
+      <!-- Query Tabs & Console Box -->
+      <div class="cli-box">
+        <div class="tab-bar">
+          <button type="button" class="tab-btn active" onclick="switchDnsTab('dig', this)">Terminal dig (Linux/macOS)</button>
+          <button type="button" class="tab-btn" onclick="switchDnsTab('doh', this)">curl DoH JSON API</button>
+          <button type="button" class="tab-btn" onclick="switchDnsTab('browser', this)">In-Browser Dynamic DoH</button>
+        </div>
+
+        <div class="cli-content">
+          <!-- dig Tab -->
+          <div id="dns-tab-dig">
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px;">
+              Fetch and clean your encrypted ciphertext from any terminal without opening a web browser:
+            </p>
+            <div class="code-block">
+              <button type="button" class="copy-btn" onclick="copySnippet('code-dns-dig', this)">Copy</button>
+              <pre id="code-dns-dig"><code># Query secondary dead-drop via DNS UDP port 53:
+dig +short TXT recovery.yourdomain.com | tr -d ' "\n'</code></pre>
+            </div>
+          </div>
+
+          <!-- curl DoH Tab -->
+          <div id="dns-tab-doh" style="display: none;">
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px;">
+              Query trusted Anycast DNS-over-HTTPS resolvers (bypasses local captive portals and DNS filtering):
+            </p>
+            <div class="code-block">
+              <button type="button" class="copy-btn" onclick="copySnippet('code-dns-doh', this)">Copy</button>
+              <pre id="code-dns-doh"><code># Query Cloudflare Anycast DoH:
+curl -s -H "Accept: application/dns-json" "https://cloudflare-dns.com/dns-query?name=recovery.yourdomain.com&type=TXT"
+
+# Or query Google Public DoH failover:
+curl -s "https://dns.google/resolve?name=recovery.yourdomain.com&type=TXT"</code></pre>
+            </div>
+          </div>
+
+          <!-- In-Browser DoH Tab -->
+          <div id="dns-tab-browser" style="display: none;">
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px;">
+              The recovery terminal client natively contains an in-browser DoH fetcher with automated multi-chunk RFC 1035 stitching:
+            </p>
+            <div class="code-block">
+              <button type="button" class="copy-btn" onclick="copySnippet('code-dns-browser', this)">Copy</button>
+              <pre id="code-dns-browser"><code># Open any local or edge recovery terminal with the ?dns parameter:
+https://sos.yourdomain.com/?dns=recovery.yourdomain.com
+
+# The client automatically fetches from Cloudflare & Google DoH,
+# stitches all 255-byte chunks, and prompts for your 6-word passphrase!</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DNS Record Reference & Automated Sync -->
+      <div class="dns-box" style="margin-top: 36px;">
+        <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 6px;">Manual DNS Provider Configuration</h3>
+        <p style="color: var(--text-secondary); font-size: 0.92rem;">
+          If configuring manually in your DNS provider (Cloudflare, AWS Route 53, Namecheap, Porkbun, etc.):
+        </p>
+
+        <div class="dns-table-wrap">
+          <table class="dns-table">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Value</th>
+                <th>Purpose & Operational Rationale</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="dns-badge">Type</span></td>
+                <td>TXT</td>
+                <td class="desc">Standard RFC 1035 text record; supported universally across all DNS providers.</td>
+              </tr>
+              <tr>
+                <td><span class="dns-badge">Host / Name</span></td>
+                <td>recovery</td>
+                <td class="desc">Subdomain (e.g. <code>recovery.yourdomain.com</code>) matching your configured <code>RECOVERY_DOMAIN</code>.</td>
+              </tr>
+              <tr>
+                <td><span class="dns-badge">TTL</span></td>
+                <td>120 (2 min)</td>
+                <td class="desc">Low TTL guarantees rapid propagation across global recursive resolvers during vault rotation.</td>
+              </tr>
+              <tr>
+                <td><span class="dns-badge">Value / Content</span></td>
+                <td>"&lt;base64-ciphertext&gt;"</td>
+                <td class="desc">Standard Base64 string produced by <code>encrypt.js</code> or the offline Web Builder.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-callout">
+          <strong>⚡ 100% Automated Cloudflare Sync:</strong> You don't have to manually paste DNS records! When rotating via <code>./scripts/deploy.sh</code> or the offline web builder, the Cloudflare DNS API v4 automatically synchronizes the TXT dead-drop with 120s TTL and handles all RFC 1035 255-byte chunk splitting automatically.
         </div>
       </div>
     </div>
@@ -797,7 +1048,7 @@ vim payload.json
             <div class="code-block">
               <button type="button" class="copy-btn" onclick="copySnippet('code-vercel', this)">Copy</button>
               <pre id="code-vercel"><code># Direct Edge Upload to Vercel (Zero Git Secrets)
-./scripts/deploy.sh payload.json --provider vercel --project identity-recovery</code></pre>
+./scripts/deploy.sh payload.json --provider vercel</code></pre>
             </div>
           </div>
         </div>
@@ -821,6 +1072,7 @@ vim payload.json
     <div class="container">
       <div class="footer-links">
         <a href="./app/">Web App Builder</a>
+        <a href="#dns-dead-drop">DNS Dead-Drop</a>
         <a href="https://github.com/janhrabcak/identity-recovery" target="_blank" rel="noopener">GitHub Repository</a>
         <a href="https://github.com/janhrabcak/identity-recovery/blob/main/SPEC.md" target="_blank" rel="noopener">Specification</a>
         <a href="https://github.com/janhrabcak/identity-recovery/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
@@ -835,6 +1087,15 @@ vim payload.json
   </footer>
 
   <script>
+    function switchDnsTab(tab, btn) {
+      btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      document.getElementById('dns-tab-dig').style.display = tab === 'dig' ? 'block' : 'none';
+      document.getElementById('dns-tab-doh').style.display = tab === 'doh' ? 'block' : 'none';
+      document.getElementById('dns-tab-browser').style.display = tab === 'browser' ? 'block' : 'none';
+    }
+
     function switchCliTab(provider, btn) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');

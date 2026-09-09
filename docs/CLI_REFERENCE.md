@@ -13,13 +13,17 @@ The recommended way to rotate credentials and publish to the edge in one hardene
 ```
 
 ### Options & Flags
-- `--project <name>`: Deploy directly to Cloudflare Pages edge (zero git persistence).
-- `--direct-upload`: Use Cloudflare Pages Direct Upload (default when `CLOUDFLARE_PAGES_PROJECT` is set in `.env`).
+- `--provider <name>`: Target hosting provider: `cloudflare` (default), `netlify`, or `vercel`.
+- `--project <name>`: Cloudflare Pages project name (for direct upload).
+- `--site <id>`: Netlify Site ID (for direct upload).
+- `--token <token>`: Auth token for Vercel or Netlify direct upload.
+- `--direct-upload`: Direct edge upload without committing ciphertext to Git.
 - `--git`: Force Git commit & push mode (for private repositories).
+- `-h, --help`: Display help documentation.
 
 ### Deployment Modes
-1. **Direct Edge Upload Mode (Default when `CLOUDFLARE_PAGES_PROJECT` is set):**
-   Encrypts the payload inside an ephemeral staging directory, verifies tests, and uploads directly to Cloudflare Pages edge via Wrangler. `public/index.html` in Git is never modified or committed, keeping public repositories 100% clean of personal data.
+1. **Direct Edge Upload Mode (Default when provider credentials are set):**
+   Encrypts the payload inside an ephemeral staging directory, verifies tests, and uploads directly to edge CDN via CLI (Wrangler, Netlify CLI, or Vercel CLI). `public/index.html` in Git is never modified or committed, keeping public repositories 100% clean of personal data.
 2. **Git Push Mode (Fallback for private repositories):**
    Encrypts into `public/index.html`, runs test verification, strictly stages only `public/index.html`, commits, and pushes to `origin main`.
 
@@ -27,8 +31,8 @@ The recommended way to rotate credentials and publish to the edge in one hardene
 1. **Pre-flight Checks:** Verifies Git repository status, remote connectivity, and payload schema completeness.
 2. **Passphrase Ingestion:** Prompts with masked input, calculates Diceware entropy (~77 bits required), and requires confirmation to avoid typos.
 3. **Offline WebCrypto Encryption:** Derives PBKDF2-600k keys and injects ciphertext directly into HTML.
-4. **Automated Verification:** Runs all 17 automated tests in `tests/test-suite.js` to guarantee cryptographic and runtime integrity.
-5. **Edge Deployment:** Deploys directly via Wrangler or pushes to Git.
+4. **Automated Verification:** Runs all 20 automated tests in `tests/test-suite.js` to guarantee cryptographic, edge security, and runtime integrity.
+5. **Edge Deployment:** Deploys directly via provider CLI or pushes to Git.
 6. **Plaintext Shredding:** Offers to permanently shred the unencrypted source file (3-pass random overwrite + zero-fill), defaulting to **Yes**.
 7. **Cloudflare DNS Dead-Drop Sync:** Automatically updates the secondary DNS TXT record via Cloudflare API v4 if configured in `.env`.
 
@@ -103,7 +107,7 @@ Does **not** require any decryption passphrase. It inspects the public `<meta na
 
 ## 4. Test Suite (`tests/test-suite.js`)
 
-Runs end-to-end cryptographic and structural tests across 17 test suites:
+Runs end-to-end cryptographic and structural tests across 20 test suites:
 
 ```bash
 npm test
@@ -128,6 +132,9 @@ npm test
 15. Multi-channel push notification formatters (ntfy, Discord, Slack).
 16. In-browser TOTP HMAC-SHA1 mathematical validation.
 17. Offline Vault Builder (`tools/builder.html`) security, CSP, and parity check.
+18. Multi-provider edge security parity and modular provider registry (`scripts/providers/`).
+19. Modular Credential Card Architecture & Normalization Parity.
+20. Public Product Hub (`site/`), Cloudflare Pages configuration, and repository trust assets.
 
 ---
 
@@ -141,3 +148,54 @@ npm run build:builder
 ```
 
 Run this command whenever you make improvements to `public/index.html` or styles to keep the offline web builder in sync.
+
+---
+
+## 6. Site Builder (`scripts/build-site.js`)
+
+Synchronizes the web platform assets (`site/`) and GitHub Pages demo (`docs/`), and generates multi-provider edge security headers and canonical redirects via the provider registry:
+
+```bash
+npm run build:site
+# or: node scripts/build-site.js
+```
+
+---
+
+## 7. Modular Web Platform Deployment (`scripts/deploy-site.sh`)
+
+Deploys the public web platform (`site/`) to your preferred edge hosting provider (Cloudflare Pages, Netlify, or Vercel):
+
+```bash
+# Deploy to Cloudflare Pages (default):
+npm run deploy:site
+# Or specify options:
+./scripts/deploy-site.sh --provider cloudflare --project idrecoverykit
+
+# Deploy to Netlify:
+npm run deploy:site -- --provider netlify
+
+# Deploy to Vercel:
+npm run deploy:site -- --provider vercel
+
+# List supported providers and environment credential status:
+./scripts/deploy-site.sh --list-providers
+```
+
+---
+
+## 8. Hosting Provider Registry CLI (`scripts/providers/index.js`)
+
+Command-line utility for inspecting and managing modular hosting providers:
+
+```bash
+# List all providers and credential status:
+node scripts/providers/index.js list
+
+# Generate edge configs across all providers:
+node scripts/providers/index.js generate site
+
+# Print CLI deploy command for a specific provider:
+node scripts/providers/index.js deploy-cmd cloudflare site
+```
+
