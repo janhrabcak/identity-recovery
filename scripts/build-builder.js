@@ -486,6 +486,7 @@ const BUILDER_HTML = `<!DOCTYPE html>
 
     .tab-bar {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
       margin-bottom: 12px;
       border-bottom: 1px solid var(--border-color);
@@ -721,24 +722,79 @@ const BUILDER_HTML = `<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- Step 1: Deploy to Cloudflare Pages -->
+    <!-- Step 1: Deploy to Edge Hosting -->
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title">🌐 Step 1: Deploy to Cloudflare Pages</div>
+          <div class="card-title">🌐 Step 1: Deploy to Edge Hosting (Cloudflare / Netlify / Vercel)</div>
           <div class="card-subtitle">Host your hardened single-file recovery terminal at <code>https://sos.yourdomain.com</code></div>
         </div>
       </div>
 
       <div class="tab-bar">
-        <button type="button" class="tab-btn active" id="tab-git-btn">Option A: Git Repository (Recommended)</button>
-        <button type="button" class="tab-btn" id="tab-upload-btn">Option B: Cloudflare Direct Upload (No Git)</button>
+        <button type="button" class="tab-btn active" id="tab-cf-btn">Cloudflare Pages</button>
+        <button type="button" class="tab-btn" id="tab-netlify-btn">Netlify</button>
+        <button type="button" class="tab-btn" id="tab-vercel-btn">Vercel</button>
+        <button type="button" class="tab-btn" id="tab-git-btn">Git Push (All Providers)</button>
+      </div>
+
+      <!-- Cloudflare Tab -->
+      <div id="tab-cf-content">
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">
+          <strong>Option A: Direct Upload via Web Dashboard (Zero Git Secrets)</strong>
+        </p>
+        <ol style="margin-left: 20px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
+          <li>Log into the <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener" style="color: var(--border-focus);">Cloudflare Dashboard</a>.</li>
+          <li>Navigate to <strong>Workers & Pages</strong> → Select your Pages project (or click <strong>Create application → Pages → Direct Upload</strong>).</li>
+          <li>Create an empty folder, place the downloaded <code>index.html</code> (and <code>_headers</code>) inside, and drag it into the dropzone.</li>
+          <li>Click <strong>Deploy site</strong>. Your vault is live worldwide on Cloudflare's Anycast Edge!</li>
+        </ol>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 12px 0 6px 0;">
+          <strong>Option B: CLI Direct Deploy</strong>
+        </p>
+        <div class="code-block">./scripts/deploy.sh payload.json --provider cloudflare --project identity-recovery</div>
+      </div>
+
+      <!-- Netlify Tab -->
+      <div id="tab-netlify-content" style="display: none;">
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">
+          <strong>Option A: Netlify Drop Web Dashboard (Zero Git Secrets)</strong>
+        </p>
+        <ol style="margin-left: 20px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
+          <li>Log into the <a href="https://app.netlify.com/" target="_blank" rel="noopener" style="color: var(--border-focus);">Netlify Dashboard</a>.</li>
+          <li>Navigate to <strong>Sites</strong> and scroll down to the <strong>Deploy manually / Netlify Drop</strong> section.</li>
+          <li>Drag-and-drop the folder containing your downloaded <code>index.html</code> (and <code>netlify.toml</code>).</li>
+          <li>Your recovery vault is live with full edge security header parity!</li>
+        </ol>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 12px 0 6px 0;">
+          <strong>Option B: CLI Direct Deploy</strong>
+        </p>
+        <div class="code-block">./scripts/deploy.sh payload.json --provider netlify --site &lt;YOUR_NETLIFY_SITE_ID&gt;</div>
+      </div>
+
+      <!-- Vercel Tab -->
+      <div id="tab-vercel-content" style="display: none;">
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">
+          <strong>Option A: CLI Direct Deploy (Zero Git Secrets)</strong>
+        </p>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px;">
+          Deploy directly to Vercel production edge without committing ciphertext:
+        </p>
+        <div class="code-block">./scripts/deploy.sh payload.json --provider vercel --project identity-recovery</div>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 12px 0 6px 0;">
+          <strong>Option B: Git Integration</strong>
+        </p>
+        <ol style="margin-left: 20px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
+          <li>Import your repository in the <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" style="color: var(--border-focus);">Vercel Dashboard</a>.</li>
+          <li>Configure <strong>Root Directory:</strong> <code>.</code> and <strong>Output Directory:</strong> <code>public</code>.</li>
+          <li>Deployments automatically apply strict security headers from <code>vercel.json</code>.</li>
+        </ol>
       </div>
 
       <!-- Git Tab -->
-      <div id="tab-git-content">
+      <div id="tab-git-content" style="display: none;">
         <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">
-          Move the downloaded <code>index.html</code> into your repository's <code>public/</code> folder and push:
+          For private repositories or standard Git workflows across any provider, commit and push:
         </p>
         <div class="code-block" id="code-git-snippet">mv ~/Downloads/index.html public/index.html
 git add public/index.html
@@ -746,30 +802,19 @@ git commit -m "vault: rotate encrypted recovery payload"
 git push origin main</div>
         <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 8px;" id="btn-copy-git-snippet">📋 Copy Git Commands</button>
       </div>
-
-      <!-- Upload Tab -->
-      <div id="tab-upload-content" style="display: none;">
-        <ol style="margin-left: 20px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
-          <li>Log into the <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener" style="color: var(--border-focus);">Cloudflare Dashboard</a>.</li>
-          <li>Navigate to <strong>Workers & Pages</strong> → Select your Pages project (or click <strong>Create application → Pages → Direct Upload</strong>).</li>
-          <li>Click <strong>Create deployment</strong>.</li>
-          <li>Create a folder containing only the downloaded <code>index.html</code> and drag it into the upload dropzone.</li>
-          <li>Click <strong>Deploy site</strong>. Your recovery vault is live worldwide on Cloudflare's Anycast Edge!</li>
-        </ol>
-      </div>
     </div>
 
-    <!-- Step 2: Update Cloudflare DNS TXT Dead-Drop -->
+    <!-- Step 2: Update DNS TXT Dead-Drop -->
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title">📡 Step 2: Update Cloudflare DNS TXT Dead-Drop</div>
+          <div class="card-title">📡 Step 2: Update DNS TXT Dead-Drop (Cloudflare, Route53, or Any DNS)</div>
           <div class="card-subtitle">Secondary fallback queryable via DoH if your web URL is unreachable.</div>
         </div>
       </div>
 
       <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;">
-        In <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener" style="color: var(--border-focus);">Cloudflare DNS</a>, add or update the following TXT record in your domain zone:
+        In your DNS provider (such as <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener" style="color: var(--border-focus);">Cloudflare DNS</a>, AWS Route 53, etc.), add or update the following TXT record in your domain zone:
       </p>
 
       <table class="dns-table">
@@ -1378,24 +1423,27 @@ document.addEventListener('DOMContentLoaded', () => {
     copyText(document.getElementById('code-git-snippet').innerText);
   });
 
+  const tabCfBtn = document.getElementById('tab-cf-btn');
+  const tabNetlifyBtn = document.getElementById('tab-netlify-btn');
+  const tabVercelBtn = document.getElementById('tab-vercel-btn');
   const tabGitBtn = document.getElementById('tab-git-btn');
-  const tabUploadBtn = document.getElementById('tab-upload-btn');
+
+  const tabCfContent = document.getElementById('tab-cf-content');
+  const tabNetlifyContent = document.getElementById('tab-netlify-content');
+  const tabVercelContent = document.getElementById('tab-vercel-content');
   const tabGitContent = document.getElementById('tab-git-content');
-  const tabUploadContent = document.getElementById('tab-upload-content');
 
-  tabGitBtn.addEventListener('click', () => {
-    tabGitBtn.classList.add('active');
-    tabUploadBtn.classList.remove('active');
-    tabGitContent.style.display = 'block';
-    tabUploadContent.style.display = 'none';
-  });
+  function selectTab(activeBtn, activeContent) {
+    [tabCfBtn, tabNetlifyBtn, tabVercelBtn, tabGitBtn].forEach(btn => btn.classList.remove('active'));
+    [tabCfContent, tabNetlifyContent, tabVercelContent, tabGitContent].forEach(c => c.style.display = 'none');
+    activeBtn.classList.add('active');
+    activeContent.style.display = 'block';
+  }
 
-  tabUploadBtn.addEventListener('click', () => {
-    tabUploadBtn.classList.add('active');
-    tabGitBtn.classList.remove('active');
-    tabUploadContent.style.display = 'block';
-    tabGitContent.style.display = 'none';
-  });
+  tabCfBtn.addEventListener('click', () => selectTab(tabCfBtn, tabCfContent));
+  tabNetlifyBtn.addEventListener('click', () => selectTab(tabNetlifyBtn, tabNetlifyContent));
+  tabVercelBtn.addEventListener('click', () => selectTab(tabVercelBtn, tabVercelContent));
+  tabGitBtn.addEventListener('click', () => selectTab(tabGitBtn, tabGitContent));
 
   document.getElementById('btn-back-to-edit').addEventListener('click', () => {
     document.getElementById('view-deploy').style.display = 'none';
