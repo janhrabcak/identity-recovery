@@ -24,3 +24,4 @@ node_modules/
 desktop.ini
 .env.*
 !.env.example
+temp-demo/

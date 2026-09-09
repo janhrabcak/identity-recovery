@@ -110,7 +110,7 @@ cp templates/sample-payload.json payload.json
 # Run the automated deployment pipeline:
 ./scripts/deploy.sh payload.json
 ```
-The script will prompt for your 6-word passphrase, verify entropy, run 19 automated tests, commit strictly `public/index.html`, push to `main`, and securely shred `payload.json`.
+The script will prompt for your 6-word passphrase, verify entropy, run 20 automated tests, commit strictly `public/index.html`, push to `main`, and securely shred `payload.json`.
 
 ### 4. Connect Cloudflare Pages, Netlify, or Vercel (Free)
 - **Cloudflare Pages:** Connect Git or deploy via Wrangler (`./scripts/deploy.sh`).
@@ -138,11 +138,18 @@ identity-recovery/
 │   ├── index.html                # Recovery terminal UI (contains encrypted ciphertext)
 │   └── _headers                  # Strict HTTP security headers (CSP, HSTS, no-store)
 │
+├── site/                         # 🌐 Public product hub (idrecoverykit.com)
+│   ├── index.html                # Project landing page & documentation hub
+│   ├── app/index.html            # Hosted web vault builder (synced from tools/builder.html)
+│   ├── _headers                  # Cloudflare/Netlify edge headers & app no-store rules
+│   └── vercel.json               # Vercel edge headers & app no-store rules
+│
 ├── tools/                        # 🖥️ Offline client-side browser tools
 │   └── builder.html              # Standalone web builder to generate index.html offline
 │
 ├── scripts/                      # 🛠️ Private offline tooling (trusted machine only)
 │   ├── build-builder.js          # Generator script to refresh tools/builder.html
+│   ├── build-site.js             # Generator script to sync site/app and edge headers
 │   ├── deploy.sh                 # 7-step rotation, verification, and publish pipeline
 │   ├── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
 │   └── check-staleness.js        # Zero-knowledge staleness evaluator for CI/alerts
@@ -160,7 +167,7 @@ identity-recovery/
 │   └── sample-payload.json       # Template schema with TOTP seeds
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # 19 automated cryptographic & integrity tests
+│   └── test-suite.js             # 20 automated cryptographic & integrity tests
 │
 ├── vercel.json                   # Vercel edge security header configuration
 ├── netlify.toml                  # Netlify edge security header configuration

@@ -554,6 +554,44 @@ async function runTests() {
   }
 
   console.log("✓ Test 19 Passed: Modular Credential Card Architecture & Normalization Parity verified.");
+
+  // Test 20: Public Product Hub (idrecoverykit.com) Site & App Parity
+  console.log("\n[Test 20] Public Product Hub (idrecoverykit.com) Site & App Parity Verification");
+  const SITE_INDEX_PATH = path.join(REPO_ROOT, 'site', 'index.html');
+  const SITE_APP_INDEX_PATH = path.join(REPO_ROOT, 'site', 'app', 'index.html');
+  const SITE_HEADERS_PATH = path.join(REPO_ROOT, 'site', '_headers');
+
+  if (!fs.existsSync(SITE_INDEX_PATH)) {
+    throw new Error("Test 20 Failed: site/index.html not found!");
+  }
+  const siteIndexContent = fs.readFileSync(SITE_INDEX_PATH, 'utf8');
+  if (!siteIndexContent.includes("Content-Security-Policy") || !siteIndexContent.includes("default-src 'none'")) {
+    throw new Error("Test 20 Failed: site/index.html missing strict CSP!");
+  }
+  if (!siteIndexContent.includes("./app/")) {
+    throw new Error("Test 20 Failed: site/index.html missing link to Web App (./app/)!");
+  }
+  if (!siteIndexContent.includes("https://github.com/janhrabcak/identity-recovery")) {
+    throw new Error("Test 20 Failed: site/index.html missing link to GitHub repository!");
+  }
+
+  if (!fs.existsSync(SITE_APP_INDEX_PATH)) {
+    throw new Error("Test 20 Failed: site/app/index.html not found! Run scripts/build-site.js.");
+  }
+  const expectedBuilderHtml = fs.readFileSync(path.join(REPO_ROOT, 'tools', 'builder.html'), 'utf8');
+  const siteAppHtml = fs.readFileSync(SITE_APP_INDEX_PATH, 'utf8');
+  if (expectedBuilderHtml !== siteAppHtml) {
+    throw new Error("Test 20 Failed: site/app/index.html does not match tools/builder.html! Run npm run build.");
+  }
+
+  if (!fs.existsSync(SITE_HEADERS_PATH)) {
+    throw new Error("Test 20 Failed: site/_headers not found!");
+  }
+  const siteHeaders = fs.readFileSync(SITE_HEADERS_PATH, 'utf8');
+  if (!siteHeaders.includes("default-src 'none'") || !siteHeaders.includes("/app/*") || !siteHeaders.includes("no-store")) {
+    throw new Error("Test 20 Failed: site/_headers missing CSP or /app/* no-store rules!");
+  }
+  console.log("✓ Test 20 Passed: Public product hub (site/) and web app (/app/) parity verified.");
 }
 
 runTests().catch(err => {

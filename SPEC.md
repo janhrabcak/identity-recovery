@@ -40,11 +40,17 @@ identity-recovery/
 │   ├── CLI_REFERENCE.md          # Manual CLI flags & offline workflow
 │   └── FEATURES.md               # UI features (TOTP, QR, panic keybind)
 │
+├── site/                         # 🌐 Public product hub (idrecoverykit.com)
+│   ├── index.html                # Project landing page & documentation hub
+│   ├── app/index.html            # Hosted web vault builder (synced from tools/builder.html)
+│   ├── _headers                  # Cloudflare/Netlify edge headers & app no-store rules
+│   └── vercel.json               # Vercel edge headers & app no-store rules
+│
 ├── templates/                    # 📋 Safe dummy templates
 │   └── sample-payload.json       # Template recovery schema
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # Automated crypto & parity tests (18 automated tests)
+│   └── test-suite.js             # Automated crypto & parity tests (20 automated tests)
 │
 ├── vercel.json                   # Vercel edge security header configuration
 ├── netlify.toml                  # Netlify edge security header configuration
@@ -308,3 +314,5 @@ Automated test runner verifying:
 16. In-browser TOTP HMAC-SHA1 mathematical validation.
 17. Offline Vault Builder (`tools/builder.html`) security, CSP, and parity check.
 18. Multi-provider edge security parity verifying identical strict CSP, HSTS, and `Cache-Control: no-store` headers across Cloudflare (`_headers`), Vercel (`vercel.json`), and Netlify (`netlify.toml`).
+19. Modular Credential Card Architecture & Normalization Parity verifying password manager, backup codes, seed phrase, TOTP group, key-value, and notes cards.
+20. Public Product Hub (`site/`) and web app (`/app/`) parity, strict CSP, and edge header verification for `idrecoverykit.com`.

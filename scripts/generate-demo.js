@@ -76,16 +76,29 @@ async function createDemo() {
     await page.click(selector);
   }
 
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(1000);
 
   // Click load sample
   console.log('Clicking load sample...');
   await clickAt('#btn-load-sample');
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(800);
 
-  // Scroll down a bit
-  await page.mouse.wheel(0, 400);
+  // Scroll down to cards section
+  await page.mouse.wheel(0, 320);
   await page.waitForTimeout(600);
+
+  // Add a Seed Phrase card to showcase modular capability
+  console.log('Adding Seed Phrase card...');
+  await clickAt('#btn-add-seed');
+  await page.waitForTimeout(600);
+
+  // Fill in seed phrase in the newly added card
+  const seedTextareas = page.locator('.seed-textarea');
+  const count = await seedTextareas.count();
+  if (count > 0) {
+    await seedTextareas.nth(count - 1).fill('witch collapse practice feed shame open despair creek road again ice least');
+  }
+  await page.waitForTimeout(800);
 
   // Generate diceware instead of typing
   console.log('Generating diceware...');
@@ -102,15 +115,15 @@ async function createDemo() {
   
   // Wait for build
   await page.waitForSelector('#view-deploy', { state: 'visible' });
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(1200);
   
   // Show git tab
   await clickAt('#tab-git-btn');
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(1200);
   
   // Move to download button to highlight it
   await moveTo('#btn-download-html');
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1800);
 
   console.log('Closing browser...');
   await page.close();

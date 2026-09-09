@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data: https:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none';">
+  <title>ID Recovery Kit — Cold-Start Identity Recovery Protocol</title>
+  <meta name="description" content="Zero-dependency, offline AES-GCM-256 encrypted credential vault for physical disaster recovery. Access master passwords, 2FA backup codes, and TOTP seeds from any browser.">
+
+  <style>
+    :root {
+      --bg-page: #0b0f19;
+      --bg-surface: #111827;
+      --bg-surface-elevated: #1e293b;
+      --border-subtle: #1f293d;
+      --border-focus: #3b82f6;
+      --accent-green: #10b981;
+      --accent-emerald: #34d399;
+      --accent-cyan: #06b6d4;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Navigation */
+    .navbar {
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(11, 15, 25, 0.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 70px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-icon {
+      font-size: 1.5rem;
+    }
+
+    .brand-badge {
+      font-size: 0.75rem;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .nav-links a:hover {
+      color: var(--text-primary);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background: #28364e;
+      border-color: #3b4d6e;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 90px 0 70px 0;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.04) 50%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid var(--border-subtle);
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      color: var(--accent-emerald);
+      margin-bottom: 24px;
+      font-weight: 500;
+    }
+
+    .hero-title {
+      font-size: 3.25rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1.5px;
+      margin-bottom: 24px;
+      background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 36px;
+      font-weight: 400;
+    }
+
+    .hero-cta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* Terminal Preview */
+    .terminal-window {
+      max-width: 900px;
+      margin: 50px auto 0 auto;
+      background: #090d16;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .terminal-header {
+      background: #111726;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+
+    .terminal-title {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .terminal-body {
+      padding: 24px;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.7;
+      color: #e2e8f0;
+      overflow-x: auto;
+    }
+
+    .t-green { color: var(--accent-emerald); }
+    .t-cyan { color: var(--accent-cyan); }
+    .t-muted { color: var(--text-muted); }
+    .t-bold { font-weight: 700; }
+
+    /* Threat Model Section */
+    .section {
+      padding: 80px 0;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 50px auto;
+    }
+
+    .section-tag {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent-emerald);
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.75px;
+      margin-bottom: 16px;
+    }
+
+    .section-desc {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    /* Grid cards */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 28px;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .card:hover {
+      border-color: #334155;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 18px;
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+    }
+
+    .card-text {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* Disaster Scenario Callout */
+    .scenario-box {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(17, 24, 39, 0.9) 100%);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+      margin-bottom: 60px;
+    }
+
+    .scenario-left h3 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: 14px;
+      letter-spacing: -0.5px;
+    }
+
+    .scenario-left p {
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+      font-size: 1rem;
+    }
+
+    .scenario-steps {
+      list-style: none;
+    }
+
+    .scenario-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 18px;
+      background: rgba(11, 15, 25, 0.6);
+      padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .step-num {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--accent-emerald);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .step-body {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .step-body strong {
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    /* CLI Quickstart Tabs */
+    .cli-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(11, 15, 25, 0.6);
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      padding: 14px 22px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      color: var(--accent-emerald);
+      border-bottom-color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .cli-content {
+      padding: 24px;
+    }
+
+    .code-block {
+      background: #080c14;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 18px;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: #e2e8f0;
+      line-height: 1.6;
+      position: relative;
+      overflow-x: auto;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .copy-btn:hover {
+      color: var(--text-primary);
+      background: #2c3b52;
+    }
+
+    /* Web App Banner */
+    .app-banner {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      text-align: center;
+      margin-top: 60px;
+    }
+
+    .app-banner h3 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .app-banner p {
+      color: var(--text-secondary);
+      max-width: 650px;
+      margin: 0 auto 24px auto;
+      font-size: 1.05rem;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 50px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    .footer-links a {
+      color: var(--text-secondary);
+    }
+
+    .footer-links a:hover {
+      color: var(--text-primary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2.25rem; }
+      .scenario-box { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <a href="/" class="brand">
+        <span class="brand-icon">🛡️</span>
+        <span>ID Recovery Kit</span>
+        <span class="brand-badge">v1.0</span>
+      </a>
+
+      <nav class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#disaster-model">Threat Model</a>
+        <a href="#cli-quickstart">CLI Deploy</a>
+        <a href="https://github.com/janhrabcak/identity-recovery" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="./app/" class="btn btn-primary">
+          <span>🚀 Launch Web App</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container hero-content">
+      <div class="pill-badge">
+        <span>🔒 Zero Runtime Dependencies</span>
+        <span>•</span>
+        <span>600,000 PBKDF2 Rounds</span>
+        <span>•</span>
+        <span>MIT Open Source</span>
+      </div>
+
+      <h1 class="hero-title">When All Your Devices Are Gone, How Do You Recover Your Identity?</h1>
+
+      <p class="hero-subtitle">
+        <strong>ID Recovery Kit</strong> is an open-source, cold-start disaster-recovery protocol. 
+        It encapsulates your 1Password secret keys, Google 2SV backup codes, and live TOTP seeds inside a self-contained, 
+        offline AES-GCM-256 encrypted terminal that you can unlock on <em>any borrowed browser</em> with nothing more than your memory.
+      </p>
+
+      <div class="hero-cta">
+        <a href="./app/" class="btn btn-primary" style="padding: 14px 28px; font-size: 1.05rem;">
+          🚀 Launch Web Vault Builder
+        </a>
+        <a href="#cli-quickstart" class="btn btn-secondary" style="padding: 14px 24px; font-size: 1.05rem;">
+          💻 CLI Quickstart
+        </a>
+        <a href="https://github.com/janhrabcak/identity-recovery" target="_blank" rel="noopener" class="btn btn-secondary" style="padding: 14px 20px;">
+          ⭐️ Star on GitHub
+        </a>
+      </div>
+
+      <!-- Terminal Window Preview -->
+      <div class="terminal-window">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <div class="terminal-title">~/identity-recovery — deploy.sh</div>
+          <div></div>
+        </div>
+        <div class="terminal-body">
+          <p><span class="t-cyan">$</span> ./scripts/deploy.sh payload.json --provider cloudflare</p>
+          <p class="t-muted">[1/7] Running pre-flight security checks...</p>
+          <p class="t-green">✓ Valid JSON payload with required credentials.</p>
+          <p class="t-muted">[2/7] Enter 6-word Diceware passphrase: <span class="t-cyan">******</span></p>
+          <p class="t-green">✓ Sufficient Diceware entropy detected (~77.5 bits).</p>
+          <p class="t-muted">[3/7] Encrypting with PBKDF2-SHA256 (600,000 rounds) + AES-GCM-256...</p>
+          <p class="t-green">✓ Zero Git Persistence: Staged in ephemeral staging directory.</p>
+          <p class="t-muted">[4/7] Synchronizing Cloudflare DNS TXT dead-drop (sos.yourdomain.com)...</p>
+          <p class="t-green">✓ DNS TXT record published worldwide. Queryable via DoH anywhere.</p>
+          <p class="t-bold t-green">🚀 Recovery terminal live worldwide at https://sos.yourdomain.com</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Threat Model & Disaster Scenario -->
+  <section class="section" id="disaster-model">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">The Physical Disaster Problem</div>
+        <h2 class="section-title">Why Traditional Password Managers Fail in a Crisis</h2>
+        <p class="section-desc">
+          Modern password managers are fantastic, until physical disaster strikes. 
+          What happens when you are stranded with zero primary devices?
+        </p>
+      </div>
+
+      <div class="scenario-box">
+        <div class="scenario-left">
+          <h3>The Cold-Start Catch-22</h3>
+          <p>
+            You are traveling and your backpack with your phone, laptop, and hardware security key (YubiKey) is stolen.
+          </p>
+          <p>
+            You walk into a hotel business center or library. You know your master password, but 1Password requires your <strong>34-character Secret Key</strong> (which was on your laptop), and Google requires a <strong>hardware key or 2SV prompt</strong> (which was on your phone).
+          </p>
+          <p style="color: var(--accent-emerald); font-weight: 600;">
+            Without your devices, you cannot log in. Without logging in, you cannot retrieve your devices.
+          </p>
+        </div>
+
+        <ul class="scenario-steps">
+          <li class="scenario-step">
+            <span class="step-num">1</span>
+            <div class="step-body">
+              <strong>Walk up to any browser</strong>
+              Navigate to your recovery URL (or query the DNS dead-drop via DoH).
+            </div>
+          </li>
+          <li class="scenario-step">
+            <span class="step-num">2</span>
+            <div class="step-body">
+              <strong>Enter your 6-word Diceware passphrase</strong>
+              PBKDF2 derives the key locally in WebCrypto with 600,000 rounds. No backend server ever sees your passphrase.
+            </div>
+          </li>
+          <li class="scenario-step">
+            <span class="step-num">3</span>
+            <div class="step-body">
+              <strong>Restore access immediately</strong>
+              Copy your 1Password Secret Key, generate live TOTP codes, and use Google 2SV backup codes to log in.
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Core Features Grid -->
+      <div class="cards-grid" id="features">
+        <div class="card">
+          <div class="card-icon">🔒</div>
+          <h3 class="card-title">600,000 PBKDF2 Iterations</h3>
+          <p class="card-text">
+            Key derivation exceeds OWASP recommendations by 300,000 rounds. Encrypted via AES-GCM-256 with 96-bit CSPRNG initialization vectors.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">📡</div>
+          <h3 class="card-title">DNS Dead-Drop Fallback</h3>
+          <p class="card-text">
+            If your web domain is blocked, censored, or unreachable, your ciphertext is queryable as a DNS TXT record via Cloudflare & Google DoH.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🛡️</div>
+          <h3 class="card-title">Zero Runtime Dependencies</h3>
+          <p class="card-text">
+            Strictly self-contained single-file HTML. No external npm libraries, zero third-party CDNs, and a strict Content Security Policy (CSP).
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🌐</div>
+          <h3 class="card-title">Multi-Provider Edge Hosting</h3>
+          <p class="card-text">
+            Deploy with automated header parity across Cloudflare Pages, Netlify, and Vercel with <code>no-store</code> caching and clickjacking protection.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">⚡</div>
+          <h3 class="card-title">Live TOTP & QR Engine</h3>
+          <p class="card-text">
+            Built-in WebCrypto HMAC-SHA1 engine generates 30-second live 2FA codes directly in browser, with offline QR code generation for mobile re-enrollment.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🧹</div>
+          <h3 class="card-title">Panic Button & Auto-Scrub</h3>
+          <p class="card-text">
+            Pressing <code>Escape x3</code> instantly flushes all decrypted secrets from DOM memory. System clipboard auto-clears after 45 seconds.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLI Quickstart Section -->
+  <section class="section" id="cli-quickstart">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">Developer Quickstart</div>
+        <h2 class="section-title">Deploy via Automated CLI</h2>
+        <p class="section-desc">
+          Automate encryption, verification tests, and zero-persistence direct edge deployment in seconds.
+        </p>
+      </div>
+
+      <div class="cli-box">
+        <div class="tab-bar">
+          <button type="button" class="tab-btn active" onclick="switchCliTab('cf', this)">Cloudflare Pages</button>
+          <button type="button" class="tab-btn" onclick="switchCliTab('netlify', this)">Netlify</button>
+          <button type="button" class="tab-btn" onclick="switchCliTab('vercel', this)">Vercel</button>
+        </div>
+
+        <div class="cli-content">
+          <!-- Cloudflare Tab -->
+          <div id="cli-tab-cf">
+            <div class="code-block">
+              <button type="button" class="copy-btn" onclick="copySnippet('code-cf', this)">Copy</button>
+              <pre id="code-cf"><code># 1. Clone repository
+git clone https://github.com/janhrabcak/identity-recovery.git
+cd identity-recovery
+
+# 2. Copy sample payload and populate credentials
+cp templates/sample-payload.json payload.json
+chmod 600 payload.json
+vim payload.json
+
+# 3. Direct Edge Upload to Cloudflare Pages (Zero Git Secrets)
+./scripts/deploy.sh payload.json --provider cloudflare --project identity-recovery</code></pre>
+            </div>
+          </div>
+
+          <!-- Netlify Tab -->
+          <div id="cli-tab-netlify" style="display: none;">
+            <div class="code-block">
+              <button type="button" class="copy-btn" onclick="copySnippet('code-netlify', this)">Copy</button>
+              <pre id="code-netlify"><code># Direct Edge Upload to Netlify (Zero Git Secrets)
+./scripts/deploy.sh payload.json --provider netlify --site &lt;YOUR_NETLIFY_SITE_ID&gt;</code></pre>
+            </div>
+          </div>
+
+          <!-- Vercel Tab -->
+          <div id="cli-tab-vercel" style="display: none;">
+            <div class="code-block">
+              <button type="button" class="copy-btn" onclick="copySnippet('code-vercel', this)">Copy</button>
+              <pre id="code-vercel"><code># Direct Edge Upload to Vercel (Zero Git Secrets)
+./scripts/deploy.sh payload.json --provider vercel --project identity-recovery</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- In-Browser Builder CTA Banner -->
+      <div class="app-banner">
+        <h3>Prefer Not to Use the Terminal?</h3>
+        <p>
+          You can create, test, and download your encrypted single-file recovery vault completely inside your browser using our zero-dependency web generator.
+        </p>
+        <a href="./app/" class="btn btn-primary" style="padding: 12px 26px; font-size: 1rem;">
+          🚀 Open In-Browser Vault Builder
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="./app/">Web App Builder</a>
+        <a href="https://github.com/janhrabcak/identity-recovery" target="_blank" rel="noopener">GitHub Repository</a>
+        <a href="https://github.com/janhrabcak/identity-recovery/blob/main/SPEC.md" target="_blank" rel="noopener">Specification</a>
+        <a href="https://github.com/janhrabcak/identity-recovery/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+      </div>
+      <p>
+        Cold-Start Identity Recovery Protocol • Zero-knowledge client-side encryption.
+      </p>
+      <p style="margin-top: 6px; font-size: 0.8rem; color: var(--text-muted);">
+        All encryption and key derivation occurs strictly inside your browser or local CLI using standard WebCrypto APIs.
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    function switchCliTab(provider, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      document.getElementById('cli-tab-cf').style.display = provider === 'cf' ? 'block' : 'none';
+      document.getElementById('cli-tab-netlify').style.display = provider === 'netlify' ? 'block' : 'none';
+      document.getElementById('cli-tab-vercel').style.display = provider === 'vercel' ? 'block' : 'none';
+    }
+
+    function copySnippet(id, btn) {
+      const text = document.getElementById(id).innerText;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          const orig = btn.innerText;
+          btn.innerText = "✓ Copied";
+          setTimeout(() => btn.innerText = orig, 2000);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
