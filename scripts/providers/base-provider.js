@@ -8,8 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 export const SECURITY_HEADERS = {
-  // CSP for public landing pages (allows https: images for social icons and external assets)
-  cspLanding: "default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data: https:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none';",
+  cspLanding: "default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data: https:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none';",
   // CSP for encrypted vaults (strict data: only, zero external images)
   cspVault: "default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none';",
   frameOptions: "DENY",
