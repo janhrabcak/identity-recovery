@@ -18,7 +18,7 @@ Stateless, zero-hardware emergency credential recovery protocol designed to rest
 
 | Dimension | Indicator | Operational Guarantee |
 |---|---|---|
-| **Cryptographic Parity** | `🟢 18/18 Passed` | Node.js WebCrypto $\leftrightarrow$ Browser WebCrypto end-to-end verified |
+| **Cryptographic Parity** | `🟢 19/19 Passed` | Node.js WebCrypto $\leftrightarrow$ Browser WebCrypto end-to-end verified |
 | **Supply Chain Risk** | `🟢 0 Dependencies` | Pure Node.js standard libraries & browser-native APIs (zero npm attack surface) |
 | **Edge Header Security** | `🟢 Hardened` | Strict CSP (`default-src 'none'`), `no-store` cache control, anti-clickjacking (`DENY`) |
 | **Vault Freshness** | `🟢 Automated` | Bi-monthly GitHub Actions audit + multi-channel push alerts (ntfy/Discord/Slack) |
@@ -30,12 +30,17 @@ Stateless, zero-hardware emergency credential recovery protocol designed to rest
 ## 🎯 Protocol Overview
 
 - **Disaster Scenario:** Total physical hardware loss (lost phone, lost YubiKey, lost wallet, no trusted devices).
-- **Root of Trust:** 1Password (holds all credentials, Google backup codes, and downstream accounts).
-- **Primary Identity:** Google (@gmail.com with 2SV enabled).
+- **Modular Credential Cards:** Flexible, composable secret blocks for:
+  - 🔑 **Password Managers:** 1Password, Bitwarden, KeePassXC, Dashlane, Proton Pass, or custom vaults.
+  - 🛡️ **2SV Backup Codes:** Google, GitHub, Apple Recovery Keys, Microsoft, AWS, or any service (with per-card interactive burned code tracking).
+  - 🌱 **Seed Phrases:** BIP-39 12/18/24-word recovery phrases for Ledger, Trezor, MetaMask, Phantom, etc., with click-to-reveal word chips.
+  - ⏱️ **Live In-Browser TOTP:** Real-time 30-second rotating two-factor codes for unlimited services.
+  - 🔐 **Custom Secrets & Keys:** Arbitrary key-value fields for SSH keys, LUKS disk passphrases, PGP fingerprints, and PINs.
+  - 📝 **Emergency Instructions:** Rich text emergency contacts, trusted numbers, and protocol guidelines.
 - **Key Material:** Memorized 6-word Diceware passphrase (~77 bits entropy).
 - **Cryptography:** AES-GCM-256 with PBKDF2-SHA-256 (600,000 iterations, 16-byte random salt, 12-byte random IV).
 - **Runtime:** Single-file zero-dependency `public/index.html` executing native WebCrypto (`window.crypto.subtle`).
-- **Primary Dead-Drop:** Edge Anycast CDN (`https://sos.<yourdomain>.com` on Cloudflare Pages).
+- **Primary Dead-Drop:** Edge Anycast CDN (`https://sos.<yourdomain>.com` on Cloudflare Pages, Netlify, or Vercel).
 - **Secondary Dead-Drop:** RFC 1035 DNS TXT record (`recovery.<yourdomain>.com`) queryable via DNS-over-HTTPS (DoH).
 
 ---
@@ -105,7 +110,7 @@ cp templates/sample-payload.json payload.json
 # Run the automated deployment pipeline:
 ./scripts/deploy.sh payload.json
 ```
-The script will prompt for your 6-word passphrase, verify entropy, run 18 automated tests, commit strictly `public/index.html`, push to `main`, and securely shred `payload.json`.
+The script will prompt for your 6-word passphrase, verify entropy, run 19 automated tests, commit strictly `public/index.html`, push to `main`, and securely shred `payload.json`.
 
 ### 4. Connect Cloudflare Pages, Netlify, or Vercel (Free)
 - **Cloudflare Pages:** Connect Git or deploy via Wrangler (`./scripts/deploy.sh`).
@@ -155,7 +160,7 @@ identity-recovery/
 │   └── sample-payload.json       # Template schema with TOTP seeds
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # 18 automated cryptographic & integrity tests
+│   └── test-suite.js             # 19 automated cryptographic & integrity tests
 │
 ├── vercel.json                   # Vercel edge security header configuration
 ├── netlify.toml                  # Netlify edge security header configuration

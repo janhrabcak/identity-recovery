@@ -521,6 +521,83 @@
       overflow-y: auto;
     }
 
+    /* Seed Phrase styles */
+    .seed-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+    .seed-chip {
+      display: flex;
+      align-items: center;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      gap: 8px;
+    }
+    .seed-idx {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      min-width: 22px;
+    }
+    .seed-word {
+      color: var(--text-primary);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: filter 0.2s;
+    }
+    .seed-word.masked {
+      filter: blur(5px);
+      user-select: none;
+    }
+
+    /* Key-Value styles */
+    .kv-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .kv-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      gap: 12px;
+    }
+    .kv-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .kv-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    .kv-value {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+    .kv-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
     /* Recovery instructions callout */
     .instructions-box {
       background-color: rgba(2, 132, 199, 0.08);
@@ -679,10 +756,26 @@
         color: #000000 !important;
         padding: 8px 12px !important;
       }
-      #backup-codes-container {
+      .codes-grid, #backup-codes-container {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 6px !important;
+      }
+      .seed-chip {
+        background: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        color: #000000 !important;
+      }
+      .seed-word.masked {
+        filter: none !important;
+      }
+      .kv-box {
+        background: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        color: #000000 !important;
+      }
+      .kv-value {
+        color: #000000 !important;
       }
       .code-card {
         background: #ffffff !important;
@@ -846,118 +939,9 @@
         </div>
       </section>
 
-      <!-- Section: 1Password Root of Trust -->
-      <section class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <span>🔑</span> Root of Trust: 1Password
-          </div>
-          <span style="font-size: 0.775rem; color: var(--text-secondary);">Primary Credential Store</span>
-        </div>
+      <!-- Modular Vault Credential Cards (Populated dynamically) -->
+      <div id="vault-cards-container"></div>
 
-        <div class="cred-box">
-          <div class="cred-content">
-            <div class="cred-label">Account Email</div>
-            <div id="op-email" class="cred-value">-</div>
-          </div>
-          <button type="button" class="btn btn-sm btn-copy" onclick="copyValue(this, currentPayload?.onePassword?.email)">Copy</button>
-        </div>
-
-        <div class="cred-box">
-          <div class="cred-content">
-            <div class="cred-label">Secret Key</div>
-            <div id="op-secret-key" class="cred-value secret-key-value">-</div>
-          </div>
-                    <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn btn-sm btn-copy" onclick="showQR(currentPayload?.onePassword?.secretKey)">📱 QR</button>
-            <button type="button" class="btn btn-sm btn-copy" onclick="copyValue(this, currentPayload?.onePassword?.secretKey)">Copy</button>
-          </div>
-
-        </div>
-
-        <div id="op-hint-box" class="cred-box hidden">
-          <div class="cred-content">
-            <div class="cred-label">Account Key Hint</div>
-            <div id="op-hint" class="cred-value">-</div>
-          </div>
-          <button type="button" class="btn btn-sm btn-copy" onclick="copyValue(this, currentPayload?.onePassword?.accountKeyHint)">Copy</button>
-        </div>
-
-        <div class="instructions-box">
-          <strong>1Password Sign-in Protocol:</strong>
-          <ol>
-            <li>Open <code style="color: #38bdf8;">https://my.1password.com</code> in a clean/incognito browser tab.</li>
-            <li>Paste the <strong>Account Email</strong> and <strong>Secret Key</strong> copied above.</li>
-            <li>Type your memorized 1Password Master Password to restore access to all vaults and authenticator seeds.</li>
-          </ol>
-        </div>
-      </section>
-
-
-      <!-- Section: Live TOTP Generator -->
-      <section class="card hidden" id="totp-section">
-        <div class="card-header">
-          <div class="card-title">
-            <span>⏱️</span> Live Authenticator (TOTP)
-          </div>
-          <span style="font-size: 0.775rem; color: var(--text-secondary);">Offline Generator</span>
-        </div>
-        
-        <p style="font-size: 0.825rem; color: var(--text-secondary); margin-bottom: 14px;">
-          These live codes are generated directly in your browser. Ensure your system clock is accurate.
-        </p>
-        
-        <div style="width: 100%; height: 4px; background: var(--bg-surface-elevated); border-radius: 2px; margin-bottom: 16px; overflow: hidden;">
-          <div id="totp-progress-bar" style="height: 100%; background: var(--accent-primary); width: 100%; transition: width 1s linear;"></div>
-        </div>
-
-        <div id="totp-container" class="codes-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
-        </div>
-      </section>
-
-      <!-- Section: Google Backup Codes Tracker -->
-      <section class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <span>🛡️</span> Google 2SV Backup Codes
-          </div>
-          <span style="font-size: 0.775rem; color: var(--text-secondary);">Single-Use Emergency Authenticator</span>
-        </div>
-
-        <p style="font-size: 0.825rem; color: var(--text-secondary); margin-bottom: 14px;">
-          Each Google backup code can only be used once. Click any code or its checkbox to strike it through as <strong>USED</strong> so you don't burn recovery attempts.
-        </p>
-
-        <div class="tracker-header">
-          <div class="tracker-counter">
-            Remaining Unused: <span id="codes-remaining-count" class="tracker-counter-num">0</span> / <span id="codes-total-count">0</span>
-          </div>
-          <div class="tracker-actions">
-            <button type="button" class="btn btn-sm btn-primary" id="copy-next-code-btn" onclick="copyNextUnusedCode(this)">
-              ⚡ Copy Next Unused Code
-            </button>
-            <button type="button" class="btn btn-sm" onclick="resetAllCodeStrikes()">
-              ↺ Reset Tracker
-            </button>
-          </div>
-        </div>
-
-        <!-- Dynamic Grid of Codes -->
-        <div id="backup-codes-container" class="codes-grid">
-          <!-- Populated by JavaScript -->
-        </div>
-      </section>
-
-      <!-- Section: Emergency Notes -->
-      <section class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <span>📝</span> Emergency Instructions & Contacts
-          </div>
-          <button type="button" class="btn btn-sm btn-copy" onclick="copyValue(this, currentPayload?.notes)">Copy Notes</button>
-        </div>
-        <div id="emergency-notes" class="notes-box">-</div>
-      </section>
 
     </main>
 
@@ -2176,16 +2160,16 @@ var qrcodegen;
 
           const dec = new TextDecoder();
           const jsonText = dec.decode(decryptedBuffer);
-          const payload = JSON.parse(jsonText);
+          const rawPayload = JSON.parse(jsonText);
+          const payload = normalizeVaultPayload(rawPayload);
 
           currentPayload = payload;
 
-          // Scope sessionStorage key by canaryCode or payload hash
+          // Scope sessionStorage key by canaryCode
           if (payload.metadata && payload.metadata.canaryCode) {
             vaultSessionStorageKey = "recovery_used_codes_" + payload.metadata.canaryCode;
           }
 
-          loadUsedCodesFromSession();
           renderVault(payload);
 
           // Switch screen
@@ -2205,22 +2189,109 @@ var qrcodegen;
     }
 
     /**
+     * Normalizes payload into the modular items architecture,
+     * maintaining full backward compatibility with legacy single-service payloads.
+     */
+    function normalizeVaultPayload(payload) {
+      if (!payload || typeof payload !== "object") {
+        return { metadata: {}, items: [] };
+      }
+      const res = { ...payload };
+      if (!Array.isArray(res.items)) {
+        res.items = [];
+        if (res.onePassword && (res.onePassword.email || res.onePassword.secretKey)) {
+          res.items.push({
+            id: "legacy-op",
+            type: "password_manager",
+            title: "1Password Root of Trust",
+            service: "1Password",
+            email: res.onePassword.email || "",
+            secretKey: res.onePassword.secretKey || "",
+            hint: res.onePassword.accountKeyHint || "",
+            instructions: "1. Open https://my.1password.com in a clean browser tab.\n2. Paste Account Email and Secret Key.\n3. Type your memorized Master Password to restore access."
+          });
+        }
+        if (Array.isArray(res.googleBackupCodes) && res.googleBackupCodes.length > 0) {
+          res.items.push({
+            id: "legacy-codes",
+            type: "backup_codes",
+            title: "Google 2SV Backup Codes",
+            service: "Google",
+            codes: res.googleBackupCodes
+          });
+        }
+        if (res.totpSeeds && typeof res.totpSeeds === "object" && Object.keys(res.totpSeeds).length > 0) {
+          res.items.push({
+            id: "legacy-totp",
+            type: "totp_group",
+            title: "Live Authenticator (TOTP)",
+            seeds: res.totpSeeds
+          });
+        }
+        if (res.notes) {
+          res.items.push({
+            id: "legacy-notes",
+            type: "notes",
+            title: "Emergency Instructions & Contacts",
+            content: res.notes
+          });
+        }
+      }
+      return res;
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    /**
      * Render the decrypted vault contents into the DOM safely.
      */
-    function renderVault(payload) {
+    function renderVault(rawPayload) {
+      const payload = normalizeVaultPayload(rawPayload);
+      currentPayload = payload;
+
       renderStalenessBanner(payload.metadata);
-      renderOnePassword(payload.onePassword);
-      renderBackupCodes(payload.googleBackupCodes);
-      if (payload.totpSeeds) {
-        document.getElementById("totp-section").classList.remove("hidden");
-        updateTOTPs();
-        if (totpInterval) clearInterval(totpInterval);
-        totpInterval = setInterval(updateTOTPs, 1000);
-      } else {
-        document.getElementById("totp-section").classList.add("hidden");
-        if (totpInterval) clearInterval(totpInterval);
+
+      const container = document.getElementById("vault-cards-container");
+      if (!container) return;
+      container.innerHTML = "";
+
+      if (totpInterval) {
+        clearInterval(totpInterval);
+        totpInterval = null;
       }
-      renderEmergencyNotes(payload.notes);
+      activeTotpList = [];
+      usedBackupCodesMap.clear();
+
+      let hasTotp = false;
+      const items = Array.isArray(payload.items) ? payload.items : [];
+
+      if (items.length === 0) {
+        container.innerHTML = '<div class="card" style="text-align: center; color: var(--text-muted); padding: 24px;">No credentials found in vault payload.</div>';
+        return;
+      }
+
+      items.forEach((item, idx) => {
+        const cardEl = renderCardItem(item, idx);
+        if (cardEl) {
+          container.appendChild(cardEl);
+        }
+        if (item.type === "totp_group" || item.type === "totp") {
+          hasTotp = true;
+        }
+      });
+
+      if (hasTotp) {
+        updateAllTOTPs();
+        totpInterval = setInterval(updateAllTOTPs, 1000);
+      }
     }
 
     /**
@@ -2304,220 +2375,662 @@ var qrcodegen;
       }
     }
 
-    /**
-     * Render 1Password credentials
-     */
-    function renderOnePassword(onePassword) {
-      const emailEl = document.getElementById("op-email");
-      const secretKeyEl = document.getElementById("op-secret-key");
-      const hintBoxEl = document.getElementById("op-hint-box");
-      const hintEl = document.getElementById("op-hint");
+    // Map of cardId -> Set(usedIndices)
+    const usedBackupCodesMap = new Map();
 
-      if (!onePassword) {
-        emailEl.textContent = "Not specified in vault";
-        secretKeyEl.textContent = "Not specified in vault";
-        return;
-      }
-
-      emailEl.textContent = onePassword.email || "-";
-      secretKeyEl.textContent = onePassword.secretKey || "-";
-
-      if (onePassword.accountKeyHint) {
-        hintEl.textContent = onePassword.accountKeyHint;
-        hintBoxEl.classList.remove("hidden");
-      } else {
-        hintBoxEl.classList.add("hidden");
-      }
+    function getCardSessionKey(cardId) {
+      const canary = currentPayload?.metadata?.canaryCode || "vault";
+      return `recovery_used_codes_${canary}_${cardId}`;
     }
 
-    /**
-     * Strikethrough Tracker: Load & Save Session State
-     */
-    function loadUsedCodesFromSession() {
+    function loadUsedCodesForCard(cardId) {
       try {
-        const stored = sessionStorage.getItem(vaultSessionStorageKey);
+        const stored = sessionStorage.getItem(getCardSessionKey(cardId));
         if (stored) {
-          usedCodeIndices = new Set(JSON.parse(stored));
-        } else {
-          usedCodeIndices = new Set();
+          return new Set(JSON.parse(stored));
         }
-      } catch (e) {
-        usedCodeIndices = new Set();
-      }
+        if (cardId === "legacy-codes" && vaultSessionStorageKey) {
+          const legacy = sessionStorage.getItem(vaultSessionStorageKey);
+          if (legacy) return new Set(JSON.parse(legacy));
+        }
+      } catch (e) {}
+      return new Set();
     }
 
-    function saveUsedCodesToSession() {
+    function saveUsedCodesForCard(cardId, set) {
       try {
-        sessionStorage.setItem(vaultSessionStorageKey, JSON.stringify(Array.from(usedCodeIndices)));
-      } catch (e) {
-        // Storage restricted
-      }
+        sessionStorage.setItem(getCardSessionKey(cardId), JSON.stringify(Array.from(set)));
+      } catch (e) {}
     }
 
     /**
-     * Render Google Backup Codes with interactive strikethrough tracker
+     * Render a Password Manager credential card
      */
-    function renderBackupCodes(codes) {
-      const container = document.getElementById("backup-codes-container");
-      container.innerHTML = "";
+    function renderPasswordManagerCard(item, cardIndex) {
+      const cardId = item.id || `pm-${cardIndex}`;
+      const card = document.createElement("section");
+      card.className = "card";
+      card.id = `card-${cardId}`;
 
-      if (!Array.isArray(codes) || codes.length === 0) {
-        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.875rem;">No backup codes found in payload.</div>';
-        updateTrackerCounts(0, 0);
-        return;
-      }
+      const title = item.title || (item.service ? `Root of Trust: ${item.service}` : "Password Manager");
+      const service = item.service || "Primary Vault";
 
-      codes.forEach((code, index) => {
-        const isUsed = usedCodeIndices.has(index);
+      const header = document.createElement("div");
+      header.className = "card-header";
+      header.innerHTML = `
+        <div class="card-title">
+          <span>🔑</span> ${escapeHtml(title)}
+        </div>
+        <span style="font-size: 0.775rem; color: var(--text-secondary);">${escapeHtml(service)}</span>
+      `;
+      card.appendChild(header);
 
-        const card = document.createElement("div");
-        card.className = `code-card ${isUsed ? "used" : ""}`;
-        card.id = `code-card-${index}`;
-
-        // Left container
-        const left = document.createElement("div");
-        left.className = "code-left";
-
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.className = "code-checkbox";
-        checkbox.checked = isUsed;
-        checkbox.title = "Mark as used";
-        checkbox.addEventListener("click", (e) => {
-          e.stopPropagation();
-          toggleCodeUsed(index);
-        });
-
-        const idxLabel = document.createElement("span");
-        idxLabel.className = "code-index";
-        idxLabel.textContent = `#${index + 1}`;
-
-        const codeDigits = document.createElement("span");
-        codeDigits.className = "code-digits";
-        // Format as XXXX XXXX if 8 digits for enhanced legibility
-        const formattedCode = code.length === 8 ? `${code.slice(0, 4)} ${code.slice(4)}` : code;
-        codeDigits.textContent = formattedCode;
-
-        left.appendChild(checkbox);
-        left.appendChild(idxLabel);
-        left.appendChild(codeDigits);
-
-        // Copy button
+      if (item.email) {
+        const box = document.createElement("div");
+        box.className = "cred-box";
+        box.innerHTML = `
+          <div class="cred-content">
+            <div class="cred-label">Account Email / Username</div>
+            <div class="cred-value">${escapeHtml(item.email)}</div>
+          </div>
+        `;
         const copyBtn = document.createElement("button");
         copyBtn.type = "button";
         copyBtn.className = "btn btn-sm btn-copy";
         copyBtn.textContent = "Copy";
-        copyBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          copyValue(copyBtn, code);
-        });
+        copyBtn.onclick = function() { copyValue(this, item.email); };
+        box.appendChild(copyBtn);
+        card.appendChild(box);
+      }
 
-        // Toggle strikethrough when clicking on the card itself
-        card.addEventListener("click", () => {
-          toggleCodeUsed(index);
-        });
+      if (item.secretKey) {
+        const box = document.createElement("div");
+        box.className = "cred-box";
+        box.innerHTML = `
+          <div class="cred-content">
+            <div class="cred-label">Secret Key / Master Key Token</div>
+            <div class="cred-value secret-key-value">${escapeHtml(item.secretKey)}</div>
+          </div>
+        `;
+        const actions = document.createElement("div");
+        actions.style.display = "flex";
+        actions.style.gap = "8px";
 
-        card.appendChild(left);
-        card.appendChild(copyBtn);
-        container.appendChild(card);
-      });
+        const qrBtn = document.createElement("button");
+        qrBtn.type = "button";
+        qrBtn.className = "btn btn-sm btn-copy";
+        qrBtn.textContent = "📱 QR";
+        qrBtn.onclick = function() { showQR(item.secretKey); };
 
-      updateTrackerCounts(codes.length - usedCodeIndices.size, codes.length);
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "btn btn-sm btn-copy";
+        copyBtn.textContent = "Copy";
+        copyBtn.onclick = function() { copyValue(this, item.secretKey); };
+
+        actions.appendChild(qrBtn);
+        actions.appendChild(copyBtn);
+        box.appendChild(actions);
+        card.appendChild(box);
+      }
+
+      if (item.hint) {
+        const box = document.createElement("div");
+        box.className = "cred-box";
+        box.innerHTML = `
+          <div class="cred-content">
+            <div class="cred-label">Account / Key Hint</div>
+            <div class="cred-value">${escapeHtml(item.hint)}</div>
+          </div>
+        `;
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "btn btn-sm btn-copy";
+        copyBtn.textContent = "Copy";
+        copyBtn.onclick = function() { copyValue(this, item.hint); };
+        box.appendChild(copyBtn);
+        card.appendChild(box);
+      }
+
+      if (item.instructions) {
+        const instBox = document.createElement("div");
+        instBox.className = "instructions-box";
+        instBox.innerHTML = `<strong>Sign-in Instructions:</strong><div style="margin-top: 6px; white-space: pre-wrap;">${escapeHtml(item.instructions)}</div>`;
+        card.appendChild(instBox);
+      }
+
+      return card;
     }
 
     /**
-     * Toggle used state of a backup code
+     * Render Backup Codes Card with interactive strikethrough tracker
      */
-    function toggleCodeUsed(index) {
-      if (usedCodeIndices.has(index)) {
-        usedCodeIndices.delete(index);
-      } else {
-        usedCodeIndices.add(index);
-      }
-      saveUsedCodesToSession();
+    function renderBackupCodesCard(item, cardIndex) {
+      const cardId = item.id || `codes-${cardIndex}`;
+      const card = document.createElement("section");
+      card.className = "card";
+      card.id = `card-${cardId}`;
 
-      const card = document.getElementById(`code-card-${index}`);
-      if (card) {
-        const checkbox = card.querySelector(".code-checkbox");
-        if (usedCodeIndices.has(index)) {
-          card.classList.add("used");
-          if (checkbox) checkbox.checked = true;
+      const title = item.title || (item.service ? `${item.service} Backup Codes` : "Emergency Backup Codes");
+      const service = item.service || "Single-Use Emergency Authenticator";
+      const codes = Array.isArray(item.codes) ? item.codes : [];
+
+      if (!usedBackupCodesMap.has(cardId)) {
+        usedBackupCodesMap.set(cardId, loadUsedCodesForCard(cardId));
+      }
+      const usedSet = usedBackupCodesMap.get(cardId);
+
+      const header = document.createElement("div");
+      header.className = "card-header";
+      header.innerHTML = `
+        <div class="card-title">
+          <span>🛡️</span> ${escapeHtml(title)}
+        </div>
+        <span style="font-size: 0.775rem; color: var(--text-secondary);">${escapeHtml(service)}</span>
+      `;
+      card.appendChild(header);
+
+      const desc = document.createElement("p");
+      desc.style = "font-size: 0.825rem; color: var(--text-secondary); margin-bottom: 14px;";
+      desc.innerHTML = `Each backup code can only be used once. Click any code or its checkbox to strike it through as <strong>USED</strong> so you don't burn recovery attempts.`;
+      card.appendChild(desc);
+
+      const trackerHeader = document.createElement("div");
+      trackerHeader.className = "tracker-header";
+
+      const counterDiv = document.createElement("div");
+      counterDiv.className = "tracker-counter";
+      const remCount = codes.length - usedSet.size;
+      counterDiv.innerHTML = `Remaining Unused: <span id="rem-count-${cardId}" class="tracker-counter-num">${remCount}</span> / <span id="tot-count-${cardId}">${codes.length}</span>`;
+
+      const trackerActions = document.createElement("div");
+      trackerActions.className = "tracker-actions";
+
+      const copyNextBtn = document.createElement("button");
+      copyNextBtn.type = "button";
+      copyNextBtn.className = "btn btn-sm btn-primary";
+      copyNextBtn.id = `copy-next-btn-${cardId}`;
+      copyNextBtn.textContent = remCount === 0 && codes.length > 0 ? "No Unused Codes Left" : "⚡ Copy Next Unused Code";
+      copyNextBtn.disabled = remCount === 0 && codes.length > 0;
+      copyNextBtn.onclick = function() { copyNextUnusedCodeForCard(this, cardId, codes); };
+
+      const resetBtn = document.createElement("button");
+      resetBtn.type = "button";
+      resetBtn.className = "btn btn-sm";
+      resetBtn.textContent = "↺ Reset Tracker";
+      resetBtn.onclick = function() { resetCodeStrikesForCard(cardId, codes); };
+
+      trackerActions.appendChild(copyNextBtn);
+      trackerActions.appendChild(resetBtn);
+      trackerHeader.appendChild(counterDiv);
+      trackerHeader.appendChild(trackerActions);
+      card.appendChild(trackerHeader);
+
+      const grid = document.createElement("div");
+      grid.className = "codes-grid";
+      grid.id = `codes-grid-${cardId}`;
+
+      if (codes.length === 0) {
+        grid.innerHTML = '<div style="color: var(--text-muted); font-size: 0.875rem;">No backup codes found in payload.</div>';
+      } else {
+        codes.forEach((code, index) => {
+          const isUsed = usedSet.has(index);
+          const codeCard = document.createElement("div");
+          codeCard.className = `code-card ${isUsed ? "used" : ""}`;
+          codeCard.id = `code-card-${cardId}-${index}`;
+
+          const left = document.createElement("div");
+          left.className = "code-left";
+
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.className = "code-checkbox";
+          cb.checked = isUsed;
+          cb.title = "Mark as used";
+          cb.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleCodeUsedForCard(cardId, index, codes);
+          });
+
+          const idxLabel = document.createElement("span");
+          idxLabel.className = "code-index";
+          idxLabel.textContent = `#${index + 1}`;
+
+          const digits = document.createElement("span");
+          digits.className = "code-digits";
+          const formatted = code.length === 8 ? `${code.slice(0, 4)} ${code.slice(4)}` : code;
+          digits.textContent = formatted;
+
+          left.appendChild(cb);
+          left.appendChild(idxLabel);
+          left.appendChild(digits);
+
+          const copyBtn = document.createElement("button");
+          copyBtn.type = "button";
+          copyBtn.className = "btn btn-sm btn-copy";
+          copyBtn.textContent = "Copy";
+          copyBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            copyValue(copyBtn, code);
+          });
+
+          codeCard.addEventListener("click", () => {
+            toggleCodeUsedForCard(cardId, index, codes);
+          });
+
+          codeCard.appendChild(left);
+          codeCard.appendChild(copyBtn);
+          grid.appendChild(codeCard);
+        });
+      }
+
+      card.appendChild(grid);
+      return card;
+    }
+
+    function toggleCodeUsedForCard(cardId, index, codes) {
+      const usedSet = usedBackupCodesMap.get(cardId) || new Set();
+      if (usedSet.has(index)) {
+        usedSet.delete(index);
+      } else {
+        usedSet.add(index);
+      }
+      usedBackupCodesMap.set(cardId, usedSet);
+      saveUsedCodesForCard(cardId, usedSet);
+
+      const cardEl = document.getElementById(`code-card-${cardId}-${index}`);
+      if (cardEl) {
+        const cb = cardEl.querySelector(".code-checkbox");
+        if (usedSet.has(index)) {
+          cardEl.classList.add("used");
+          if (cb) cb.checked = true;
         } else {
-          card.classList.remove("used");
-          if (checkbox) checkbox.checked = false;
+          cardEl.classList.remove("used");
+          if (cb) cb.checked = false;
         }
       }
 
-      const totalCodes = currentPayload?.googleBackupCodes?.length || 0;
-      updateTrackerCounts(totalCodes - usedCodeIndices.size, totalCodes);
+      updateCardTrackerCounts(cardId, codes);
     }
 
-    /**
-     * Quick Action: Copy Next Unused Code
-     */
-    function copyNextUnusedCode(buttonEl) {
-      const codes = currentPayload?.googleBackupCodes;
-      if (!Array.isArray(codes) || codes.length === 0) return;
+    function updateCardTrackerCounts(cardId, codes) {
+      const usedSet = usedBackupCodesMap.get(cardId) || new Set();
+      const remaining = codes.length - usedSet.size;
+      const remEl = document.getElementById(`rem-count-${cardId}`);
+      const totEl = document.getElementById(`tot-count-${cardId}`);
+      if (remEl) remEl.textContent = remaining;
+      if (totEl) totEl.textContent = codes.length;
 
-      const nextIndex = codes.findIndex((_, idx) => !usedCodeIndices.has(idx));
+      const nextBtn = document.getElementById(`copy-next-btn-${cardId}`);
+      if (nextBtn) {
+        if (remaining === 0 && codes.length > 0) {
+          nextBtn.disabled = true;
+          nextBtn.textContent = "No Unused Codes Left";
+        } else {
+          nextBtn.disabled = false;
+          nextBtn.textContent = "⚡ Copy Next Unused Code";
+        }
+      }
+    }
+
+    function copyNextUnusedCodeForCard(buttonEl, cardId, codes) {
+      const usedSet = usedBackupCodesMap.get(cardId) || new Set();
+      const nextIndex = codes.findIndex((_, idx) => !usedSet.has(idx));
       if (nextIndex === -1) {
-        alert("All backup codes are marked as USED!");
+        alert("All backup codes for this service are marked as USED!");
         return;
       }
-
       const nextCode = codes[nextIndex];
       copyValue(buttonEl, nextCode);
 
-      // Flash and scroll card into view
-      const targetCard = document.getElementById(`code-card-${nextIndex}`);
-      if (targetCard) {
-        targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
-        targetCard.style.outline = "2px solid #38bdf8";
+      const targetEl = document.getElementById(`code-card-${cardId}-${nextIndex}`);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        targetEl.style.outline = "2px solid #38bdf8";
         setTimeout(() => {
-          targetCard.style.outline = "";
+          targetEl.style.outline = "";
         }, 1500);
       }
     }
 
-    /**
-     * Reset all strikethroughs
-     */
-    function resetAllCodeStrikes() {
-      if (usedCodeIndices.size === 0) return;
-      if (confirm("Reset all backup code strikethrough marks?")) {
-        usedCodeIndices.clear();
-        saveUsedCodesToSession();
-        if (currentPayload && currentPayload.googleBackupCodes) {
-          renderBackupCodes(currentPayload.googleBackupCodes);
-        }
+    function resetCodeStrikesForCard(cardId, codes) {
+      const usedSet = usedBackupCodesMap.get(cardId);
+      if (!usedSet || usedSet.size === 0) return;
+      if (confirm("Reset all backup code strikethrough marks for this card?")) {
+        usedSet.clear();
+        saveUsedCodesForCard(cardId, usedSet);
+        codes.forEach((_, index) => {
+          const cardEl = document.getElementById(`code-card-${cardId}-${index}`);
+          if (cardEl) {
+            cardEl.classList.remove("used");
+            const cb = cardEl.querySelector(".code-checkbox");
+            if (cb) cb.checked = false;
+          }
+        });
+        updateCardTrackerCounts(cardId, codes);
       }
     }
 
     /**
-     * Update remaining / total counters
+     * Render Seed Phrase Card
      */
-    function updateTrackerCounts(remaining, total) {
-      document.getElementById("codes-remaining-count").textContent = remaining;
-      document.getElementById("codes-total-count").textContent = total;
+    function renderSeedPhraseCard(item, cardIndex) {
+      const cardId = item.id || `seed-${cardIndex}`;
+      const card = document.createElement("section");
+      card.className = "card";
+      card.id = `card-${cardId}`;
 
-      const copyNextBtn = document.getElementById("copy-next-code-btn");
-      if (copyNextBtn) {
-        if (remaining === 0 && total > 0) {
-          copyNextBtn.disabled = true;
-          copyNextBtn.textContent = "No Unused Codes Left";
-        } else {
-          copyNextBtn.disabled = false;
-          copyNextBtn.textContent = "⚡ Copy Next Unused Code";
-        }
-      }
+      const title = item.title || (item.service ? `${item.service} Seed Phrase` : "BIP-39 Recovery Phrase");
+      const service = item.service || "Mnemonic Phrase";
+      const words = (item.phrase || "").trim().split(/\s+/).filter(w => w.length > 0);
+
+      const header = document.createElement("div");
+      header.className = "card-header";
+      header.innerHTML = `
+        <div class="card-title">
+          <span>🌱</span> ${escapeHtml(title)}
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.775rem; color: var(--text-secondary);">${escapeHtml(service)}</span>
+          <span class="banner-badge badge-fresh" style="font-size: 0.75rem; padding: 2px 8px;">${words.length} Words</span>
+        </div>
+      `;
+      card.appendChild(header);
+
+      const actionsBar = document.createElement("div");
+      actionsBar.style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;";
+
+      const leftNotice = document.createElement("span");
+      leftNotice.style = "font-size: 0.825rem; color: var(--text-secondary);";
+      leftNotice.textContent = "Keep offline. Numbered BIP-39 mnemonic recovery words:";
+
+      const btnGroup = document.createElement("div");
+      btnGroup.style = "display: flex; gap: 8px;";
+
+      let masked = true;
+      const toggleBtn = document.createElement("button");
+      toggleBtn.type = "button";
+      toggleBtn.className = "btn btn-sm";
+      toggleBtn.textContent = "👁️ Reveal Words";
+      toggleBtn.onclick = function() {
+        masked = !masked;
+        card.querySelectorAll(".seed-word").forEach(el => {
+          if (masked) el.classList.add("masked");
+          else el.classList.remove("masked");
+        });
+        toggleBtn.textContent = masked ? "👁️ Reveal Words" : "🙈 Hide Words";
+      };
+
+      const copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.className = "btn btn-sm btn-copy";
+      copyBtn.textContent = "📋 Copy Full Phrase";
+      copyBtn.onclick = function() { copyValue(this, words.join(" ")); };
+
+      btnGroup.appendChild(toggleBtn);
+      btnGroup.appendChild(copyBtn);
+      actionsBar.appendChild(leftNotice);
+      actionsBar.appendChild(btnGroup);
+      card.appendChild(actionsBar);
+
+      const grid = document.createElement("div");
+      grid.className = "seed-grid";
+
+      words.forEach((word, idx) => {
+        const chip = document.createElement("div");
+        chip.className = "seed-chip";
+        const idxFormatted = String(idx + 1).padStart(2, "0");
+        chip.innerHTML = `<span class="seed-idx">${idxFormatted}</span><span class="seed-word masked">${escapeHtml(word)}</span>`;
+        grid.appendChild(chip);
+      });
+
+      card.appendChild(grid);
+      return card;
     }
 
     /**
-     * Render emergency notes safely
+     * Render Custom Key-Value Card
      */
-    function renderEmergencyNotes(notes) {
-      const notesEl = document.getElementById("emergency-notes");
-      notesEl.textContent = notes || "No emergency instructions provided.";
+    function renderKeyValueCard(item, cardIndex) {
+      const cardId = item.id || `kv-${cardIndex}`;
+      const card = document.createElement("section");
+      card.className = "card";
+      card.id = `card-${cardId}`;
+
+      const title = item.title || "Custom Secrets & Keys";
+      const service = item.service || "Credentials";
+
+      const header = document.createElement("div");
+      header.className = "card-header";
+      header.innerHTML = `
+        <div class="card-title">
+          <span>🔐</span> ${escapeHtml(title)}
+        </div>
+        <span style="font-size: 0.775rem; color: var(--text-secondary);">${escapeHtml(service)}</span>
+      `;
+      card.appendChild(header);
+
+      const list = document.createElement("div");
+      list.className = "kv-list";
+
+      let entries = [];
+      if (Array.isArray(item.entries)) {
+        entries = item.entries;
+      } else if (item.entries && typeof item.entries === "object") {
+        entries = Object.entries(item.entries).map(([k, v]) => ({ label: k, value: String(v) }));
+      }
+
+      if (entries.length === 0) {
+        list.innerHTML = '<div style="color: var(--text-muted); font-size: 0.875rem;">No key-value entries.</div>';
+      } else {
+        entries.forEach((entry, idx) => {
+          const row = document.createElement("div");
+          row.className = "kv-box";
+
+          const content = document.createElement("div");
+          content.className = "kv-content";
+
+          const label = document.createElement("div");
+          label.className = "kv-label";
+          label.textContent = entry.label || entry.key || `Entry #${idx + 1}`;
+
+          const val = document.createElement("div");
+          val.className = "kv-value";
+          val.textContent = entry.value || "";
+
+          content.appendChild(label);
+          content.appendChild(val);
+
+          const actions = document.createElement("div");
+          actions.className = "kv-actions";
+
+          const copyBtn = document.createElement("button");
+          copyBtn.type = "button";
+          copyBtn.className = "btn btn-sm btn-copy";
+          copyBtn.textContent = "Copy";
+          copyBtn.onclick = function() { copyValue(this, entry.value || ""); };
+
+          actions.appendChild(copyBtn);
+          row.appendChild(content);
+          row.appendChild(actions);
+          list.appendChild(row);
+        });
+      }
+
+      card.appendChild(list);
+      return card;
+    }
+
+    /**
+     * Render Live TOTP Card
+     */
+    function renderTotpCard(item, cardIndex) {
+      const cardId = item.id || `totp-${cardIndex}`;
+      const card = document.createElement("section");
+      card.className = "card";
+      card.id = `card-${cardId}`;
+
+      const title = item.title || "Live Authenticator (TOTP)";
+      const service = item.service || "Offline Generator";
+
+      const header = document.createElement("div");
+      header.className = "card-header";
+      header.innerHTML = `
+        <div class="card-title">
+          <span>⏱️</span> ${escapeHtml(title)}
+        </div>
+        <span style="font-size: 0.775rem; color: var(--text-secondary);">${escapeHtml(service)}</span>
+      `;
+      card.appendChild(header);
+
+      const desc = document.createElement("p");
+      desc.style = "font-size: 0.825rem; color: var(--text-secondary); margin-bottom: 14px;";
+      desc.textContent = "These live codes are generated directly in your browser. Ensure your system clock is accurate.";
+      card.appendChild(desc);
+
+      const barWrap = document.createElement("div");
+      barWrap.style = "width: 100%; height: 4px; background: var(--bg-surface-elevated); border-radius: 2px; margin-bottom: 16px; overflow: hidden;";
+      const bar = document.createElement("div");
+      bar.className = "totp-progress-bar";
+      bar.style = "height: 100%; background: var(--accent-primary); width: 100%; transition: width 1s linear;";
+      barWrap.appendChild(bar);
+      card.appendChild(barWrap);
+
+      const grid = document.createElement("div");
+      grid.className = "codes-grid";
+      grid.style = "grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));";
+
+      let seeds = [];
+      if (Array.isArray(item.seeds)) {
+        seeds = item.seeds;
+      } else if (item.seeds && typeof item.seeds === "object") {
+        seeds = Object.entries(item.seeds).map(([name, secret]) => ({ service: name, seed: secret }));
+      } else if (item.seed) {
+        seeds = [{ service: item.service || "Default", seed: item.seed }];
+      }
+
+      seeds.forEach((seedEntry, sIdx) => {
+        const rowId = `totp-code-${cardId}-${sIdx}`;
+        activeTotpList.push({ rowId, seed: seedEntry.seed });
+
+        const el = document.createElement("div");
+        el.className = "cred-box";
+
+        const content = document.createElement("div");
+        content.className = "cred-content";
+
+        const label = document.createElement("div");
+        label.className = "cred-label";
+        label.textContent = seedEntry.service || seedEntry.name || "Account";
+
+        const val = document.createElement("div");
+        val.className = "cred-value";
+        val.id = rowId;
+        val.style = "font-family: var(--font-mono); font-size: 1.25rem; letter-spacing: 2px;";
+        val.textContent = "------";
+
+        content.appendChild(label);
+        content.appendChild(val);
+
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "btn btn-sm btn-copy";
+        copyBtn.textContent = "Copy";
+        copyBtn.onclick = function() {
+          const curVal = (val.textContent || "").replace(/\s+/g, "");
+          copyValue(this, curVal);
+        };
+
+        el.appendChild(content);
+        el.appendChild(copyBtn);
+        grid.appendChild(el);
+      });
+
+      card.appendChild(grid);
+      return card;
+    }
+
+    /**
+     * Render Emergency Notes Card
+     */
+    function renderNotesCard(item, cardIndex) {
+      const cardId = item.id || `notes-${cardIndex}`;
+      const card = document.createElement("section");
+      card.className = "card";
+      card.id = `card-${cardId}`;
+
+      const title = item.title || "Emergency Instructions & Contacts";
+      const content = item.content || item.notes || "";
+
+      const header = document.createElement("div");
+      header.className = "card-header";
+      header.innerHTML = `
+        <div class="card-title">
+          <span>📝</span> ${escapeHtml(title)}
+        </div>
+      `;
+      const copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.className = "btn btn-sm btn-copy";
+      copyBtn.textContent = "Copy Notes";
+      copyBtn.onclick = function() { copyValue(this, content); };
+      header.appendChild(copyBtn);
+      card.appendChild(header);
+
+      const notesBox = document.createElement("div");
+      notesBox.className = "notes-box";
+      notesBox.textContent = content || "No instructions provided.";
+      card.appendChild(notesBox);
+
+      return card;
+    }
+
+    /**
+     * Dispatch card item renderer by type
+     */
+    function renderCardItem(item, index) {
+      if (!item || !item.type) return null;
+      switch (item.type) {
+        case "password_manager":
+          return renderPasswordManagerCard(item, index);
+        case "backup_codes":
+          return renderBackupCodesCard(item, index);
+        case "totp_group":
+        case "totp":
+          return renderTotpCard(item, index);
+        case "seed_phrase":
+          return renderSeedPhraseCard(item, index);
+        case "key_value":
+          return renderKeyValueCard(item, index);
+        case "notes":
+          return renderNotesCard(item, index);
+        default:
+          return renderKeyValueCard(item, index);
+      }
+    }
+
+    let activeTotpList = [];
+
+    async function updateAllTOTPs() {
+      if (activeTotpList.length === 0) return;
+      const now = Date.now();
+      const progress = 100 - (((now / 1000) % 30) / 30) * 100;
+      document.querySelectorAll(".totp-progress-bar").forEach(bar => {
+        bar.style.width = progress + "%";
+      });
+
+      for (const entry of activeTotpList) {
+        try {
+          const code = await generateTOTP(entry.seed, now);
+          const el = document.getElementById(entry.rowId);
+          if (el) {
+            el.textContent = `${code.slice(0, 3)} ${code.slice(3)}`;
+          }
+        } catch (e) {
+          const el = document.getElementById(entry.rowId);
+          if (el) el.textContent = "ERR";
+        }
+      }
     }
 
     /**
@@ -2543,15 +3056,24 @@ var qrcodegen;
         clearInterval(totpInterval);
         totpInterval = null;
       }
-      usedCodeIndices.clear();
-      try { sessionStorage.removeItem(vaultSessionStorageKey); } catch (e) {}
+      activeTotpList = [];
+      usedBackupCodesMap.clear();
+
+      // Wipe all stored used codes
+      try {
+        const toRemove = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const k = sessionStorage.key(i);
+          if (k && k.startsWith("recovery_used_codes_")) {
+            toRemove.push(k);
+          }
+        }
+        toRemove.forEach(k => sessionStorage.removeItem(k));
+      } catch (e) {}
 
       // Clear DOM
-      document.getElementById("op-email").textContent = "-";
-      document.getElementById("op-secret-key").textContent = "-";
-      document.getElementById("op-hint").textContent = "-";
-      document.getElementById("backup-codes-container").innerHTML = "";
-      document.getElementById("emergency-notes").textContent = "-";
+      const container = document.getElementById("vault-cards-container");
+      if (container) container.innerHTML = "";
       document.getElementById("passphrase-input").value = "";
       updateWordCount("");
       clearError();
@@ -2569,6 +3091,18 @@ var qrcodegen;
       document.getElementById("lock-screen").prepend(notice);
       setTimeout(() => notice.remove(), 2500);
     }
+
+    // Backward-compatibility stubs
+    function renderOnePassword() {}
+    function renderBackupCodes() {}
+    function renderEmergencyNotes() {}
+    function loadUsedCodesFromSession() {}
+    function saveUsedCodesToSession() {}
+    function toggleCodeUsed() {}
+    function copyNextUnusedCode() {}
+    function resetAllCodeStrikes() {}
+    function updateTrackerCounts() {}
+
   
 
     function base32ToBuffer(base32) {
@@ -2616,45 +3150,7 @@ var qrcodegen;
     let totpInterval = null;
 
     async function updateTOTPs() {
-      if (!currentPayload || !currentPayload.totpSeeds) return;
-      const container = document.getElementById("totp-container");
-      
-      const now = Date.now();
-      const progress = 100 - ((now / 1000) % 30) / 30 * 100;
-      document.getElementById("totp-progress-bar").style.width = progress + "%";
-      
-      // We only recreate DOM if needed, to avoid jank. But this is simple, just recreate for now.
-      container.innerHTML = "";
-      for (const [name, secret] of Object.entries(currentPayload.totpSeeds)) {
-        const code = await generateTOTP(secret, now);
-        const el = document.createElement("div");
-        el.className = "cred-box";
-
-        const contentDiv = document.createElement("div");
-        contentDiv.className = "cred-content";
-        
-        const labelDiv = document.createElement("div");
-        labelDiv.className = "cred-label";
-        labelDiv.textContent = name;
-        
-        const valueDiv = document.createElement("div");
-        valueDiv.className = "cred-value";
-        valueDiv.style = "font-family: var(--font-mono); font-size: 1.25rem; letter-spacing: 2px;";
-        valueDiv.textContent = `${code.slice(0,3)} ${code.slice(3)}`;
-        
-        contentDiv.appendChild(labelDiv);
-        contentDiv.appendChild(valueDiv);
-        
-        const copyBtn = document.createElement("button");
-        copyBtn.type = "button";
-        copyBtn.className = "btn btn-sm btn-copy";
-        copyBtn.textContent = "Copy";
-        copyBtn.onclick = function() { copyValue(this, code); };
-        
-        el.appendChild(contentDiv);
-        el.appendChild(copyBtn);
-        container.appendChild(el);
-      }
+      await updateAllTOTPs();
     }
 
     function showQR(text) {

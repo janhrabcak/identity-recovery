@@ -70,6 +70,8 @@ identity-recovery/
   Encoded as standard RFC 4648 Base64 string.
 
 ### 2.4 Payload Schema
+The payload supports a modular, block-based card architecture via an `items` array, allowing arbitrary combinations of password managers, multi-service backup codes, seed phrases, TOTP authenticators, and custom key-value entries. Legacy root fields (`onePassword`, `googleBackupCodes`, `totpSeeds`, `notes`) remain supported for seamless backward compatibility.
+
 ```json
 {
   "metadata": {
@@ -77,6 +79,55 @@ identity-recovery/
     "staleAfterMonths": 6,
     "canaryCode": "12345678"
   },
+  "items": [
+    {
+      "id": "card-pm-1",
+      "type": "password_manager",
+      "title": "Root of Trust: 1Password",
+      "service": "1Password",
+      "email": "user@example.com",
+      "secretKey": "XX-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+      "hint": "Personal Emergency Vault",
+      "instructions": "1. Go to https://my.1password.com\n2. Enter credentials"
+    },
+    {
+      "id": "card-codes-google",
+      "type": "backup_codes",
+      "title": "Google 2SV Backup Codes",
+      "service": "Google",
+      "codes": ["23456789", "34567890", "..."]
+    },
+    {
+      "id": "card-totp",
+      "type": "totp_group",
+      "title": "Live Authenticator (TOTP)",
+      "seeds": {
+        "Google": "JBSWY3DPEHPK3PXP",
+        "GitHub": "KVKFKRCPI5UHIZKS"
+      }
+    },
+    {
+      "id": "card-seed",
+      "type": "seed_phrase",
+      "title": "Ledger Hardware Wallet",
+      "service": "Ledger",
+      "phrase": "witch collapse practice feed shame open despair creek road again ice least"
+    },
+    {
+      "id": "card-custom-kv",
+      "type": "key_value",
+      "title": "Server SSH & PGP Keys",
+      "entries": [
+        { "label": "Root SSH Key", "value": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5..." }
+      ]
+    },
+    {
+      "id": "card-notes",
+      "type": "notes",
+      "title": "Emergency Instructions & Contacts",
+      "content": "Emergency contacts, trusted phone numbers, and secondary recovery steps"
+    }
+  ],
   "onePassword": {
     "email": "user@example.com",
     "secretKey": "XX-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX",

@@ -256,6 +256,51 @@ const BUILDER_HTML = `<!DOCTYPE html>
       gap: 8px;
     }
 
+    .card-item {
+      position: relative;
+      transition: border-color 0.15s;
+    }
+
+    .card-item:hover {
+      border-color: #4b5563;
+    }
+
+    .card-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .btn-icon {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 0.85rem;
+      transition: all 0.15s;
+    }
+
+    .btn-icon:hover {
+      background: var(--bg-surface-subtle);
+      color: var(--text-primary);
+      border-color: #4b5563;
+    }
+
+    .btn-delete:hover {
+      background: var(--status-red-bg) !important;
+      color: var(--status-red-text) !important;
+      border-color: var(--status-red-border) !important;
+    }
+
+    .kv-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
     .card-subtitle {
       color: var(--text-secondary);
       font-size: 0.85rem;
@@ -586,71 +631,34 @@ const BUILDER_HTML = `<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- CARD 2: Primary Identity (1Password Root of Trust) -->
-    <div class="card">
-      <div class="card-header">
+    <!-- SECTION 2: Modular Credential Cards -->
+    <div style="margin: 28px 0 16px 0;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
         <div>
-          <div class="card-title">🛡️ 2. Primary Identity: 1Password</div>
-          <div class="card-subtitle">Your master credential vault holding all accounts and Google backup codes.</div>
+          <div class="card-title" style="font-size: 1.25rem;">📦 2. Credential Cards (Modular Architecture)</div>
+          <div class="card-subtitle">Add, customize, and arrange multiple password managers, single-use backup codes, seed phrases, TOTP seeds, or custom keys.</div>
         </div>
       </div>
 
-      <div class="grid-2">
-        <div class="form-group">
-          <label for="op-email">Account Email</label>
-          <input type="text" id="op-email" class="mono" placeholder="user@example.com" autocomplete="off">
-        </div>
-        <div class="form-group">
-          <label for="op-hint">Account Key Hint</label>
-          <input type="text" id="op-hint" placeholder="Personal Emergency Vault" autocomplete="off">
-        </div>
+      <!-- Add Card Action Toolbar -->
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 14px; align-items: center;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px;">+ Add Card:</span>
+        <button type="button" id="btn-add-pm" class="btn btn-secondary btn-sm" onclick="addCard('password_manager')">🔑 Password Manager</button>
+        <button type="button" id="btn-add-codes" class="btn btn-secondary btn-sm" onclick="addCard('backup_codes')">🛡️ Backup Codes</button>
+        <button type="button" id="btn-add-seed" class="btn btn-secondary btn-sm" onclick="addCard('seed_phrase')">🌱 Seed Phrase</button>
+        <button type="button" id="btn-add-totp" class="btn btn-secondary btn-sm" onclick="addCard('totp_group')">⏱️ Authenticator (TOTP)</button>
+        <button type="button" id="btn-add-kv" class="btn btn-secondary btn-sm" onclick="addCard('key_value')">🔐 Custom Key-Value</button>
+        <button type="button" id="btn-add-notes" class="btn btn-secondary btn-sm" onclick="addCard('notes')">📝 Secure Notes</button>
       </div>
 
-      <div class="form-group" style="margin-top: 12px;">
-        <label for="op-secret-key">1Password Secret Key</label>
-        <input type="text" id="op-secret-key" class="mono" placeholder="A3-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX" autocomplete="off">
-      </div>
-    </div>
+      <!-- Container for Dynamic Cards -->
+      <div id="cards-container"></div>
 
-    <!-- CARD 3: Google 2SV Backup Codes -->
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">🔐 3. Google 2SV Single-Use Backup Codes</div>
-          <div class="card-subtitle">Enables recovery on an untrusted device when your phone or security key is missing.</div>
-        </div>
-        <span class="badge badge-gray" id="badge-code-count">0 codes</span>
-      </div>
-
-      <div class="form-group">
-        <textarea id="google-backup-codes" class="mono" rows="4" placeholder="Paste 8-digit or 10-digit Google backup codes here (one per line, space, or comma separated)&#10;23456789&#10;34567890&#10;45678901&#10;..."></textarea>
-      </div>
-    </div>
-
-    <!-- CARD 4: TOTP Seeds (Optional) -->
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">⏱️ 4. TOTP Seeds (Optional)</div>
-          <div class="card-subtitle">Raw Base32 secret keys for real-time in-browser authenticator code generation.</div>
-        </div>
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-add-totp">+ Add Account</button>
-      </div>
-
-      <div id="totp-container"></div>
-    </div>
-
-    <!-- CARD 5: Emergency Notes -->
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">📝 5. Emergency Notes & Contacts</div>
-          <div class="card-subtitle">Trusted phone numbers, fallback instructions, or financial institution hotline details.</div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <textarea id="emergency-notes" rows="3" placeholder="Emergency contact: Alice (+1-555-0199). Recovery protocol: Recover Google account first using backup codes, then sign in to 1Password at my.1password.com."></textarea>
+      <!-- Empty State Notice -->
+      <div id="empty-cards-notice" style="text-align: center; padding: 36px 20px; background: var(--bg-surface); border: 2px dashed var(--border-color); border-radius: var(--radius-lg); margin-bottom: 20px; display: none;">
+        <div style="font-size: 2rem; margin-bottom: 8px;">📦</div>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 14px;">No credential cards added yet. Click an option above or load sample data.</p>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="loadSampleData()">📋 Load Sample Data</button>
       </div>
     </div>
 
@@ -984,13 +992,444 @@ function generateDiceware() {
   showToast('Generated 6-word Diceware phrase!');
 }
 
-function parseBackupCodes() {
-  const raw = document.getElementById('google-backup-codes').value;
-  const matches = raw.match(/\\b\\d{8,10}\\b/g) || [];
-  const bCount = document.getElementById('badge-code-count');
-  bCount.innerText = \`\${matches.length} codes\`;
-  bCount.className = matches.length >= 10 ? 'badge badge-green' : (matches.length > 0 ? 'badge badge-amber' : 'badge badge-gray');
-  return matches;
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+let cardCounter = 0;
+
+function updateEmptyNotice() {
+  const container = document.getElementById('cards-container');
+  const empty = document.getElementById('empty-cards-notice');
+  if (!container || !empty) return;
+  empty.style.display = container.children.length === 0 ? 'block' : 'none';
+}
+
+function getDefaultTitleForType(type, service) {
+  switch (type) {
+    case 'password_manager': return service ? ('Root of Trust: ' + service) : 'Password Manager';
+    case 'backup_codes': return service ? (service + ' 2SV Backup Codes') : 'Emergency Backup Codes';
+    case 'seed_phrase': return service ? (service + ' Seed Phrase') : 'BIP-39 Recovery Phrase';
+    case 'totp_group': return 'Live Authenticator (TOTP)';
+    case 'key_value': return 'Custom Secrets & Keys';
+    case 'notes': return 'Emergency Instructions & Contacts';
+    default: return 'Credential Card';
+  }
+}
+
+function addCard(type, data = {}) {
+  cardCounter++;
+  const cardId = data.id || ('card_' + cardCounter + '_' + Date.now().toString(36));
+  const container = document.getElementById('cards-container');
+
+  const card = document.createElement('div');
+  card.className = 'card card-item';
+  card.dataset.id = cardId;
+  card.dataset.type = type;
+
+  let headerHtml = '';
+  let bodyHtml = '';
+
+  const titleText = data.title || getDefaultTitleForType(type, data.service);
+
+  if (type === 'password_manager') {
+    const service = data.service || '1Password';
+    headerHtml = '<div>' +
+      '<div class="card-title">🔑 <input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="background:none; border:none; color:inherit; font-weight:700; font-size:1.05rem; padding:0; width:auto; max-width:350px;"></div>' +
+      '<div class="card-subtitle">Password Manager & Master Vault</div>' +
+      '</div>';
+    bodyHtml = '<div class="grid-2">' +
+      '<div class="form-group">' +
+      '<label>Service Preset</label>' +
+      '<select class="pm-service">' +
+      '<option value="1Password"' + (service === '1Password' ? ' selected' : '') + '>1Password</option>' +
+      '<option value="Bitwarden"' + (service === 'Bitwarden' ? ' selected' : '') + '>Bitwarden</option>' +
+      '<option value="KeePassXC"' + (service === 'KeePassXC' ? ' selected' : '') + '>KeePassXC</option>' +
+      '<option value="Dashlane"' + (service === 'Dashlane' ? ' selected' : '') + '>Dashlane</option>' +
+      '<option value="Proton Pass"' + (service === 'Proton Pass' ? ' selected' : '') + '>Proton Pass</option>' +
+      '<option value="Other"' + (!['1Password', 'Bitwarden', 'KeePassXC', 'Dashlane', 'Proton Pass'].includes(service) ? ' selected' : '') + '>Other / Custom</option>' +
+      '</select>' +
+      '</div>' +
+      '<div class="form-group">' +
+      '<label>Account / Key Hint</label>' +
+      '<input type="text" class="pm-hint" placeholder="Personal Emergency Vault" value="' + escapeHtml(data.hint || '') + '">' +
+      '</div>' +
+      '</div>' +
+      '<div class="grid-2" style="margin-top: 12px;">' +
+      '<div class="form-group">' +
+      '<label>Account Email / Username</label>' +
+      '<input type="text" class="pm-email mono" placeholder="user@example.com" value="' + escapeHtml(data.email || '') + '">' +
+      '</div>' +
+      '<div class="form-group">' +
+      '<label>Secret Key / Master Key Token</label>' +
+      '<input type="text" class="pm-secret mono" placeholder="A3-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX" value="' + escapeHtml(data.secretKey || '') + '">' +
+      '</div>' +
+      '</div>' +
+      '<div class="form-group" style="margin-top: 12px;">' +
+      '<label>Optional Sign-in Instructions</label>' +
+      '<textarea class="pm-instructions" rows="2" placeholder="1. Go to https://my.1password.com&#10;2. Paste email and secret key&#10;3. Enter memorized master password">' + escapeHtml(data.instructions || '') + '</textarea>' +
+      '</div>';
+  } else if (type === 'backup_codes') {
+    const service = data.service || 'Google';
+    const codesStr = Array.isArray(data.codes) ? data.codes.join('\n') : (data.codes || '');
+    headerHtml = '<div>' +
+      '<div class="card-title">🛡️ <input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="background:none; border:none; color:inherit; font-weight:700; font-size:1.05rem; padding:0; width:auto; max-width:350px;"></div>' +
+      '<div class="card-subtitle">Single-use emergency recovery backup codes</div>' +
+      '</div>';
+    bodyHtml = '<div class="grid-2">' +
+      '<div class="form-group">' +
+      '<label>Service Preset</label>' +
+      '<select class="codes-service">' +
+      '<option value="Google"' + (service === 'Google' ? ' selected' : '') + '>Google (8-digit)</option>' +
+      '<option value="GitHub"' + (service === 'GitHub' ? ' selected' : '') + '>GitHub (10-char)</option>' +
+      '<option value="Apple"' + (service === 'Apple' ? ' selected' : '') + '>Apple (Recovery Key)</option>' +
+      '<option value="Microsoft"' + (service === 'Microsoft' ? ' selected' : '') + '>Microsoft</option>' +
+      '<option value="AWS"' + (service === 'AWS' ? ' selected' : '') + '>AWS</option>' +
+      '<option value="Other"' + (!['Google', 'GitHub', 'Apple', 'Microsoft', 'AWS'].includes(service) ? ' selected' : '') + '>Other</option>' +
+      '</select>' +
+      '</div>' +
+      '<div class="form-group">' +
+      '<label>Parsed Code Count</label>' +
+      '<div style="display: flex; align-items: center; height: 42px;">' +
+      '<span class="badge badge-gray codes-badge">0 codes parsed</span>' +
+      '</div>' +
+      '</div>' +
+      '</div>' +
+      '<div class="form-group" style="margin-top: 12px;">' +
+      '<label>Backup Codes (One per line, space, or comma separated)</label>' +
+      '<textarea class="codes-textarea mono" rows="4" placeholder="23456789&#10;34567890&#10;45678901&#10;...">' + escapeHtml(codesStr) + '</textarea>' +
+      '</div>';
+  } else if (type === 'seed_phrase') {
+    const service = data.service || 'Ledger';
+    const phrase = data.phrase || '';
+    headerHtml = '<div>' +
+      '<div class="card-title">🌱 <input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="background:none; border:none; color:inherit; font-weight:700; font-size:1.05rem; padding:0; width:auto; max-width:350px;"></div>' +
+      '<div class="card-subtitle">BIP-39 Crypto Wallet / Hardware Key Recovery Phrase</div>' +
+      '</div>';
+    bodyHtml = '<div class="grid-2">' +
+      '<div class="form-group">' +
+      '<label>Wallet / Service Preset</label>' +
+      '<select class="seed-service">' +
+      '<option value="Ledger"' + (service === 'Ledger' ? ' selected' : '') + '>Ledger</option>' +
+      '<option value="Trezor"' + (service === 'Trezor' ? ' selected' : '') + '>Trezor</option>' +
+      '<option value="MetaMask"' + (service === 'MetaMask' ? ' selected' : '') + '>MetaMask</option>' +
+      '<option value="Phantom"' + (service === 'Phantom' ? ' selected' : '') + '>Phantom</option>' +
+      '<option value="BIP-39"' + (service === 'BIP-39' ? ' selected' : '') + '>Standard BIP-39 (12/24 words)</option>' +
+      '<option value="Other"' + (!['Ledger', 'Trezor', 'MetaMask', 'Phantom', 'BIP-39'].includes(service) ? ' selected' : '') + '>Other</option>' +
+      '</select>' +
+      '</div>' +
+      '<div class="form-group">' +
+      '<label>Word Count Status</label>' +
+      '<div style="display: flex; align-items: center; height: 42px;">' +
+      '<span class="badge badge-gray seed-badge">0 words</span>' +
+      '</div>' +
+      '</div>' +
+      '</div>' +
+      '<div class="form-group" style="margin-top: 12px;">' +
+      '<label>Mnemonic Recovery Words (Space-separated 12, 18, or 24 words)</label>' +
+      '<textarea class="seed-textarea mono" rows="3" placeholder="witch collapse practice feed shame open despair creek road again ice least">' + escapeHtml(phrase) + '</textarea>' +
+      '</div>';
+  } else if (type === 'totp_group') {
+    headerHtml = '<div>' +
+      '<div class="card-title">⏱️ <input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="background:none; border:none; color:inherit; font-weight:700; font-size:1.05rem; padding:0; width:auto; max-width:350px;"></div>' +
+      '<div class="card-subtitle">Live In-Browser Time-Based OTP Authenticator Seeds</div>' +
+      '</div>';
+    bodyHtml = '<div class="form-group">' +
+      '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">' +
+      '<label style="margin-bottom: 0;">Authenticator Accounts</label>' +
+      '<button type="button" class="btn btn-secondary btn-sm btn-add-totp-row">+ Add Account</button>' +
+      '</div>' +
+      '<div class="totp-rows-container"></div>' +
+      '</div>';
+  } else if (type === 'key_value') {
+    headerHtml = '<div>' +
+      '<div class="card-title">🔐 <input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="background:none; border:none; color:inherit; font-weight:700; font-size:1.05rem; padding:0; width:auto; max-width:350px;"></div>' +
+      '<div class="card-subtitle">Arbitrary Secrets, SSH Keys, PINs, or Recovery Questions</div>' +
+      '</div>';
+    bodyHtml = '<div class="form-group">' +
+      '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">' +
+      '<label style="margin-bottom: 0;">Key-Value Entries</label>' +
+      '<button type="button" class="btn btn-secondary btn-sm btn-add-kv-row">+ Add Field</button>' +
+      '</div>' +
+      '<div class="kv-rows-container"></div>' +
+      '</div>';
+  } else if (type === 'notes') {
+    headerHtml = '<div>' +
+      '<div class="card-title">📝 <input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="background:none; border:none; color:inherit; font-weight:700; font-size:1.05rem; padding:0; width:auto; max-width:350px;"></div>' +
+      '<div class="card-subtitle">Emergency instructions, contacts, and fallback protocols</div>' +
+      '</div>';
+    bodyHtml = '<div class="form-group">' +
+      '<label>Emergency Instructions / Contacts</label>' +
+      '<textarea class="notes-textarea" rows="4" placeholder="Emergency contact: Alice (+1-555-0199).">' + escapeHtml(data.content || data.notes || '') + '</textarea>' +
+      '</div>';
+  }
+
+  const headerDiv = document.createElement('div');
+  headerDiv.className = 'card-header';
+  headerDiv.innerHTML = headerHtml;
+
+  const controls = document.createElement('div');
+  controls.className = 'card-controls';
+  controls.innerHTML = '<button type="button" class="btn-icon btn-move-up" title="Move card up">↑</button>' +
+    '<button type="button" class="btn-icon btn-move-down" title="Move card down">↓</button>' +
+    '<button type="button" class="btn-icon btn-delete" title="Delete card">🗑️</button>';
+  headerDiv.appendChild(controls);
+  card.appendChild(headerDiv);
+
+  const bodyDiv = document.createElement('div');
+  bodyDiv.innerHTML = bodyHtml;
+  card.appendChild(bodyDiv);
+
+  controls.querySelector('.btn-move-up').onclick = () => {
+    const prev = card.previousElementSibling;
+    if (prev) container.insertBefore(card, prev);
+  };
+  controls.querySelector('.btn-move-down').onclick = () => {
+    const next = card.nextElementSibling;
+    if (next) container.insertBefore(next, card);
+  };
+  controls.querySelector('.btn-delete').onclick = () => {
+    if (confirm('Delete this credential card?')) {
+      card.remove();
+      updateEmptyNotice();
+    }
+  };
+
+  if (type === 'backup_codes') {
+    const ta = card.querySelector('.codes-textarea');
+    const badge = card.querySelector('.codes-badge');
+    const updateCodes = () => {
+      const matches = (ta.value.match(/\\b[A-Za-z0-9_-]{6,16}\\b/g) || []);
+      badge.textContent = matches.length + ' codes parsed';
+      badge.className = matches.length >= 10 ? 'badge badge-green' : (matches.length > 0 ? 'badge badge-amber' : 'badge badge-gray');
+    };
+    ta.addEventListener('input', updateCodes);
+    updateCodes();
+  } else if (type === 'seed_phrase') {
+    const ta = card.querySelector('.seed-textarea');
+    const badge = card.querySelector('.seed-badge');
+    const updateSeed = () => {
+      const words = ta.value.trim().split(/\\s+/).filter(w => w.length > 0);
+      badge.textContent = words.length + ' words';
+      badge.className = (words.length === 12 || words.length === 24) ? 'badge badge-green' : (words.length > 0 ? 'badge badge-amber' : 'badge badge-gray');
+    };
+    ta.addEventListener('input', updateSeed);
+    updateSeed();
+  } else if (type === 'totp_group') {
+    const totpContainer = card.querySelector('.totp-rows-container');
+    const addRowBtn = card.querySelector('.btn-add-totp-row');
+    const addRow = (acc = '', sec = '') => {
+      const row = document.createElement('div');
+      row.className = 'kv-row';
+      row.innerHTML = '<input type="text" class="totp-acc" placeholder="Account / Service (e.g. Google)" value="' + escapeHtml(acc) + '" style="flex:1;">' +
+        '<input type="text" class="totp-sec mono" placeholder="Base32 Secret Key" value="' + escapeHtml(sec) + '" style="flex:1.5;">' +
+        '<button type="button" class="btn-icon btn-delete" style="padding:6px 10px;">✕</button>';
+      row.querySelector('.btn-delete').onclick = () => row.remove();
+      totpContainer.appendChild(row);
+    };
+    addRowBtn.onclick = () => addRow();
+    if (data.seeds && typeof data.seeds === 'object') {
+      for (const [k, v] of Object.entries(data.seeds)) addRow(k, v);
+    } else {
+      addRow('Google', '');
+    }
+  } else if (type === 'key_value') {
+    const kvContainer = card.querySelector('.kv-rows-container');
+    const addRowBtn = card.querySelector('.btn-add-kv-row');
+    const addRow = (k = '', v = '') => {
+      const row = document.createElement('div');
+      row.className = 'kv-row';
+      row.innerHTML = '<input type="text" class="kv-key" placeholder="Key / Label (e.g. SSH Key)" value="' + escapeHtml(k) + '" style="flex:1;">' +
+        '<input type="text" class="kv-val mono" placeholder="Value / Secret" value="' + escapeHtml(v) + '" style="flex:2;">' +
+        '<button type="button" class="btn-icon btn-delete" style="padding:6px 10px;">✕</button>';
+      row.querySelector('.btn-delete').onclick = () => row.remove();
+      kvContainer.appendChild(row);
+    };
+    addRowBtn.onclick = () => addRow();
+    if (Array.isArray(data.entries)) {
+      data.entries.forEach(e => addRow(e.label || e.key || '', e.value || ''));
+    } else if (data.entries && typeof data.entries === 'object') {
+      for (const [k, v] of Object.entries(data.entries)) addRow(k, String(v));
+    } else {
+      addRow('', '');
+    }
+  }
+
+  container.appendChild(card);
+  updateEmptyNotice();
+  return card;
+}
+
+function getCardsData() {
+  const container = document.getElementById('cards-container');
+  const cardEls = container.querySelectorAll('.card-item');
+  const items = [];
+
+  cardEls.forEach((card, idx) => {
+    const type = card.dataset.type;
+    const id = card.dataset.id || ('card_' + (idx + 1));
+    const titleInput = card.querySelector('.card-title-input');
+    const title = (titleInput && titleInput.value.trim()) || getDefaultTitleForType(type);
+
+    if (type === 'password_manager') {
+      items.push({
+        id,
+        type,
+        title,
+        service: card.querySelector('.pm-service').value,
+        hint: card.querySelector('.pm-hint').value.trim() || undefined,
+        email: card.querySelector('.pm-email').value.trim(),
+        secretKey: card.querySelector('.pm-secret').value.trim(),
+        instructions: card.querySelector('.pm-instructions').value.trim() || undefined
+      });
+    } else if (type === 'backup_codes') {
+      const raw = card.querySelector('.codes-textarea').value;
+      const codes = raw.match(/\\b[A-Za-z0-9_-]{6,16}\\b/g) || [];
+      items.push({
+        id,
+        type,
+        title,
+        service: card.querySelector('.codes-service').value,
+        codes
+      });
+    } else if (type === 'seed_phrase') {
+      const phrase = card.querySelector('.seed-textarea').value.trim().replace(/\\s+/g, ' ');
+      items.push({
+        id,
+        type,
+        title,
+        service: card.querySelector('.seed-service').value,
+        phrase
+      });
+    } else if (type === 'totp_group') {
+      const seeds = {};
+      card.querySelectorAll('.totp-rows-container .kv-row').forEach(row => {
+        const acc = row.querySelector('.totp-acc').value.trim();
+        const sec = row.querySelector('.totp-sec').value.trim().replace(/\\s+/g, '').toUpperCase();
+        if (acc && sec) seeds[acc] = sec;
+      });
+      items.push({
+        id,
+        type,
+        title,
+        seeds
+      });
+    } else if (type === 'key_value') {
+      const entries = [];
+      card.querySelectorAll('.kv-rows-container .kv-row').forEach(row => {
+        const k = row.querySelector('.kv-key').value.trim();
+        const v = row.querySelector('.kv-val').value.trim();
+        if (k || v) entries.push({ label: k, value: v });
+      });
+      items.push({
+        id,
+        type,
+        title,
+        entries
+      });
+    } else if (type === 'notes') {
+      items.push({
+        id,
+        type,
+        title,
+        content: card.querySelector('.notes-textarea').value.trim()
+      });
+    }
+  });
+
+  return items;
+}
+
+function buildVaultPayload(items) {
+  const canary = document.getElementById('canary-code').value.trim() || '12345678';
+  const staleMonths = parseInt(document.getElementById('stale-months').value, 10) || 6;
+
+  const payload = {
+    metadata: {
+      generatedAt: new Date().toISOString(),
+      staleAfterMonths: staleMonths,
+      canaryCode: canary
+    },
+    items: items
+  };
+
+  // Attach legacy root fields for complete backward compatibility
+  const firstPm = items.find(it => it.type === 'password_manager');
+  if (firstPm) {
+    payload.onePassword = {
+      email: firstPm.email || '',
+      secretKey: firstPm.secretKey || '',
+      accountKeyHint: firstPm.hint || 'Personal Emergency Vault'
+    };
+  }
+  const firstCodes = items.find(it => it.type === 'backup_codes');
+  if (firstCodes) {
+    payload.googleBackupCodes = firstCodes.codes || [];
+  }
+  const firstTotp = items.find(it => it.type === 'totp_group' || it.type === 'totp');
+  if (firstTotp && firstTotp.seeds) {
+    payload.totpSeeds = firstTotp.seeds;
+  }
+  const firstNotes = items.find(it => it.type === 'notes');
+  if (firstNotes) {
+    payload.notes = firstNotes.content;
+  }
+
+  return payload;
+}
+
+function normalizeVaultPayload(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return { metadata: {}, items: [] };
+  }
+  const res = { ...payload };
+  if (!Array.isArray(res.items)) {
+    res.items = [];
+    if (res.onePassword && (res.onePassword.email || res.onePassword.secretKey)) {
+      res.items.push({
+        id: 'legacy-op',
+        type: 'password_manager',
+        title: 'Root of Trust: 1Password',
+        service: '1Password',
+        email: res.onePassword.email || '',
+        secretKey: res.onePassword.secretKey || '',
+        hint: res.onePassword.accountKeyHint || '',
+        instructions: '1. Go to https://my.1password.com\\n2. Paste email and secret key\\n3. Enter memorized master password.'
+      });
+    }
+    if (Array.isArray(res.googleBackupCodes) && res.googleBackupCodes.length > 0) {
+      res.items.push({
+        id: 'legacy-codes',
+        type: 'backup_codes',
+        title: 'Google 2SV Backup Codes',
+        service: 'Google',
+        codes: res.googleBackupCodes
+      });
+    }
+    if (res.totpSeeds && typeof res.totpSeeds === 'object' && Object.keys(res.totpSeeds).length > 0) {
+      res.items.push({
+        id: 'legacy-totp',
+        type: 'totp_group',
+        title: 'Live Authenticator (TOTP)',
+        seeds: res.totpSeeds
+      });
+    }
+    if (res.notes) {
+      res.items.push({
+        id: 'legacy-notes',
+        type: 'notes',
+        title: 'Emergency Instructions & Contacts',
+        content: res.notes
+      });
+    }
+  }
+  return res;
 }
 
 function generateCanaryCode() {
@@ -1000,86 +1439,59 @@ function generateCanaryCode() {
   document.getElementById('canary-code').value = code;
 }
 
-function addTotpRow(account = '', seed = '') {
-  const container = document.getElementById('totp-container');
-  const row = document.createElement('div');
-  row.className = 'kv-row';
-  
-  const inputAcc = document.createElement('input');
-  inputAcc.type = 'text';
-  inputAcc.placeholder = 'Service (e.g. Google)';
-  inputAcc.className = 'totp-account';
-  inputAcc.value = account;
-  
-  const inputSeed = document.createElement('input');
-  inputSeed.type = 'text';
-  inputSeed.placeholder = 'Base32 Secret Key (e.g. JBSWY3DPEHPK3PXP)';
-  inputSeed.className = 'totp-seed mono';
-  inputSeed.value = seed;
-  
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'btn btn-secondary btn-sm';
-  btn.style.color = 'var(--status-red-text)';
-  btn.textContent = '✕';
-  btn.onclick = function() { this.parentElement.remove(); };
-  
-  row.appendChild(inputAcc);
-  row.appendChild(inputSeed);
-  row.appendChild(btn);
-  container.appendChild(row);
-}
+function loadSampleData() {
+  const container = document.getElementById('cards-container');
+  container.innerHTML = '';
 
-function getTotpSeeds() {
-  const rows = document.querySelectorAll('#totp-container .kv-row');
-  const result = {};
-  rows.forEach(r => {
-    const acc = r.querySelector('.totp-account').value.trim();
-    const seed = r.querySelector('.totp-seed').value.trim().replace(/\\s+/g, '').toUpperCase();
-    if (acc && seed) {
-      result[acc] = seed;
+  addCard('password_manager', {
+    service: '1Password',
+    title: 'Root of Trust: 1Password',
+    email: 'user@example.com',
+    secretKey: 'A3-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX',
+    hint: 'Personal Emergency Vault',
+    instructions: '1. Go to https://my.1password.com in a clean browser tab.\\n2. Paste email and secret key.\\n3. Enter memorized master password.'
+  });
+
+  addCard('backup_codes', {
+    service: 'Google',
+    title: 'Google 2SV Backup Codes',
+    codes: [
+      '23456789', '34567890', '45678901', '56789012', '67890123',
+      '78901234', '89012345', '90123456', '01234567', '12345670'
+    ]
+  });
+
+  addCard('totp_group', {
+    title: 'Live Authenticator (TOTP)',
+    seeds: {
+      'Google': 'JBSWY3DPEHPK3PXP',
+      'GitHub': 'KVKFKRCPI5UHIZKS'
     }
   });
-  return Object.keys(result).length > 0 ? result : undefined;
-}
 
-function loadSampleData() {
-  document.getElementById('op-email').value = 'user@example.com';
-  document.getElementById('op-hint').value = 'Personal Emergency Vault';
-  document.getElementById('op-secret-key').value = 'A3-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX';
-  document.getElementById('google-backup-codes').value = [
-    '23456789', '34567890', '45678901', '56789012', '67890123',
-    '78901234', '89012345', '90123456', '01234567', '12345670'
-  ].join('\\n');
-  document.getElementById('emergency-notes').value = 'Emergency contact: Alice (+1-555-0199). Recovery protocol: Recover Google account first using backup codes, then sign in to 1Password at my.1password.com.';
+  addCard('notes', {
+    title: 'Emergency Instructions & Contacts',
+    content: 'Emergency contact: Alice (+1-555-0199). Recovery protocol: Recover Google account first using backup codes, then sign in to 1Password at my.1password.com.'
+  });
+
   document.getElementById('recovery-domain').value = 'recovery.yourdomain.com';
   document.getElementById('canary-code').value = '12345678';
   document.getElementById('stale-months').value = '6';
-
-  document.getElementById('totp-container').innerHTML = '';
-  addTotpRow('Google', 'JBSWY3DPEHPK3PXP');
-  addTotpRow('GitHub', 'KVKFKRCPI5UHIZKS');
 
   if (!document.getElementById('passphrase').value) {
     document.getElementById('passphrase').value = 'correct horse battery staple zebra guitar';
   }
   updatePassphraseUI();
-  parseBackupCodes();
-  showToast('Loaded sample data!');
+  showToast('Loaded modular sample cards!');
 }
 
 function clearAll() {
   if (!confirm('Are you sure you want to clear all entered credentials and keys?')) return;
   document.getElementById('passphrase').value = '';
-  document.getElementById('op-email').value = '';
-  document.getElementById('op-hint').value = '';
-  document.getElementById('op-secret-key').value = '';
-  document.getElementById('google-backup-codes').value = '';
-  document.getElementById('emergency-notes').value = '';
-  document.getElementById('totp-container').innerHTML = '';
+  document.getElementById('cards-container').innerHTML = '';
+  updateEmptyNotice();
   document.getElementById('canary-code').value = '';
   updatePassphraseUI();
-  parseBackupCodes();
   showToast('Cleared all fields.');
 }
 
@@ -1215,44 +1627,15 @@ async function handleBuildVault() {
     return;
   }
 
-  const email = document.getElementById('op-email').value.trim();
-  const secretKey = document.getElementById('op-secret-key').value.trim();
-  const hint = document.getElementById('op-hint').value.trim();
-  const backupCodes = parseBackupCodes();
-
-  if (!email || !secretKey) {
-    alert('Please enter your 1Password Email and Secret Key.');
+  const items = getCardsData();
+  if (items.length === 0) {
+    alert('Please add at least one credential card to your vault.');
     return;
   }
 
-  if (backupCodes.length === 0) {
-    if (!confirm('Warning: No Google backup codes entered. Proceed anyway?')) return;
-  }
-
-  const canary = document.getElementById('canary-code').value.trim() || '12345678';
-  const staleMonths = parseInt(document.getElementById('stale-months').value, 10) || 6;
+  const payload = buildVaultPayload(items);
+  const canary = payload.metadata.canaryCode;
   const domain = document.getElementById('recovery-domain').value.trim() || 'recovery.yourdomain.com';
-  const notes = document.getElementById('emergency-notes').value.trim();
-  const totpSeeds = getTotpSeeds();
-
-  const payload = {
-    metadata: {
-      generatedAt: new Date().toISOString(),
-      staleAfterMonths: staleMonths,
-      canaryCode: canary
-    },
-    onePassword: {
-      email: email,
-      secretKey: secretKey,
-      accountKeyHint: hint || 'Personal Emergency Vault'
-    },
-    googleBackupCodes: backupCodes,
-    notes: notes || undefined
-  };
-
-  if (totpSeeds) {
-    payload.totpSeeds = totpSeeds;
-  }
 
   const btn = document.getElementById('btn-build-vault');
   const statusDiv = document.getElementById('build-status');
@@ -1298,7 +1681,6 @@ async function handleBuildVault() {
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('passphrase').addEventListener('input', updatePassphraseUI);
-  document.getElementById('google-backup-codes').addEventListener('input', parseBackupCodes);
 
   document.getElementById('btn-toggle-passphrase').addEventListener('click', () => {
     const p = document.getElementById('passphrase');
@@ -1307,7 +1689,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-generate-diceware').addEventListener('click', generateDiceware);
   document.getElementById('btn-random-canary').addEventListener('click', generateCanaryCode);
-  document.getElementById('btn-add-totp').addEventListener('click', () => addTotpRow());
   document.getElementById('btn-load-sample').addEventListener('click', loadSampleData);
   document.getElementById('btn-reset-all').addEventListener('click', clearAll);
 
@@ -1340,28 +1721,20 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.onload = (evt) => {
       try {
         const json = JSON.parse(evt.target.result);
-        if (json.onePassword) {
-          document.getElementById('op-email').value = json.onePassword.email || '';
-          document.getElementById('op-secret-key').value = json.onePassword.secretKey || '';
-          document.getElementById('op-hint').value = json.onePassword.accountKeyHint || '';
+        const normalized = normalizeVaultPayload(json);
+
+        document.getElementById('cards-container').innerHTML = '';
+
+        (normalized.items || []).forEach(item => {
+          addCard(item.type, item);
+        });
+
+        if (normalized.metadata) {
+          if (normalized.metadata.canaryCode) document.getElementById('canary-code').value = normalized.metadata.canaryCode;
+          if (normalized.metadata.staleAfterMonths) document.getElementById('stale-months').value = normalized.metadata.staleAfterMonths;
         }
-        if (json.googleBackupCodes && Array.isArray(json.googleBackupCodes)) {
-          document.getElementById('google-backup-codes').value = json.googleBackupCodes.join('\\n');
-          parseBackupCodes();
-        }
-        if (json.notes) {
-          document.getElementById('emergency-notes').value = json.notes;
-        }
-        if (json.metadata) {
-          if (json.metadata.canaryCode) document.getElementById('canary-code').value = json.metadata.canaryCode;
-          if (json.metadata.staleAfterMonths) document.getElementById('stale-months').value = json.metadata.staleAfterMonths;
-        }
-        if (json.totpSeeds && typeof json.totpSeeds === 'object') {
-          document.getElementById('totp-container').innerHTML = '';
-          for (const [k, v] of Object.entries(json.totpSeeds)) {
-            addTotpRow(k, v);
-          }
-        }
+
+        updateEmptyNotice();
         showToast('Successfully imported ' + file.name);
       } catch (err) {
         alert('Invalid JSON file: ' + err.message);
@@ -1371,31 +1744,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('btn-export-plaintext').addEventListener('click', () => {
-    const email = document.getElementById('op-email').value.trim();
-    const secretKey = document.getElementById('op-secret-key').value.trim();
-    if (!email && !secretKey) {
-      alert('Form is empty.');
+    const items = getCardsData();
+    if (items.length === 0) {
+      alert('Vault is empty. Add at least one credential card.');
       return;
     }
     if (!confirm('CAUTION: This exports unencrypted credentials to your local disk. Remember to store or shred it safely. Proceed?')) return;
 
-    const payload = {
-      metadata: {
-        generatedAt: new Date().toISOString(),
-        staleAfterMonths: parseInt(document.getElementById('stale-months').value, 10) || 6,
-        canaryCode: document.getElementById('canary-code').value.trim() || '12345678'
-      },
-      onePassword: {
-        email: email,
-        secretKey: secretKey,
-        accountKeyHint: document.getElementById('op-hint').value.trim() || 'Personal Emergency Vault'
-      },
-      googleBackupCodes: parseBackupCodes(),
-      notes: document.getElementById('emergency-notes').value.trim() || undefined
-    };
-    const totp = getTotpSeeds();
-    if (totp) payload.totpSeeds = totp;
-
+    const payload = buildVaultPayload(items);
     triggerDownload('payload.json', JSON.stringify(payload, null, 2));
   });
 
@@ -1463,6 +1819,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   generateCanaryCode();
   updatePassphraseUI();
+  loadSampleData();
 });
 </script>
 </body>

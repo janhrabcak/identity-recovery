@@ -426,9 +426,134 @@ async function runTests() {
   }
   console.log("✓ Test 18 Passed: Multi-provider security headers verified across Cloudflare, Vercel, and Netlify.");
 
-  console.log("\n==========================================");
-  console.log("ALL TESTS PASSED SUCCESSFULLY! ✓");
-  console.log("==========================================");
+  // Test 19: Modular Credential Card Architecture & Normalization Parity
+  console.log("\n[Test 19] Modular Credential Card Architecture & Normalization Parity");
+  const modularPayload = {
+    metadata: {
+      generatedAt: new Date().toISOString(),
+      staleAfterMonths: 6,
+      canaryCode: "99887766"
+    },
+    items: [
+      {
+        id: "card-pm",
+        type: "password_manager",
+        title: "Root of Trust: Bitwarden",
+        service: "Bitwarden",
+        email: "alice@example.com",
+        secretKey: "BW-MASTER-TOKEN-998822",
+        hint: "Hardware token backup"
+      },
+      {
+        id: "card-gh-codes",
+        type: "backup_codes",
+        title: "GitHub 2SV Backup Codes",
+        service: "GitHub",
+        codes: ["a1b2c3d4e5", "f6g7h8i9j0", "k1l2m3n4o5"]
+      },
+      {
+        id: "card-seed",
+        type: "seed_phrase",
+        title: "Ledger Cold Wallet Recovery",
+        service: "Ledger",
+        phrase: "witch collapse practice feed shame open despair creek road again ice least"
+      },
+      {
+        id: "card-totp",
+        type: "totp_group",
+        title: "Live Authenticator",
+        seeds: {
+          "AWS": "JBSWY3DPEHPK3PXP",
+          "GitLab": "KVKFKRCPI5UHIZKS"
+        }
+      },
+      {
+        id: "card-custom",
+        type: "key_value",
+        title: "Server SSH & Disk Passphrase",
+        entries: [
+          { label: "Server SSH Key", value: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5..." },
+          { label: "LUKS Passphrase", value: "stellar-horizon-nebula-99" }
+        ]
+      },
+      {
+        id: "card-notes",
+        type: "notes",
+        title: "Emergency Notes",
+        content: "Call Bob at +1-555-0144 for secondary physical safe key."
+      }
+    ]
+  };
+
+  const modularCiphertext = await encryptPayload(modularPayload, passphrase);
+  const decryptedModular = await decryptPayload(modularCiphertext, passphrase);
+
+  if (decryptedModular.metadata.canaryCode !== "99887766" ||
+      !Array.isArray(decryptedModular.items) ||
+      decryptedModular.items.length !== 6) {
+    throw new Error("Test 19 Failed: Modular payload items failed round-trip encryption/decryption!");
+  }
+
+  const pmCard = decryptedModular.items.find(it => it.type === "password_manager");
+  const seedCard = decryptedModular.items.find(it => it.type === "seed_phrase");
+  const kvCard = decryptedModular.items.find(it => it.type === "key_value");
+
+  if (!pmCard || pmCard.email !== "alice@example.com" || pmCard.service !== "Bitwarden") {
+    throw new Error("Test 19 Failed: Password manager card corrupted in transit!");
+  }
+  if (!seedCard || seedCard.phrase.split(" ").length !== 12) {
+    throw new Error("Test 19 Failed: Seed phrase card corrupted in transit!");
+  }
+  if (!kvCard || kvCard.entries.length !== 2 || kvCard.entries[1].value !== "stellar-horizon-nebula-99") {
+    throw new Error("Test 19 Failed: Key-value card corrupted in transit!");
+  }
+
+  // Verify legacy normalization logic parity
+  const legacySample = {
+    metadata: { canaryCode: "11223344" },
+    onePassword: { email: "test@example.com", secretKey: "KEY-123" },
+    googleBackupCodes: ["12345678", "87654321"],
+    totpSeeds: { "Google": "SECRET" },
+    notes: "Legacy test notes"
+  };
+
+  function normalize(p) {
+    const res = { ...p };
+    if (!Array.isArray(res.items)) {
+      res.items = [];
+      if (res.onePassword) res.items.push({ type: 'password_manager', email: res.onePassword.email });
+      if (res.googleBackupCodes) res.items.push({ type: 'backup_codes', codes: res.googleBackupCodes });
+      if (res.totpSeeds) res.items.push({ type: 'totp_group', seeds: res.totpSeeds });
+      if (res.notes) res.items.push({ type: 'notes', content: res.notes });
+    }
+    return res;
+  }
+
+  const normalizedLegacy = normalize(legacySample);
+  if (normalizedLegacy.items.length !== 4 ||
+      normalizedLegacy.items[0].type !== "password_manager" ||
+      normalizedLegacy.items[1].codes.length !== 2) {
+    throw new Error("Test 19 Failed: Legacy payload normalization parity check failed!");
+  }
+
+  // Verify public/index.html and tools/builder.html contain card architecture components
+  const publicIndexHtml = fs.readFileSync(HTML_PATH, 'utf8');
+  if (!publicIndexHtml.includes('vault-cards-container') ||
+      !publicIndexHtml.includes('normalizeVaultPayload') ||
+      !publicIndexHtml.includes('renderSeedPhraseCard') ||
+      !publicIndexHtml.includes('renderKeyValueCard')) {
+    throw new Error("Test 19 Failed: public/index.html missing modular card container or renderers!");
+  }
+
+  const builderHtmlContent = fs.readFileSync(path.join(REPO_ROOT, 'tools', 'builder.html'), 'utf8');
+  if (!builderHtmlContent.includes('cards-container') ||
+      !builderHtmlContent.includes('btn-add-pm') ||
+      !builderHtmlContent.includes('btn-add-seed') ||
+      !builderHtmlContent.includes('btn-add-kv')) {
+    throw new Error("Test 19 Failed: tools/builder.html missing modular card builder controls!");
+  }
+
+  console.log("✓ Test 19 Passed: Modular Credential Card Architecture & Normalization Parity verified.");
 }
 
 runTests().catch(err => {

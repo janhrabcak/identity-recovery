@@ -224,6 +224,51 @@ export function createSamplePayload(isFresh = true) {
       staleAfterMonths: 6,
       canaryCode: "12345678"
     },
+    items: [
+      {
+        id: "pm-1",
+        type: "password_manager",
+        title: "Root of Trust: 1Password",
+        service: "1Password",
+        email: "user@example.com",
+        secretKey: "A3-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+        hint: "Personal Emergency Vault",
+        instructions: "1. Go to https://my.1password.com in a clean browser tab.\n2. Paste email and secret key.\n3. Enter memorized master password."
+      },
+      {
+        id: "codes-google",
+        type: "backup_codes",
+        title: "Google 2SV Backup Codes",
+        service: "Google",
+        codes: [
+          "23456789",
+          "34567890",
+          "45678901",
+          "56789012",
+          "67890123",
+          "78901234",
+          "89012345",
+          "90123456",
+          "01234567",
+          "12345670"
+        ]
+      },
+      {
+        id: "totp-1",
+        type: "totp_group",
+        title: "Live Authenticator (TOTP)",
+        seeds: {
+          "Google": "JBSWY3DPEHPK3PXP",
+          "GitHub": "KVKFKRCPI5UHIZKS"
+        }
+      },
+      {
+        id: "notes-1",
+        type: "notes",
+        title: "Emergency Instructions & Contacts",
+        content: "Emergency contact: Alice (+1-555-0199). Recovery protocol: Recover Google account first using backup codes, then sign in to 1Password at my.1password.com."
+      }
+    ],
     onePassword: {
       email: "user@example.com",
       secretKey: "A3-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
@@ -419,8 +464,8 @@ async function main() {
   }
 
   // Validate recommended fields
-  if (!parsedPayload.onePassword || !parsedPayload.googleBackupCodes) {
-    console.warn('Warning: Payload missing recommended fields (onePassword, googleBackupCodes).');
+  if (!parsedPayload.items && (!parsedPayload.onePassword || !parsedPayload.googleBackupCodes)) {
+    console.warn('Warning: Payload missing recommended fields (items or legacy onePassword/googleBackupCodes).');
   }
 
   // Passphrase: prefer env var (avoids exposure in process list), then -p flag, then interactive prompt

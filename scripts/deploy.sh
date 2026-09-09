@@ -212,8 +212,8 @@ fi
 node -e "
   const fs = await import('node:fs');
   const p = JSON.parse(fs.readFileSync(process.argv[1], 'utf8'));
-  if (!p.onePassword || !p.googleBackupCodes) {
-    console.error('Warning: Payload is missing onePassword or googleBackupCodes!');
+  if (!p.items && (!p.onePassword || !p.googleBackupCodes)) {
+    console.error('Warning: Payload is missing items or legacy onePassword/googleBackupCodes!');
     process.exit(1);
   }
 " "$PAYLOAD_FILE"
