@@ -10,6 +10,10 @@
 
 Stateless, zero-hardware emergency credential recovery protocol designed to restore primary identity and root-of-trust access from an untrusted terminal or newly procured device anywhere in the world.
 
+<p align="center">
+  <img src="docs/demo.gif" alt="Identity Recovery Protocol Web Builder Demo" width="800">
+</p>
+
 ### 🛡️ Repository Health & Cryptographic Posture
 
 | Dimension | Indicator | Operational Guarantee |
