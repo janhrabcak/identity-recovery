@@ -2629,15 +2629,30 @@ var qrcodegen;
         const code = await generateTOTP(secret, now);
         const el = document.createElement("div");
         el.className = "cred-box";
-        el.innerHTML = `
-          <div class="cred-content">
-            <div class="cred-label">${name}</div>
-            <div class="cred-value" style="font-family: var(--font-mono); font-size: 1.25rem; letter-spacing: 2px;">
-              ${code.slice(0,3)} ${code.slice(3)}
-            </div>
-          </div>
-          <button type="button" class="btn btn-sm btn-copy" onclick="copyValue(this, \`${code}\`)">Copy</button>
-        `;
+
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "cred-content";
+        
+        const labelDiv = document.createElement("div");
+        labelDiv.className = "cred-label";
+        labelDiv.textContent = name;
+        
+        const valueDiv = document.createElement("div");
+        valueDiv.className = "cred-value";
+        valueDiv.style = "font-family: var(--font-mono); font-size: 1.25rem; letter-spacing: 2px;";
+        valueDiv.textContent = `${code.slice(0,3)} ${code.slice(3)}`;
+        
+        contentDiv.appendChild(labelDiv);
+        contentDiv.appendChild(valueDiv);
+        
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "btn btn-sm btn-copy";
+        copyBtn.textContent = "Copy";
+        copyBtn.onclick = function() { copyValue(this, code); };
+        
+        el.appendChild(contentDiv);
+        el.appendChild(copyBtn);
         container.appendChild(el);
       }
     }

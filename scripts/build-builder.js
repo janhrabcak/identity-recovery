@@ -959,11 +959,29 @@ function addTotpRow(account = '', seed = '') {
   const container = document.getElementById('totp-container');
   const row = document.createElement('div');
   row.className = 'kv-row';
-  row.innerHTML = \`
-    <input type="text" placeholder="Service (e.g. Google)" value="\${account}" class="totp-account">
-    <input type="text" placeholder="Base32 Secret Key (e.g. JBSWY3DPEHPK3PXP)" value="\${seed}" class="totp-seed mono">
-    <button type="button" class="btn btn-secondary btn-sm" style="color: var(--status-red-text);" onclick="this.parentElement.remove()">✕</button>
-  \`;
+  
+  const inputAcc = document.createElement('input');
+  inputAcc.type = 'text';
+  inputAcc.placeholder = 'Service (e.g. Google)';
+  inputAcc.className = 'totp-account';
+  inputAcc.value = account;
+  
+  const inputSeed = document.createElement('input');
+  inputSeed.type = 'text';
+  inputSeed.placeholder = 'Base32 Secret Key (e.g. JBSWY3DPEHPK3PXP)';
+  inputSeed.className = 'totp-seed mono';
+  inputSeed.value = seed;
+  
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn btn-secondary btn-sm';
+  btn.style.color = 'var(--status-red-text)';
+  btn.textContent = '✕';
+  btn.onclick = function() { this.parentElement.remove(); };
+  
+  row.appendChild(inputAcc);
+  row.appendChild(inputSeed);
+  row.appendChild(btn);
   container.appendChild(row);
 }
 

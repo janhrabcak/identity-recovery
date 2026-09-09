@@ -58,7 +58,7 @@ export function evaluateVaultFreshness(htmlContent, htmlFilePath = null) {
   // 2. Fallback: inspect git commit timestamp if file path is available
   if (!generatedAtStr && htmlFilePath && fs.existsSync(htmlFilePath)) {
     try {
-      const gitDate = execSync(`git log -1 --format=%cI "${htmlFilePath}"`, { encoding: 'utf8' }).trim();
+      const gitDate = execFileSync('git', ['log', '-1', '--format=%cI', htmlFilePath], { encoding: 'utf8' }).trim();
       if (gitDate) {
         generatedAtStr = gitDate;
       }
