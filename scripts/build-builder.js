@@ -1077,7 +1077,7 @@ function addCard(type, data = {}) {
       '</div>';
   } else if (type === 'backup_codes') {
     const service = data.service || 'Google';
-    const codesStr = Array.isArray(data.codes) ? data.codes.join('\n') : (data.codes || '');
+    const codesStr = Array.isArray(data.codes) ? data.codes.join('\\n') : (data.codes || '');
     headerHtml = '<div>' +
       '<div class="card-title">🛡️ <input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="background:none; border:none; color:inherit; font-weight:700; font-size:1.05rem; padding:0; width:auto; max-width:350px;"></div>' +
       '<div class="card-subtitle">Single-use emergency recovery backup codes</div>' +

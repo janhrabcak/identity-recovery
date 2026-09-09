@@ -28,6 +28,13 @@ async function createDemo() {
   });
   const page = await context.newPage();
 
+  page.on('console', msg => console.log('BROWSER CONSOLE:', msg.text()));
+  page.on('pageerror', err => console.error('BROWSER ERROR:', err.message));
+  page.on('dialog', async d => {
+    console.log('BROWSER DIALOG:', d.message());
+    await d.dismiss();
+  });
+
   console.log('Loading builder...');
   await page.goto(builderUrl);
   
@@ -62,10 +69,13 @@ async function createDemo() {
   });
 
   async function moveTo(selector) {
-    const box = await page.locator(selector).boundingBox();
+    const el = page.locator(selector);
+    await el.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+    const box = await el.boundingBox();
     if (box) {
       await page.evaluate(({x, y}) => window.moveCursor(x, y), { x: box.x + box.width/2, y: box.y + box.height/2 });
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(400);
     }
   }
 
@@ -73,7 +83,7 @@ async function createDemo() {
     await moveTo(selector);
     await page.evaluate(() => window.clickCursor());
     await page.waitForTimeout(100);
-    await page.click(selector);
+    await page.locator(selector).click();
   }
 
   await page.waitForTimeout(1000);
