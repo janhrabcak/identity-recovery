@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Cold-Start Identity Recovery Protocol - Secure Deployment Script
+# Cold-Start Identity Recovery Protocol - Multi-Provider Secure Deployment Script
+#
+# Supports:
+#   - Cloudflare Pages (Direct Upload via Wrangler or Git Push)
+#   - Netlify (Direct Upload via Netlify CLI or Git Push)
+#   - Vercel (Direct Upload via Vercel CLI or Git Push)
 #
 # Automates:
 #   1. Pre-flight verification (git status, payload validation)
@@ -8,8 +13,8 @@
 #   3. PBKDF2-600k + AES-GCM-256 encryption & HTML injection
 #   4. Test suite validation (prevents deploying broken payloads)
 #   5. Deployment execution:
-#      - Direct Edge Upload (Default if CLOUDFLARE_PAGES_PROJECT is configured):
-#        Deploys directly to Cloudflare Pages edge via Wrangler without touching Git.
+#      - Direct Edge Upload (Zero Git Secrets):
+#        Deploys directly to edge CDN via CLI without touching Git.
 #      - Git Push Mode (Fallback for private repositories):
 #        Stages strictly public/index.html and pushes to origin main.
 #   6. Secure plaintext shredding (defaults to YES)
@@ -25,21 +30,43 @@ cd "$REPO_ROOT"
 
 # Load environment configuration if present
 if [[ -f "$REPO_ROOT/.env" ]]; then
+  DEPLOY_PROVIDER_ENV=$(grep -E '^\s*DEPLOY_PROVIDER=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
   RECOVERY_DOMAIN_ENV=$(grep -E '^\s*RECOVERY_DOMAIN=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
+  
+  # Cloudflare
   CLOUDFLARE_API_TOKEN_ENV=$(grep -E '^\s*CLOUDFLARE_API_TOKEN=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
   CLOUDFLARE_ZONE_ID_ENV=$(grep -E '^\s*CLOUDFLARE_ZONE_ID=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
   CLOUDFLARE_PAGES_PROJECT_ENV=$(grep -E '^\s*CLOUDFLARE_PAGES_PROJECT=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
   CLOUDFLARE_ACCOUNT_ID_ENV=$(grep -E '^\s*CLOUDFLARE_ACCOUNT_ID=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
+
+  # Netlify
+  NETLIFY_SITE_ID_ENV=$(grep -E '^\s*NETLIFY_SITE_ID=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
+  NETLIFY_AUTH_TOKEN_ENV=$(grep -E '^\s*NETLIFY_AUTH_TOKEN=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
+
+  # Vercel
+  VERCEL_TOKEN_ENV=$(grep -E '^\s*VERCEL_TOKEN=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
+  VERCEL_ORG_ID_ENV=$(grep -E '^\s*VERCEL_ORG_ID=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
+  VERCEL_PROJECT_ID_ENV=$(grep -E '^\s*VERCEL_PROJECT_ID=' "$REPO_ROOT/.env" | cut -d'=' -f2- | tr -d '"'\'' ' || true)
 fi
 
 # Detect from index.html meta tag if not in environment
 META_DOMAIN=$(grep -o 'name="recovery-dns-domain" content="[^"]*"' "$REPO_ROOT/public/index.html" | cut -d'"' -f4 || true)
 
 RECOVERY_DOMAIN="${RECOVERY_DOMAIN:-${RECOVERY_DOMAIN_ENV:-${META_DOMAIN:-recovery.yourdomain.com}}}"
+
+# Provider detection
+DEPLOY_PROVIDER="${DEPLOY_PROVIDER:-${DEPLOY_PROVIDER_ENV:-cloudflare}}"
 CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN:-$CLOUDFLARE_API_TOKEN_ENV}"
 CLOUDFLARE_ZONE_ID="${CLOUDFLARE_ZONE_ID:-$CLOUDFLARE_ZONE_ID_ENV}"
 CLOUDFLARE_PAGES_PROJECT="${CLOUDFLARE_PAGES_PROJECT:-$CLOUDFLARE_PAGES_PROJECT_ENV}"
 CLOUDFLARE_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:-$CLOUDFLARE_ACCOUNT_ID_ENV}"
+
+NETLIFY_SITE_ID="${NETLIFY_SITE_ID:-$NETLIFY_SITE_ID_ENV}"
+NETLIFY_AUTH_TOKEN="${NETLIFY_AUTH_TOKEN:-$NETLIFY_AUTH_TOKEN_ENV}"
+
+VERCEL_TOKEN="${VERCEL_TOKEN:-$VERCEL_TOKEN_ENV}"
+VERCEL_ORG_ID="${VERCEL_ORG_ID:-$VERCEL_ORG_ID_ENV}"
+VERCEL_PROJECT_ID="${VERCEL_PROJECT_ID:-$VERCEL_PROJECT_ID_ENV}"
 
 # CLI options parsing
 FORCE_GIT_DEPLOY=false
@@ -47,8 +74,21 @@ PAYLOAD_FILE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --provider)
+      DEPLOY_PROVIDER="$2"
+      shift 2
+      ;;
     --project)
       CLOUDFLARE_PAGES_PROJECT="$2"
+      shift 2
+      ;;
+    --site)
+      NETLIFY_SITE_ID="$2"
+      shift 2
+      ;;
+    --token)
+      VERCEL_TOKEN="$2"
+      NETLIFY_AUTH_TOKEN="$2"
       shift 2
       ;;
     --git)
@@ -63,9 +103,12 @@ while [[ $# -gt 0 ]]; do
       echo "Usage: ./scripts/deploy.sh [options] [path-to-payload.json]"
       echo ""
       echo "Options:"
-      echo "  --project <name>    Deploy directly to Cloudflare Pages edge (zero git persistence)"
+      echo "  --provider <name>   Target provider: 'cloudflare' (default), 'netlify', or 'vercel'"
+      echo "  --project <name>    Cloudflare Pages project name (for Direct Upload)"
+      echo "  --site <id>         Netlify Site ID (for Direct Upload)"
+      echo "  --token <token>     API token (for Vercel or Netlify)"
       echo "  --git               Force Git-based commit & push deployment (for private repos)"
-      echo "  --direct-upload     Use Cloudflare Pages Direct Upload (default if CLOUDFLARE_PAGES_PROJECT is set)"
+      echo "  --direct-upload     Use Direct Upload mode (zero git persistence)"
       echo "  -h, --help          Show this help message"
       exit 0
       ;;
@@ -84,8 +127,17 @@ done
 
 PAYLOAD_FILE="${PAYLOAD_FILE:-payload.json}"
 
+# Normalize provider name
+DEPLOY_PROVIDER=$(echo "$DEPLOY_PROVIDER" | tr '[:upper:]' '[:lower:]')
+
 # Determine deployment strategy
-if [[ -n "$CLOUDFLARE_PAGES_PROJECT" && "$FORCE_GIT_DEPLOY" != "true" ]]; then
+if [[ "$FORCE_GIT_DEPLOY" == "true" ]]; then
+  DEPLOY_MODE="GIT_PUSH"
+elif [[ "$DEPLOY_PROVIDER" == "cloudflare" && -n "$CLOUDFLARE_PAGES_PROJECT" ]]; then
+  DEPLOY_MODE="DIRECT_UPLOAD"
+elif [[ "$DEPLOY_PROVIDER" == "netlify" ]]; then
+  DEPLOY_MODE="DIRECT_UPLOAD"
+elif [[ "$DEPLOY_PROVIDER" == "vercel" ]]; then
   DEPLOY_MODE="DIRECT_UPLOAD"
 else
   DEPLOY_MODE="GIT_PUSH"
@@ -104,12 +156,21 @@ echo "================================================================="
 echo "   Cold-Start Identity Recovery Protocol: Automated Deploy       "
 echo "================================================================="
 echo -e "${C_RESET}"
+
 if [[ "$DEPLOY_MODE" == "DIRECT_UPLOAD" ]]; then
-  echo -e "${C_GREEN}🚀 Deployment Mode: Direct Cloudflare Pages Upload (Zero Git Secrets)${C_RESET}"
-  echo -e "   Target Pages Project: ${C_BOLD}${CLOUDFLARE_PAGES_PROJECT}${C_RESET}\n"
+  echo -e "${C_GREEN}🚀 Deployment Mode: Direct Edge Upload (Zero Git Secrets)${C_RESET}"
+  echo -e "   Target Provider: ${C_BOLD}${DEPLOY_PROVIDER^^}${C_RESET}"
+  if [[ "$DEPLOY_PROVIDER" == "cloudflare" ]]; then
+    echo -e "   Cloudflare Project: ${C_BOLD}${CLOUDFLARE_PAGES_PROJECT}${C_RESET}\n"
+  elif [[ "$DEPLOY_PROVIDER" == "netlify" ]]; then
+    echo -e "   Netlify Site: ${C_BOLD}${NETLIFY_SITE_ID:-'(linked via CLI)'}${C_RESET}\n"
+  elif [[ "$DEPLOY_PROVIDER" == "vercel" ]]; then
+    echo -e "   Vercel Deployment: ${C_BOLD}Production${C_RESET}\n"
+  fi
 else
   echo -e "${C_YELLOW}📦 Deployment Mode: Git Push (Commits public/index.html to origin main)${C_RESET}"
-  echo -e "   Tip: Set CLOUDFLARE_PAGES_PROJECT in .env to deploy without Git tracking.\n"
+  echo -e "   Provider: ${C_BOLD}${DEPLOY_PROVIDER^^}${C_RESET}"
+  echo -e "   Tip: Configure provider credentials in .env to deploy without Git tracking.\n"
 fi
 
 # ------------------------------------------------------------------------------
@@ -213,6 +274,13 @@ if [[ "$DEPLOY_MODE" == "DIRECT_UPLOAD" ]]; then
   trap 'rm -rf "$DEPLOY_DIR"' EXIT
   cp -r public/* "$DEPLOY_DIR/"
   
+  if [[ -f "vercel.json" ]]; then
+    cp vercel.json "$DEPLOY_DIR/"
+  fi
+  if [[ -f "netlify.toml" ]]; then
+    cp netlify.toml "$DEPLOY_DIR/"
+  fi
+
   ENCRYPT_PASSPHRASE="$PASSPHRASE" node scripts/encrypt.js -i "$PAYLOAD_FILE" --domain "$RECOVERY_DOMAIN" --embed-html "$DEPLOY_DIR/index.html"
   B64_CIPHERTEXT=$(grep -o 'const EMBEDDED_CIPHERTEXT = "[^"]*"' "$DEPLOY_DIR/index.html" | cut -d'"' -f2 || true)
   
@@ -236,17 +304,43 @@ echo -e "${C_GREEN}✓ Test suite passed completely.${C_RESET}\n"
 # 5. Deployment Execution
 # ------------------------------------------------------------------------------
 if [[ "$DEPLOY_MODE" == "DIRECT_UPLOAD" ]]; then
-  echo -e "${C_BOLD}[5/7] Deploying directly to Cloudflare Pages edge...${C_RESET}"
-  echo -e "Uploading to project: ${C_CYAN}${CLOUDFLARE_PAGES_PROJECT}${C_RESET}..."
-  
-  export CLOUDFLARE_API_TOKEN
-  if [[ -n "$CLOUDFLARE_ACCOUNT_ID" ]]; then
-    export CLOUDFLARE_ACCOUNT_ID
-  fi
+  echo -e "${C_BOLD}[5/7] Deploying directly to ${DEPLOY_PROVIDER^^} edge...${C_RESET}"
 
-  npx --yes wrangler pages deploy "$DEPLOY_DIR" --project-name="$CLOUDFLARE_PAGES_PROJECT" --commit-dirty=true
+  if [[ "$DEPLOY_PROVIDER" == "cloudflare" ]]; then
+    echo -e "Uploading to Cloudflare Pages project: ${C_CYAN}${CLOUDFLARE_PAGES_PROJECT}${C_RESET}..."
+    export CLOUDFLARE_API_TOKEN
+    if [[ -n "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+      export CLOUDFLARE_ACCOUNT_ID
+    fi
+    npx --yes wrangler pages deploy "$DEPLOY_DIR" --project-name="$CLOUDFLARE_PAGES_PROJECT" --commit-dirty=true
+
+  elif [[ "$DEPLOY_PROVIDER" == "netlify" ]]; then
+    echo -e "Uploading to Netlify edge..."
+    NETLIFY_ARGS=("--dir=$DEPLOY_DIR" "--prod")
+    if [[ -n "$NETLIFY_SITE_ID" ]]; then
+      NETLIFY_ARGS+=("--site=$NETLIFY_SITE_ID")
+    fi
+    if [[ -n "$NETLIFY_AUTH_TOKEN" ]]; then
+      NETLIFY_ARGS+=("--auth=$NETLIFY_AUTH_TOKEN")
+    fi
+    npx --yes netlify-cli deploy "${NETLIFY_ARGS[@]}"
+
+  elif [[ "$DEPLOY_PROVIDER" == "vercel" ]]; then
+    echo -e "Uploading to Vercel edge..."
+    VERCEL_ARGS=("$DEPLOY_DIR" "--prod" "--yes")
+    if [[ -n "$VERCEL_TOKEN" ]]; then
+      VERCEL_ARGS+=("--token=$VERCEL_TOKEN")
+    fi
+    if [[ -n "$VERCEL_ORG_ID" ]]; then
+      export VERCEL_ORG_ID
+    fi
+    if [[ -n "$VERCEL_PROJECT_ID" ]]; then
+      export VERCEL_PROJECT_ID
+    fi
+    npx --yes vercel deploy "${VERCEL_ARGS[@]}"
+  fi
   
-  echo -e "${C_GREEN}✓ Successfully published directly to Cloudflare Pages edge!${C_RESET}\n"
+  echo -e "${C_GREEN}✓ Successfully published directly to ${DEPLOY_PROVIDER^^} edge!${C_RESET}\n"
 
   echo -e "${C_BOLD}[6/7] Auditing Git cleanliness...${C_RESET}"
   echo -e "${C_GREEN}✓ Zero Git Persistence: No commits were created and Git is 100% clean.${C_RESET}\n"
@@ -287,7 +381,7 @@ else
     git commit -m "vault: rotate encrypted recovery payload ($TIMESTAMP)"
     git push origin main
     echo -e "${C_GREEN}✓ Successfully pushed to GitHub main branch.${C_RESET}"
-    echo -e "${C_GREEN}✓ Cloudflare Edge deployment automatically triggered!${C_RESET}\n"
+    echo -e "${C_GREEN}✓ ${DEPLOY_PROVIDER^^} Edge deployment automatically triggered!${C_RESET}\n"
   fi
 fi
 

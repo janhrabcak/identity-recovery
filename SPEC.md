@@ -44,8 +44,10 @@ identity-recovery/
 │   └── sample-payload.json       # Template recovery schema
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # Automated crypto & parity tests (17 automated tests)
+│   └── test-suite.js             # Automated crypto & parity tests (18 automated tests)
 │
+├── vercel.json                   # Vercel edge security header configuration
+├── netlify.toml                  # Netlify edge security header configuration
 ├── .env.example                  # Environment configuration template (RECOVERY_DOMAIN)
 ├── .gitignore                    # Security boundary (blocks unencrypted payload.json)
 ├── README.md                     # Operational documentation & quick run commands
@@ -254,3 +256,4 @@ Automated test runner verifying:
 15. Multi-channel staleness push notification webhook payload generation and CI workflow integration.
 16. In-browser TOTP HMAC-SHA1 mathematical validation.
 17. Offline Vault Builder (`tools/builder.html`) security, CSP, and parity check.
+18. Multi-provider edge security parity verifying identical strict CSP, HSTS, and `Cache-Control: no-store` headers across Cloudflare (`_headers`), Vercel (`vercel.json`), and Netlify (`netlify.toml`).

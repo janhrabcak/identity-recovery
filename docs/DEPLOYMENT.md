@@ -118,7 +118,99 @@ curl -s -H "Accept: application/dns-json" "https://cloudflare-dns.com/dns-query?
 
 ---
 
-## 4. Alternative Hosting Targets
+## 4. Hosting on Netlify
 
-- **GitHub Pages:** Safe for dead-drop hosting. Set source to `/public` in repository settings. *Note: Requires a public repository on the free tier.*
-- **Self-Hosted Static Web Server:** Copy `public/index.html` to any Nginx/Apache/Caddy webroot. Ensure you apply the security headers from `public/_headers` in your web server configuration.
+Netlify is natively compatible with the existing [`public/_headers`](../public/_headers) file and the root [`netlify.toml`](../netlify.toml).
+
+### Automated Direct Upload (Zero Git Persistence)
+
+1. Create a site on Netlify (via Netlify Dashboard → **Sites** → **Add new site** → **Deploy manually**).
+2. Copy your **API ID (Site ID)** from **Site configuration** → **General** → **Site details**.
+3. Generate a Personal Access Token from **User settings** → **Applications** → **Personal access tokens**.
+4. Configure `.env`:
+   ```bash
+   DEPLOY_PROVIDER=netlify
+   NETLIFY_SITE_ID=your_site_id_here
+   NETLIFY_AUTH_TOKEN=your_auth_token_here
+   ```
+5. Deploy:
+   ```bash
+   ./scripts/deploy.sh payload.json
+   # Or explicitly: ./scripts/deploy.sh --provider netlify payload.json
+   ```
+
+---
+
+## 5. Hosting on Vercel
+
+Vercel is fully supported via the root [`vercel.json`](../vercel.json), which mirrors all security headers (`no-store`, strict CSP, HSTS, anti-clickjacking).
+
+### Automated Direct Upload (Zero Git Persistence)
+
+1. Generate a personal Access Token at [https://vercel.com/account/tokens](https://vercel.com/account/tokens).
+2. Configure `.env`:
+   ```bash
+   DEPLOY_PROVIDER=vercel
+   VERCEL_TOKEN=your_vercel_token_here
+   # (Optional) link to a specific project:
+   VERCEL_ORG_ID=your_org_id
+   VERCEL_PROJECT_ID=your_project_id
+   ```
+3. Deploy:
+   ```bash
+   ./scripts/deploy.sh payload.json
+   # Or explicitly: ./scripts/deploy.sh --provider vercel payload.json
+   ```
+
+---
+
+## 6. Self-Hosted Static Web Servers (Caddy & Nginx)
+
+If you self-host on your own server or VPS, apply these drop-in configurations to maintain identical edge security:
+
+### Caddy (`Caddyfile`)
+```caddy
+sos.yourdomain.com {
+    root * /var/www/sos/public
+    file_server
+
+    header {
+        Content-Security-Policy "default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none';"
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "no-referrer"
+        Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=(), usb=()"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        Cache-Control "no-cache, no-store, must-revalidate"
+    }
+}
+```
+
+### Nginx (`nginx.conf`)
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name sos.yourdomain.com;
+    root /var/www/sos/public;
+    index index.html;
+
+    add_header Content-Security-Policy "default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none';" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=(), usb=()" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+```
+
+---
+
+## 7. Emergency Fallback: GitHub Pages
+
+- **GitHub Pages:** Safe for dead-drop hosting. Set source to `/public` in repository settings.
+- **Limitation:** GitHub Pages does not support custom HTTP response headers (`Cache-Control: no-store` and `X-Frame-Options` cannot be set at the server level). Treat GitHub Pages as a secondary or emergency fallback rather than a primary production deployment.

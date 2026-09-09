@@ -389,7 +389,42 @@ async function runTests() {
   if (!builderHtml.includes("DEFAULT_INDEX_TEMPLATE_B64")) {
     throw new Error("Test 17 Failed: builder.html missing embedded default index.html template!");
   }
-  console.log("✓ Test 17 Passed: tools/builder.html verified (zero dependencies, strict CSP, 600k PBKDF2 iterations).");
+  // Test 18: Multi-Provider Edge Security Parity (Cloudflare, Vercel, Netlify)
+  console.log("\n[Test 18] Multi-Provider Edge Security Parity Verification");
+  const VERCEL_CONFIG_PATH = path.join(REPO_ROOT, 'vercel.json');
+  const NETLIFY_CONFIG_PATH = path.join(REPO_ROOT, 'netlify.toml');
+
+  if (!fs.existsSync(VERCEL_CONFIG_PATH)) {
+    throw new Error("Test 18 Failed: vercel.json not found!");
+  }
+  const vercelJson = JSON.parse(fs.readFileSync(VERCEL_CONFIG_PATH, 'utf8'));
+  const vercelHeaders = vercelJson.headers?.[0]?.headers || [];
+  const vercelHeaderMap = Object.fromEntries(vercelHeaders.map(h => [h.key, h.value]));
+
+  if (!vercelHeaderMap['Content-Security-Policy']?.includes("default-src 'none'")) {
+    throw new Error("Test 18 Failed: vercel.json missing strict CSP default-src 'none'!");
+  }
+  if (!vercelHeaderMap['Cache-Control']?.includes("no-store")) {
+    throw new Error("Test 18 Failed: vercel.json missing Cache-Control: no-store!");
+  }
+  if (vercelHeaderMap['X-Frame-Options'] !== "DENY") {
+    throw new Error("Test 18 Failed: vercel.json missing X-Frame-Options: DENY!");
+  }
+
+  if (!fs.existsSync(NETLIFY_CONFIG_PATH)) {
+    throw new Error("Test 18 Failed: netlify.toml not found!");
+  }
+  const netlifyToml = fs.readFileSync(NETLIFY_CONFIG_PATH, 'utf8');
+  if (!netlifyToml.includes("default-src 'none'")) {
+    throw new Error("Test 18 Failed: netlify.toml missing strict CSP default-src 'none'!");
+  }
+  if (!netlifyToml.includes("no-store")) {
+    throw new Error("Test 18 Failed: netlify.toml missing Cache-Control: no-store!");
+  }
+  if (!netlifyToml.includes('X-Frame-Options = "DENY"')) {
+    throw new Error("Test 18 Failed: netlify.toml missing X-Frame-Options = \"DENY\"!");
+  }
+  console.log("✓ Test 18 Passed: Multi-provider security headers verified across Cloudflare, Vercel, and Netlify.");
 
   console.log("\n==========================================");
   console.log("ALL TESTS PASSED SUCCESSFULLY! ✓");

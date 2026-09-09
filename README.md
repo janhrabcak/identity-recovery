@@ -6,7 +6,7 @@
 ![Node Support](https://img.shields.io/badge/node-%3E%3D18-informational?style=flat-square&logo=node.js)
 ![Cryptography](https://img.shields.io/badge/cipher-AES--GCM--256-blue?style=flat-square)
 ![KDF](https://img.shields.io/badge/KDF-PBKDF2--SHA--256%20(600k%20rounds)-blueviolet?style=flat-square)
-![Edge Deployment](https://img.shields.io/badge/deployed%20on-Cloudflare%20Pages-orange?style=flat-square&logo=cloudflare)
+![Edge Deployment](https://img.shields.io/badge/edge%20deployment-Cloudflare%20%7C%20Netlify%20%7C%20Vercel-orange?style=flat-square)
 
 Stateless, zero-hardware emergency credential recovery protocol designed to restore primary identity and root-of-trust access from an untrusted terminal or newly procured device anywhere in the world.
 
@@ -14,7 +14,7 @@ Stateless, zero-hardware emergency credential recovery protocol designed to rest
 
 | Dimension | Indicator | Operational Guarantee |
 |---|---|---|
-| **Cryptographic Parity** | `🟢 17/17 Passed` | Node.js WebCrypto $\leftrightarrow$ Browser WebCrypto end-to-end verified |
+| **Cryptographic Parity** | `🟢 18/18 Passed` | Node.js WebCrypto $\leftrightarrow$ Browser WebCrypto end-to-end verified |
 | **Supply Chain Risk** | `🟢 0 Dependencies` | Pure Node.js standard libraries & browser-native APIs (zero npm attack surface) |
 | **Edge Header Security** | `🟢 Hardened` | Strict CSP (`default-src 'none'`), `no-store` cache control, anti-clickjacking (`DENY`) |
 | **Vault Freshness** | `🟢 Automated` | Bi-monthly GitHub Actions audit + multi-channel push alerts (ntfy/Discord/Slack) |
@@ -101,12 +101,12 @@ cp templates/sample-payload.json payload.json
 # Run the automated deployment pipeline:
 ./scripts/deploy.sh payload.json
 ```
-The script will prompt for your 6-word passphrase, verify entropy, run 17 automated tests, commit strictly `public/index.html`, push to `main`, and securely shred `payload.json`.
+The script will prompt for your 6-word passphrase, verify entropy, run 18 automated tests, commit strictly `public/index.html`, push to `main`, and securely shred `payload.json`.
 
-### 4. Connect Cloudflare Pages (Free)
-1. In Cloudflare Dashboard: **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**.
-2. Select your repository. Set build output directory: `public`.
-3. Add your custom domain (e.g. `sos.yourdomain.com`).
+### 4. Connect Cloudflare Pages, Netlify, or Vercel (Free)
+- **Cloudflare Pages:** Connect Git or deploy via Wrangler (`./scripts/deploy.sh`).
+- **Netlify:** Connect Git (uses `netlify.toml`) or Direct Upload (`./scripts/deploy.sh --provider netlify`).
+- **Vercel:** Connect Git (uses `vercel.json`) or Direct Upload (`./scripts/deploy.sh --provider vercel`).
 
 ---
 
@@ -114,7 +114,7 @@ The script will prompt for your 6-word passphrase, verify entropy, run 17 automa
 
 | Guide | Description |
 |---|---|
-| [**`docs/DEPLOYMENT.md`**](docs/DEPLOYMENT.md) | Cloudflare Pages setup, custom domain routing, and automated/manual DNS TXT dead-drop configuration. |
+| [**`docs/DEPLOYMENT.md`**](docs/DEPLOYMENT.md) | Multi-provider deployment (Cloudflare Pages, Netlify, Vercel, Caddy, Nginx) and DNS TXT dead-drop configuration. |
 | [**`docs/CLI_REFERENCE.md`**](docs/CLI_REFERENCE.md) | Command-line reference for `deploy.sh`, `encrypt.js`, `check-staleness.js`, and test suites. |
 | [**`docs/FEATURES.md`**](docs/FEATURES.md) | In-depth breakdown of live TOTP generation, offline QR codes, panic keybind, clipboard auto-scrubbing, and print sheets. |
 | [**`SPEC.md`**](SPEC.md) | Complete cryptographic and architectural specification, schema definitions, and threat model. |
@@ -125,7 +125,7 @@ The script will prompt for your 6-word passphrase, verify entropy, run 17 automa
 
 ```text
 identity-recovery/
-├── public/                       # 🌐 Public edge deployment (Cloudflare Pages)
+├── public/                       # 🌐 Public edge deployment (Cloudflare Pages / Netlify / Vercel)
 │   ├── index.html                # Recovery terminal UI (contains encrypted ciphertext)
 │   └── _headers                  # Strict HTTP security headers (CSP, HSTS, no-store)
 │
@@ -143,7 +143,7 @@ identity-recovery/
 │   └── staleness-check.yml       # Bi-monthly automated staleness alert workflow
 │
 ├── docs/                         # 📖 In-depth guides
-│   ├── DEPLOYMENT.md             # Cloudflare Pages & DNS setup
+│   ├── DEPLOYMENT.md             # Cloudflare Pages, Netlify, Vercel, & DNS setup
 │   ├── CLI_REFERENCE.md          # Manual CLI flags & offline workflow
 │   └── FEATURES.md               # UI features (TOTP, QR, panic keybind)
 │
@@ -151,8 +151,10 @@ identity-recovery/
 │   └── sample-payload.json       # Template schema with TOTP seeds
 │
 ├── tests/                        # 🧪 Verification suite
-│   └── test-suite.js             # 16 automated cryptographic & integrity tests
+│   └── test-suite.js             # 18 automated cryptographic & integrity tests
 │
+├── vercel.json                   # Vercel edge security header configuration
+├── netlify.toml                  # Netlify edge security header configuration
 ├── .env.example                  # Environment template (RECOVERY_DOMAIN)
 ├── .gitignore                    # Security boundary (blocks unencrypted payload.json)
 ├── README.md                     # Landing page & quick run guide
