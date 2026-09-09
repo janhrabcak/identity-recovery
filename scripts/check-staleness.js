@@ -123,6 +123,25 @@ function writeGitHubOutput(key, value) {
 
 function manageGitHubIssue(result) {
   console.log('\n--- Managing GitHub Staleness Issues ---');
+
+  // Verify repository privacy to prevent leaking credential staleness to the public
+  let isPrivateRepo = false;
+  try {
+    const isPrivateOutput = execFileSync(
+      'gh', ['repo', 'view', '--json', 'isPrivate', '--jq', '.isPrivate'],
+      { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }
+    ).trim();
+    isPrivateRepo = isPrivateOutput === 'true';
+  } catch (err) {
+    // gh CLI or token unavailable
+  }
+
+  const allowPublicIssue = process.argv.includes('--allow-public-issue');
+  if (!isPrivateRepo && !allowPublicIssue) {
+    console.log('Notice: Repository is public or visibility could not be confirmed. Suppressing public GitHub issue to prevent disclosure of credential staleness timelines. (Override with --allow-public-issue or configure STALENESS_WEBHOOK_URL for private alerts.)');
+    return;
+  }
+
   let existingIssueNum = null;
   try {
     const issueOutput = execFileSync(

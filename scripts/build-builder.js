@@ -361,6 +361,22 @@ const BUILDER_HTML = `<!DOCTYPE html>
       gap: 16px;
     }
 
+    .grid-2 > .form-group {
+      margin-bottom: 0;
+    }
+
+    .status-field-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 6px 12px;
+      min-height: 42px;
+      box-sizing: border-box;
+    }
+
     @media (max-width: 640px) {
       .grid-2 { grid-template-columns: 1fr; }
     }
@@ -611,9 +627,9 @@ const BUILDER_HTML = `<!DOCTYPE html>
       <div class="card-header">
         <div>
           <div class="card-title">🔑 1. Disaster Recovery Passphrase (Master Key)</div>
-          <div class="card-subtitle">Memorized 6-word Diceware phrase (~77 bits entropy). This decrypts your vault.</div>
+          <div class="card-subtitle">Memorized Diceware phrase (≥6 words, or 8 generated words for ~80 bits entropy). This decrypts your vault.</div>
         </div>
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-generate-diceware">🎲 Generate 6 Words</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-generate-diceware">🎲 Generate 8 Words (~80 bits)</button>
       </div>
 
       <div class="form-group">
@@ -662,11 +678,11 @@ const BUILDER_HTML = `<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- CARD 6: Vault Metadata & Dead-Drop DNS -->
-    <div class="card">
+    <!-- CARD 3: Vault Configuration & Dead-Drop DNS -->
+    <div class="card" style="margin-top: 28px;">
       <div class="card-header">
         <div>
-          <div class="card-title">⚙️ 6. Vault Configuration & Dead-Drop DNS</div>
+          <div class="card-title">⚙️ 3. Vault Configuration & Dead-Drop DNS</div>
           <div class="card-subtitle">Settings for staleness detection and the secondary RFC 1035 DNS TXT dead-drop.</div>
         </div>
       </div>
@@ -680,19 +696,19 @@ const BUILDER_HTML = `<!DOCTYPE html>
           <label for="canary-code">Canary Code (Quick 2SV Verification)</label>
           <div class="input-with-button">
             <input type="text" id="canary-code" class="mono" placeholder="12345678">
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-random-canary">🎲</button>
+            <button type="button" class="btn btn-secondary" id="btn-random-canary" title="Generate Random Canary Code">🎲</button>
           </div>
         </div>
       </div>
 
-      <div class="grid-2" style="margin-top: 12px;">
+      <div class="grid-2" style="margin-top: 16px;">
         <div class="form-group">
           <label for="stale-months">Stale After (Months)</label>
           <input type="number" id="stale-months" value="6" min="1" max="24">
         </div>
         <div class="form-group">
           <label>HTML Template Status</label>
-          <div style="display: flex; align-items: center; height: 42px; gap: 8px;">
+          <div class="status-field-container">
             <span class="badge badge-green" id="template-status">✓ Default embedded</span>
             <button type="button" class="btn btn-secondary btn-sm" id="btn-select-template">Change Template...</button>
             <input type="file" id="input-template-file" accept=".html" style="display: none;">
@@ -966,7 +982,7 @@ function updatePassphraseUI() {
   bUnique.className = evalRes.uniqueCount >= 4 ? 'badge badge-green' : 'badge badge-gray';
 
   if (evalRes.valid) {
-    bStatus.innerText = '✓ Strong (~77 bits entropy)';
+    bStatus.innerText = evalRes.wordCount >= 8 ? '✓ Strong (~80 bits entropy)' : '✓ Valid (≥6 words)';
     bStatus.className = 'badge badge-green';
   } else if (evalRes.wordCount >= 4) {
     bStatus.innerText = 'Moderate entropy';
@@ -979,9 +995,9 @@ function updatePassphraseUI() {
 
 function generateDiceware() {
   const words = [];
-  const randomIndices = new Uint32Array(6);
+  const randomIndices = new Uint32Array(8);
   window.crypto.getRandomValues(randomIndices);
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 8; i++) {
     const idx = randomIndices[i] % DICEWARE_WORDS.length;
     words.push(DICEWARE_WORDS[idx]);
   }
@@ -989,7 +1005,7 @@ function generateDiceware() {
   document.getElementById('passphrase').value = phrase;
   document.getElementById('passphrase').type = 'text';
   updatePassphraseUI();
-  showToast('Generated 6-word Diceware phrase!');
+  showToast('Generated 8-word Diceware phrase (~80 bits entropy)!');
 }
 
 function escapeHtml(str) {
@@ -1573,6 +1589,16 @@ async function verifyDecryption(b64Ciphertext, passphrase) {
   return JSON.parse(dec.decode(decryptedBuffer));
 }
 
+function escapeHtmlAttr(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 function injectIntoTemplate(templateHtml, ciphertextB64, metadata, domain) {
   let html = templateHtml;
 
@@ -1585,21 +1611,21 @@ function injectIntoTemplate(templateHtml, ciphertextB64, metadata, domain) {
   if (metadata.generatedAt) {
     const genMetaRegex = /<meta\\s+name=["']vault-generated-at["']\\s+content=["'][^"']*["']\\s*\\/?>/i;
     if (genMetaRegex.test(html)) {
-      html = html.replace(genMetaRegex, \`<meta name="vault-generated-at" content="\${metadata.generatedAt}">\`);
+      html = html.replace(genMetaRegex, \`<meta name="vault-generated-at" content="\${escapeHtmlAttr(metadata.generatedAt)}">\`);
     }
   }
 
   if (metadata.staleAfterMonths !== undefined) {
     const staleMetaRegex = /<meta\\s+name=["']vault-stale-after-months["']\\s+content=["'][^"']*["']\\s*\\/?>/i;
     if (staleMetaRegex.test(html)) {
-      html = html.replace(staleMetaRegex, \`<meta name="vault-stale-after-months" content="\${metadata.staleAfterMonths}">\`);
+      html = html.replace(staleMetaRegex, \`<meta name="vault-stale-after-months" content="\${escapeHtmlAttr(metadata.staleAfterMonths)}">\`);
     }
   }
 
   if (domain) {
     const domainMetaRegex = /<meta\\s+name=["']recovery-dns-domain["']\\s+content=["'][^"']*["']\\s*\\/?>/i;
     if (domainMetaRegex.test(html)) {
-      html = html.replace(domainMetaRegex, \`<meta name="recovery-dns-domain" content="\${domain.trim()}">\`);
+      html = html.replace(domainMetaRegex, \`<meta name="recovery-dns-domain" content="\${escapeHtmlAttr(domain.trim())}">\`);
     }
   }
 

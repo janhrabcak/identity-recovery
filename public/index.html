@@ -1803,9 +1803,19 @@ var qrcodegen;
     const SALT_BYTES = 16;
     const IV_BYTES = 12;
 
-    // Configurable recovery DNS domain (retrieved from <meta> or URL ?dns=...)
+    // Validates standard FQDN hostname syntax (RFC 1123)
+    function isValidDomain(d) {
+      if (!d || typeof d !== "string" || d.length > 253) return false;
+      return /^(?!:\/\/)([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$/.test(d.trim());
+    }
+
+    // Configurable recovery DNS domain (retrieved from URL ?dns=... or <meta>, strictly validated)
     const urlParams = new URLSearchParams(window.location.search);
-    const RECOVERY_DNS_DOMAIN = urlParams.get("dns") || document.querySelector('meta[name="recovery-dns-domain"]')?.content || "recovery.yourdomain.com";
+    const rawDnsParam = urlParams.get("dns");
+    const metaDnsParam = document.querySelector('meta[name="recovery-dns-domain"]')?.content;
+    const RECOVERY_DNS_DOMAIN = (isValidDomain(rawDnsParam) ? rawDnsParam.trim() : null) || 
+      (isValidDomain(metaDnsParam) ? metaDnsParam.trim() : null) || 
+      "recovery.yourdomain.com";
 
     let currentPayload = null;
     let usedCodeIndices = new Set();
@@ -1820,6 +1830,19 @@ var qrcodegen;
     window.addEventListener("focus", () => {
       if (pendingClipboardScrub) {
         scrubClipboard("focus_catchup");
+      }
+    });
+
+    // Visibility change and pagehide catch-up: scrub when user switches away or closes tab
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden" && pendingClipboardScrub) {
+        scrubClipboard("page_hidden");
+      }
+    });
+
+    window.addEventListener("pagehide", () => {
+      if (pendingClipboardScrub) {
+        scrubClipboard("page_hidden");
       }
     });
 
@@ -1845,7 +1868,7 @@ var qrcodegen;
         scrubbed = fallbackCopy(" ");
       }
 
-      if (reason === "lock_purge") return;
+      if (reason === "lock_purge" || reason === "page_hidden") return;
 
       if (scrubbed) {
         showClipboardNotice("✓ Clipboard scrubbed: credentials cleared from OS clipboard");
@@ -1955,8 +1978,8 @@ var qrcodegen;
       const status = document.getElementById("dns-status-msg");
       const textarea = document.getElementById("ciphertext-input");
 
-      if (!domain) {
-        showError("No recovery DNS domain configured.");
+      if (!domain || !isValidDomain(domain)) {
+        showError("Invalid or missing recovery DNS domain configured.");
         return;
       }
 
@@ -2538,10 +2561,8 @@ var qrcodegen;
       const trackerHeader = document.createElement("div");
       trackerHeader.className = "tracker-header";
 
-      const counterDiv = document.createElement("div");
-      counterDiv.className = "tracker-counter";
-      const remCount = codes.length - usedSet.size;
-      counterDiv.innerHTML = `Remaining Unused: <span id="rem-count-${cardId}" class="tracker-counter-num">${remCount}</span> / <span id="tot-count-${cardId}">${codes.length}</span>`;
+      const safeCardId = escapeHtml(cardId);
+      counterDiv.innerHTML = `Remaining Unused: <span id="rem-count-${safeCardId}" class="tracker-counter-num">${remCount}</span> / <span id="tot-count-${safeCardId}">${codes.length}</span>`;
 
       const trackerActions = document.createElement("div");
       trackerActions.className = "tracker-actions";
@@ -3077,6 +3098,21 @@ var qrcodegen;
       document.getElementById("passphrase-input").value = "";
       updateWordCount("");
       clearError();
+
+      // Clear QR modal and canvas bitmap
+      const qrModal = document.getElementById("qr-modal");
+      if (qrModal) qrModal.classList.add("hidden");
+      const canvas = document.getElementById("qr-canvas");
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // Reset staleness banner metadata elements
+      ["meta-generated-at", "meta-vault-age", "meta-stale-limit", "meta-canary-code"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "-";
+      });
 
       // Switch screen back to lock screen
       document.getElementById("vault-screen").classList.add("hidden");

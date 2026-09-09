@@ -316,20 +316,19 @@ if [[ "$DEPLOY_MODE" == "DIRECT_UPLOAD" ]]; then
 
   elif [[ "$DEPLOY_PROVIDER" == "netlify" ]]; then
     echo -e "Uploading to Netlify edge..."
+    if [[ -n "$NETLIFY_AUTH_TOKEN" ]]; then
+      export NETLIFY_AUTH_TOKEN
+    fi
     NETLIFY_ARGS=("--dir=$DEPLOY_DIR" "--prod")
     if [[ -n "$NETLIFY_SITE_ID" ]]; then
       NETLIFY_ARGS+=("--site=$NETLIFY_SITE_ID")
-    fi
-    if [[ -n "$NETLIFY_AUTH_TOKEN" ]]; then
-      NETLIFY_ARGS+=("--auth=$NETLIFY_AUTH_TOKEN")
     fi
     npx --yes netlify-cli deploy "${NETLIFY_ARGS[@]}"
 
   elif [[ "$DEPLOY_PROVIDER" == "vercel" ]]; then
     echo -e "Uploading to Vercel edge..."
-    VERCEL_ARGS=("$DEPLOY_DIR" "--prod" "--yes")
     if [[ -n "$VERCEL_TOKEN" ]]; then
-      VERCEL_ARGS+=("--token=$VERCEL_TOKEN")
+      export VERCEL_TOKEN
     fi
     if [[ -n "$VERCEL_ORG_ID" ]]; then
       export VERCEL_ORG_ID
@@ -337,7 +336,7 @@ if [[ "$DEPLOY_MODE" == "DIRECT_UPLOAD" ]]; then
     if [[ -n "$VERCEL_PROJECT_ID" ]]; then
       export VERCEL_PROJECT_ID
     fi
-    npx --yes vercel deploy "${VERCEL_ARGS[@]}"
+    npx --yes vercel deploy "$DEPLOY_DIR" --prod --yes
   fi
   
   echo -e "${C_GREEN}✓ Successfully published directly to ${DEPLOY_PROVIDER^^} edge!${C_RESET}\n"

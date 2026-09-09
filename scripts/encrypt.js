@@ -21,6 +21,21 @@ const SALT_BYTES = 16;
 const IV_BYTES = 12;
 
 /**
+ * Escapes HTML attributes to prevent template injection.
+ * @param {string} str
+ * @returns {string}
+ */
+export function escapeHtmlAttr(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/**
  * Normalizes a passphrase: trims whitespace, normalizes Unicode to NFKC, and collapses multiple spaces into a single space.
  * @param {string} passphrase 
  * @returns {string}
@@ -533,7 +548,7 @@ async function main() {
           if (genMetaRegex.test(htmlContent)) {
             htmlContent = htmlContent.replace(
               genMetaRegex,
-              `<meta name="vault-generated-at" content="${parsedPayload.metadata.generatedAt}">`
+              `<meta name="vault-generated-at" content="${escapeHtmlAttr(parsedPayload.metadata.generatedAt)}">`
             );
           }
         }
@@ -542,7 +557,7 @@ async function main() {
           if (staleMetaRegex.test(htmlContent)) {
             htmlContent = htmlContent.replace(
               staleMetaRegex,
-              `<meta name="vault-stale-after-months" content="${parsedPayload.metadata.staleAfterMonths}">`
+              `<meta name="vault-stale-after-months" content="${escapeHtmlAttr(parsedPayload.metadata.staleAfterMonths)}">`
             );
           }
         }
@@ -556,7 +571,7 @@ async function main() {
         if (domainMetaRegex.test(htmlContent)) {
           htmlContent = htmlContent.replace(
             domainMetaRegex,
-            `<meta name="recovery-dns-domain" content="${targetDomain.trim()}">`
+            `<meta name="recovery-dns-domain" content="${escapeHtmlAttr(targetDomain.trim())}">`
           );
         }
       }
