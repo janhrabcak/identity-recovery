@@ -184,9 +184,6 @@ identity-recovery/
 └── SPEC.md                       # Full cryptographic specification
 ```
 
-> 🌐 **Domain Separation & Decoupled Architecture:**
-> The public product website and hosted offline vault compiler at [**idrecoverykit.com**](https://idrecoverykit.com) is decoupled into its own standalone repository: [**`janhrabcak/idrecoverykit-site`**](https://github.com/janhrabcak/idrecoverykit-site). This maintains strict origin isolation between the public web product and personal vault deployments, eliminates cross-site contamination risks, and guarantees that the core cryptographic protocol in `identity-recovery` requires zero third-party dependencies.
-
 ---
 
 ## 🔒 Security Cardinal Rule
