@@ -54,8 +54,18 @@ if (fs.existsSync(SITE_INDEX)) {
   console.log(`✓ Stamped build date (${currentDateStr}) & synchronized site/index.html -> docs/index.html`);
 }
 
-// Synchronize PWA and branding assets
-const staticAssets = ['manifest.json', 'sw.js', 'icon-192.png', 'icon-512.png', 'social-preview.png'];
+// Synchronize PWA, branding, and AI agent discovery assets
+const staticAssets = [
+  'manifest.json',
+  'sw.js',
+  'icon-192.png',
+  'icon-512.png',
+  'social-preview.png',
+  'robots.txt',
+  'sitemap.xml',
+  'llms.txt',
+  'llms-full.txt'
+];
 for (const asset of staticAssets) {
   const src = path.join(SITE_DIR, asset);
   const dest = path.join(DOCS_DIR, asset);
@@ -63,7 +73,17 @@ for (const asset of staticAssets) {
     fs.copyFileSync(src, dest);
   }
 }
-console.log('✓ Synchronized PWA, manifest, and branding assets to docs/');
+
+// Synchronize machine-readable schemas
+const SITE_SCHEMA_DIR = path.join(SITE_DIR, 'schema');
+const DOCS_SCHEMA_DIR = path.join(DOCS_DIR, 'schema');
+if (fs.existsSync(SITE_SCHEMA_DIR)) {
+  fs.mkdirSync(DOCS_SCHEMA_DIR, { recursive: true });
+  for (const file of fs.readdirSync(SITE_SCHEMA_DIR)) {
+    fs.copyFileSync(path.join(SITE_SCHEMA_DIR, file), path.join(DOCS_SCHEMA_DIR, file));
+  }
+}
+console.log('✓ Synchronized PWA, manifest, branding, and AI agent context assets (llms.txt, robots.txt, sitemap.xml, schema/) to docs/');
 
 import { generateAllConfigs } from './providers/index.js';
 

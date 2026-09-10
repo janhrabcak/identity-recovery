@@ -22,22 +22,90 @@
   <meta name="twitter:description" content="Stateless, zero-dependency AES-GCM-256 encrypted credential vault. Recover master passwords, backup codes, seed phrases & TOTP from any browser.">
   <meta name="twitter:image" content="https://idrecoverykit.com/social-preview.png">
 
-  <!-- Schema.org Structured Data -->
+  <!-- AI Agent & LLM Machine-Readable Discovery -->
+  <link rel="alternate" type="text/markdown" href="./llms.txt" title="LLM Machine-Readable Summary">
+  <link rel="alternate" type="text/markdown" href="./llms-full.txt" title="LLM Complete Technical Reference">
+
+  <!-- Schema.org Structured Data (Rich AI & Search Graph) -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "ID Recovery Kit",
-    "url": "https://idrecoverykit.com/",
-    "description": "Zero-dependency, offline AES-GCM-256 encrypted credential vault for physical disaster recovery.",
-    "applicationCategory": "SecurityApplication",
-    "operatingSystem": "All modern browsers (offline-capable PWA)",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "license": "https://opensource.org/licenses/MIT"
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://idrecoverykit.com/#webapp",
+        "name": "ID Recovery Kit",
+        "url": "https://idrecoverykit.com/",
+        "description": "Zero-dependency, offline AES-GCM-256 encrypted credential vault for physical disaster recovery.",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "All modern browsers (offline-capable PWA)",
+        "browserRequirements": "Requires WebCrypto API (Chrome 37+, Firefox 34+, Safari 11+, Edge 79+)",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "license": "https://opensource.org/licenses/MIT",
+        "featureList": [
+          "Zero runtime dependencies and zero external CDN scripts",
+          "PBKDF2-HMAC-SHA256 key derivation with 600,000 rounds",
+          "AES-GCM-256 authenticated encryption with 128-bit auth tags",
+          "Offline single-file compilation and PWA capability",
+          "Dead-drop DNS distribution via DNS-over-HTTPS (RFC 8484)",
+          "Automated zero-knowledge staleness evaluation"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://idrecoverykit.com/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does ID Recovery Kit work offline?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The recovery client and vault builder are single-file HTML applications executed entirely through browser-native WebCrypto (window.crypto.subtle). All key derivation, encryption, and decryption happen in local memory without transmitting data or connecting to external servers."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What cryptographic algorithms and iteration counts are used?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Passphrases undergo Unicode NFKC normalization before deriving a 256-bit key using PBKDF2-HMAC-SHA256 with 600,000 iterations and a 16-byte random salt. Vault payloads are encrypted with AES-GCM-256 authenticated encryption using a 12-byte random IV and 128-bit authentication tag."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can the encrypted vault be hosted safely in a public repository or DNS record?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The ciphertext is cryptographically protected by AES-GCM-256 and 600,000 PBKDF2 rounds. Without the memorized 6-word Diceware passphrase (~77 bits of entropy), offline brute-force cracking is computationally infeasible."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does Dead-Drop DNS recovery work via DoH?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "When web hosting is unavailable, the encrypted Base64 payload is split into sequenced 255-character RFC 1035 TXT chunks on a recovery DNS subdomain. The client queries anycast DNS-over-HTTPS (DoH) resolvers (Cloudflare or Google) to reassemble the payload directly in the browser."
+            }
+          }
+        ]
+      },
+      {
+        "@type": "SoftwareSourceCode",
+        "@id": "https://idrecoverykit.com/#source",
+        "name": "ID Recovery Kit Protocol Source Code",
+        "programmingLanguage": ["JavaScript", "HTML", "CSS"],
+        "codeRepository": "https://github.com/janhrabcak/identity-recovery",
+        "license": "https://opensource.org/licenses/MIT",
+        "author": {
+          "@type": "Person",
+          "name": "Jan Hrabcak"
+        }
+      }
+    ]
   }
   </script>
 

@@ -675,6 +675,29 @@ async function runTests() {
     throw new Error("Test 20 Failed: .github/workflows/deploy-site.yml missing!");
   }
 
+  // Verify AI Agent & LLM Discovery Assets (llms.txt, robots.txt, sitemap.xml, vault schema)
+  const LLMS_TXT_PATH = path.join(REPO_ROOT, 'site', 'llms.txt');
+  const LLMS_FULL_PATH = path.join(REPO_ROOT, 'site', 'llms-full.txt');
+  const ROBOTS_PATH = path.join(REPO_ROOT, 'site', 'robots.txt');
+  const SITEMAP_PATH = path.join(REPO_ROOT, 'site', 'sitemap.xml');
+  const VAULT_SCHEMA_PATH = path.join(REPO_ROOT, 'site', 'schema', 'vault.v1.json');
+
+  if (!fs.existsSync(LLMS_TXT_PATH) || !fs.readFileSync(LLMS_TXT_PATH, 'utf8').includes('ID Recovery Kit')) {
+    throw new Error("Test 20 Failed: site/llms.txt missing or invalid!");
+  }
+  if (!fs.existsSync(LLMS_FULL_PATH) || !fs.readFileSync(LLMS_FULL_PATH, 'utf8').includes('Cryptographic Specification')) {
+    throw new Error("Test 20 Failed: site/llms-full.txt missing or invalid!");
+  }
+  if (!fs.existsSync(ROBOTS_PATH) || !fs.readFileSync(ROBOTS_PATH, 'utf8').includes('GPTBot')) {
+    throw new Error("Test 20 Failed: site/robots.txt missing or lacks AI crawler directives!");
+  }
+  if (!fs.existsSync(SITEMAP_PATH) || !fs.readFileSync(SITEMAP_PATH, 'utf8').includes('https://idrecoverykit.com/')) {
+    throw new Error("Test 20 Failed: site/sitemap.xml missing or invalid!");
+  }
+  if (!fs.existsSync(VAULT_SCHEMA_PATH) || !JSON.parse(fs.readFileSync(VAULT_SCHEMA_PATH, 'utf8')).properties) {
+    throw new Error("Test 20 Failed: site/schema/vault.v1.json missing or invalid JSON schema!");
+  }
+
   console.log("✓ Test 20 Passed: Public product hub (site/), Cloudflare Pages configuration, GitHub Pages (docs/), and repository trust assets verified.");
 }
 

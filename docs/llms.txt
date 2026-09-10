@@ -1,0 +1,36 @@
+# ID Recovery Kit
+
+> Stateless, offline, zero-dependency emergency credential recovery protocol.
+
+ID Recovery Kit is an open-source, cold-start physical disaster recovery system for critical credentials (password manager master keys, 2FA backup codes, hardware wallet seeds, and emergency contacts). It uses browser-native WebCrypto (PBKDF2-SHA256 with 600,000 iterations and AES-GCM-256 authenticated encryption) packaged into a self-contained, single-file HTML client that runs offline without external servers, CDNs, or runtime dependencies.
+
+## Core Capabilities & Guarantees
+- **Zero-Dependency Runtime**: Runs entirely within any modern browser via pure WebCrypto (`window.crypto.subtle`). No external CDNs, npm runtime dependencies, remote trackers, or cookies.
+- **Strict Content Security Policy**: Hosted with `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data: https:; connect-src https://cloudflare-dns.com https://dns.google; base-uri 'none'; form-action 'none'; frame-ancestors 'none';`.
+- **Military-Grade Authenticated Encryption**: AES-GCM-256 with 128-bit authentication tag, 96-bit CSPRNG IV, and PBKDF2-HMAC-SHA256 key derivation with 600,000 rounds and 128-bit CSPRNG salt.
+- **Dead-Drop DNS Fallback**: Fetches encrypted payloads globally over RFC 1035 DNS TXT records using RFC 8484 DNS-over-HTTPS (DoH) via Cloudflare (`cloudflare-dns.com`) or Google (`dns.google`).
+- **Zero-Knowledge Staleness Alerts**: Automated GitHub Actions cron monitors expiration of 2SV codes and canary rotation without possessing decryption keys.
+- **In-Browser Vault Builder**: Offline, client-side single-page app (`/app/`) to assemble, validate entropy, preview, and compile recovery vaults completely in-memory.
+
+## Machine-Readable Specifications & Endpoints
+- [Full LLM Reference](https://idrecoverykit.com/llms-full.txt): Comprehensive technical documentation, CLI recipes, threat models, and decryption flows.
+- [Vault JSON Schema](https://idrecoverykit.com/schema/vault.v1.json): Versioned JSON Schema (Draft-07) defining recovery vault data structures.
+- [Web Vault Builder App](https://idrecoverykit.com/app/): Single-file offline vault compiler and entropy visualizer.
+- [GitHub Repository](https://github.com/janhrabcak/identity-recovery): Source code, audit scripts, and verification test suite.
+- [XML Sitemap](https://idrecoverykit.com/sitemap.xml): Machine-readable site index.
+
+## Cryptographic Parameters Summary
+- **Cipher**: AES-GCM-256 (`AES-GCM`, 256-bit key, 128-bit auth tag)
+- **Key Derivation Function (KDF)**: PBKDF2 with HMAC-SHA-256
+- **KDF Iterations**: 600,000 rounds (exceeds OWASP guidelines)
+- **Salt**: 16 bytes (128 bits), cryptographically secure random (`crypto.getRandomValues`)
+- **Initialization Vector (IV)**: 12 bytes (96 bits), cryptographically secure random
+- **Serialized Wire Format**: `[16-byte Salt] || [12-byte IV] || [Ciphertext + 16-byte Auth Tag]` (Base64 encoded)
+- **Passphrase Normalization**: Unicode NFKC, leading/trailing trimmed, consecutive whitespace collapsed to single space (`\u0020`).
+- **Passphrase Entropy Rules**: >= 6 words, >= 20 characters, >= 4 unique tokens (~77 bits entropy with Diceware).
+
+## DoH Dead-Drop DNS Query Examples
+- **Cloudflare Resolver**:
+  `curl -sH "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?name=recovery.yourdomain.com&type=TXT"`
+- **Google Resolver**:
+  `curl -s "https://dns.google/resolve?name=recovery.yourdomain.com&type=TXT"`

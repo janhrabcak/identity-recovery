@@ -1,0 +1,31 @@
+# Robots.txt for idrecoverykit.com
+User-agent: *
+Allow: /
+
+# Welcome AI Crawlers, Research Agents & LLM Indexers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+# LLM Discovery & Sitemap
+Sitemap: https://idrecoverykit.com/sitemap.xml

@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://idrecoverykit.com/schema/vault.v1.json",
+  "title": "ID Recovery Kit Vault Schema",
+  "description": "JSON schema for ID Recovery Kit emergency cold-start credential vaults.",
+  "type": "object",
+  "required": ["metadata", "items"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["generatedAt", "staleAfterMonths"],
+      "properties": {
+        "generatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 UTC timestamp when the vault was created or rotated."
+        },
+        "staleAfterMonths": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60,
+          "default": 6,
+          "description": "Number of months before the vault should be flagged as stale."
+        },
+        "canaryCode": {
+          "type": "string",
+          "description": "Optional rotation canary or revision string."
+        }
+      },
+      "additionalProperties": false
+    },
+    "items": {
+      "type": "array",
+      "description": "Modular credential cards stored inside the vault.",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "title"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for this credential card."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "password_manager",
+              "backup_codes",
+              "totp_group",
+              "seed_phrase",
+              "key_value",
+              "notes"
+            ],
+            "description": "Type of credential card."
+          },
+          "title": {
+            "type": "string",
+            "description": "User-facing title of the card."
+          },
+          "service": {
+            "type": "string",
+            "description": "Service name (e.g., 1Password, Bitwarden, Google, Ledger)."
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Account login email or username."
+          },
+          "secretKey": {
+            "type": "string",
+            "description": "Master password manager emergency secret key or recovery key."
+          },
+          "hint": {
+            "type": "string",
+            "description": "Password or recovery hint."
+          },
+          "instructions": {
+            "type": "string",
+            "description": "Step-by-step recovery instructions."
+          },
+          "codes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "One-time 2-step verification backup codes."
+          },
+          "seeds": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "Map of service name to Base32 RFC 6238 TOTP seed secret."
+          },
+          "phrase": {
+            "type": "string",
+            "description": "BIP-39 mnemonic recovery seed phrase."
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["label", "value"],
+              "properties": {
+                "label": { "type": "string" },
+                "value": { "type": "string" }
+              },
+              "additionalProperties": false
+            },
+            "description": "Arbitrary key-value credentials such as SSH keys, API secrets, or PGP keys."
+          },
+          "content": {
+            "type": "string",
+            "description": "Freeform Markdown or text emergency notes."
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
