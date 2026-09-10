@@ -120,7 +120,9 @@ Choose the path that fits your workflow:
    - **TTL:** `120` seconds (or Auto)
 
 > [!TIP]
-> **Why the DNS dead-drop matters:** If your website is ever blocked, offline, or expired, you can open any recovery terminal, enter your domain, and click **⚡ Fetch from DNS**. The browser queries Cloudflare & Google DoH resolvers to pull your payload directly from DNS!
+> **Why the DNS dead-drop matters:**
+> - **Hosting Outage Fallback:** If your personal website (`sos.yourdomain.com`) is ever offline, expired, or blocked, you don't lose access! You can open the public universal player at **[idrecoverykit.com](https://idrecoverykit.com)** (or open a generic `index.html` from a USB drive), type `sos.yourdomain.com`, and click **⚡ Fetch from DNS**. The browser pulls your encrypted ciphertext directly from your DNS TXT record via Cloudflare & Google DoH.
+> - **Instant Rotation:** You can rotate your encrypted vault anytime simply by updating your DNS TXT record—no web rebuild or redeployment needed.
 
 ---
 
