@@ -2,6 +2,7 @@
 /**
  * Builder Generator for Cold-Start Identity Recovery Protocol
  * Generates tools/builder.html with embedded default template from public/index.html.
+ * Studio Workspace Edition (Split-Pane Sidebar + Active Card Editor + Live Terminal Preview)
  */
 
 import fs from 'node:fs';
@@ -127,38 +128,43 @@ const BUILDER_HTML = `<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';">
-  <title>Cold-Start Recovery Vault Builder</title>
+  <title>Cold-Start Recovery Vault Builder | Studio Workspace</title>
   <style>
     :root {
-      --bg-base: #0a0e17;
-      --bg-surface: #111827;
-      --bg-surface-elevated: #1f2937;
+      --bg-base: #080c14;
+      --bg-sidebar: #0e1526;
+      --bg-surface: #121c32;
+      --bg-surface-elevated: #172440;
       --bg-surface-subtle: #1e293b;
-      --border-color: #374151;
-      --border-focus: #38bdf8;
-      --text-primary: #f9fafb;
-      --text-secondary: #9ca3af;
-      --text-muted: #6b7280;
+      --border-subtle: #1e293d;
+      --border-card: #22314e;
+      --border-focus: #10b981;
+      --border-accent: #38bdf8;
       
-      --accent-primary: #0284c7;
-      --accent-hover: #0369a1;
-      --accent-focus: rgba(2, 132, 199, 0.4);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      
+      --accent-primary: #10b981;
+      --accent-primary-hover: #059669;
+      --accent-cyan: #06b6d4;
+      --accent-blue: #38bdf8;
 
-      --status-green-bg: rgba(6, 78, 59, 0.35);
-      --status-green-border: #059669;
+      --status-green-bg: rgba(16, 185, 129, 0.15);
+      --status-green-border: rgba(16, 185, 129, 0.4);
       --status-green-text: #34d399;
 
-      --status-amber-bg: rgba(120, 53, 15, 0.35);
-      --status-amber-border: #d97706;
+      --status-amber-bg: rgba(245, 158, 11, 0.15);
+      --status-amber-border: rgba(245, 158, 11, 0.4);
       --status-amber-text: #fbbf24;
 
-      --status-red-bg: rgba(127, 29, 29, 0.35);
-      --status-red-border: #dc2626;
+      --status-red-bg: rgba(239, 68, 68, 0.15);
+      --status-red-border: rgba(239, 68, 68, 0.4);
       --status-red-text: #f87171;
 
-      --radius-sm: 4px;
-      --radius-md: 8px;
-      --radius-lg: 12px;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
       --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
@@ -170,145 +176,356 @@ const BUILDER_HTML = `<!DOCTYPE html>
       color: var(--text-primary);
       font-family: var(--font-sans);
       line-height: 1.5;
-      padding: 24px 16px;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Studio Header */
+    .studio-header {
+      background: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border-subtle);
+      height: 56px;
+      padding: 0 20px;
+      display: flex;
       align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
 
-    .container {
-      width: 100%;
-      max-width: 860px;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 24px;
-    }
-
-    .brand-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      color: #38bdf8;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      margin-bottom: 12px;
-    }
-
-    .security-notice {
-      background: rgba(16, 185, 129, 0.08);
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      border-radius: var(--radius-md);
-      padding: 12px 16px;
-      font-size: 0.85rem;
-      color: #a7f3d0;
-      margin-bottom: 24px;
+    .brand-wrap {
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    h1 {
-      font-size: 1.85rem;
-      font-weight: 800;
-      letter-spacing: -0.025em;
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-tag {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-primary);
+      border: 1px solid var(--status-green-border);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 700;
+    }
+
+    .security-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-left: 1px solid var(--border-subtle);
+      padding-left: 12px;
+      margin-left: 4px;
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      box-shadow: 0 0 8px var(--accent-primary);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Studio Split Workspace */
+    .studio-workspace {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      flex: 1;
+      min-height: calc(100vh - 56px);
+    }
+
+    @media (max-width: 960px) {
+      .studio-workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Sidebar */
+    .studio-sidebar {
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-subtle);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+    }
+
+    .sidebar-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 6px;
     }
 
-    .subtitle {
+    .sidebar-heading {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .sidebar-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .sidebar-nav-item:hover {
+      background: var(--bg-surface-elevated);
+      border-color: #334155;
+    }
+
+    .sidebar-nav-item.active {
+      border-color: var(--accent-primary);
+      background: rgba(16, 185, 129, 0.08);
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+    }
+
+    .sidebar-nav-icon {
+      font-size: 1.15rem;
+      width: 24px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .sidebar-nav-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sidebar-nav-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar-nav-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    /* Quick Add Tool Palette */
+    .quick-add-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .quick-add-chip {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
       color: var(--text-secondary);
-      font-size: 0.95rem;
-      max-width: 600px;
+      border-radius: var(--radius-sm);
+      padding: 6px 4px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.12s ease;
+      white-space: nowrap;
+    }
+
+    .quick-add-chip:hover {
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
+      border-color: var(--border-accent);
+    }
+
+    /* Sidebar Cards List */
+    .sidebar-cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      overflow-y: auto;
+      min-height: 120px;
+    }
+
+    .sidebar-card-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .sidebar-card-row:hover {
+      background: var(--bg-surface-elevated);
+      border-color: #334155;
+    }
+
+    .sidebar-card-row.active {
+      border-color: var(--border-accent);
+      background: rgba(56, 189, 248, 0.08);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
+    }
+
+    .sidebar-card-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sidebar-card-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .sidebar-card-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sidebar-card-title {
+      font-size: 0.84rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-primary);
+    }
+
+    .sidebar-card-meta {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .sidebar-card-actions {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      opacity: 0.6;
+      transition: opacity 0.15s;
+    }
+
+    .sidebar-card-row:hover .sidebar-card-actions {
+      opacity: 1;
+    }
+
+    .btn-card-action {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-size: 0.75rem;
+    }
+
+    .btn-card-action:hover {
+      color: var(--text-primary);
+      background: var(--bg-surface-subtle);
+    }
+
+    .btn-card-delete:hover {
+      color: var(--status-red-text) !important;
+      background: var(--status-red-bg) !important;
+    }
+
+    /* Sidebar Footer */
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* Right Canvas */
+    .studio-canvas {
+      background: var(--bg-base);
+      padding: 24px 28px;
+      overflow-y: auto;
+    }
+
+    .canvas-panel {
+      max-width: 1040px;
       margin: 0 auto;
+    }
+
+    .panel-header {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .panel-title {
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .panel-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
     }
 
     .card {
       background-color: var(--bg-surface);
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border-card);
       border-radius: var(--radius-lg);
-      padding: 22px;
+      padding: 20px;
       margin-bottom: 20px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .card-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .card-item {
-      position: relative;
-      transition: border-color 0.15s;
-    }
-
-    .card-item:hover {
-      border-color: #4b5563;
-    }
-
-    .card-controls {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
-    .btn-icon {
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 4px 8px;
-      font-size: 0.85rem;
-      transition: all 0.15s;
-    }
-
-    .btn-icon:hover {
-      background: var(--bg-surface-subtle);
-      color: var(--text-primary);
-      border-color: #4b5563;
-    }
-
-    .btn-delete:hover {
-      background: var(--status-red-bg) !important;
-      color: var(--status-red-text) !important;
-      border-color: var(--status-red-border) !important;
-    }
-
-    .kv-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 8px;
-      align-items: center;
-    }
-
-    .card-subtitle {
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      margin-top: 2px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
 
     .form-group {
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .form-group:last-child {
@@ -317,8 +534,8 @@ const BUILDER_HTML = `<!DOCTYPE html>
 
     label {
       display: block;
-      font-size: 0.82rem;
-      font-weight: 600;
+      font-size: 0.78rem;
+      font-weight: 700;
       color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -332,12 +549,12 @@ const BUILDER_HTML = `<!DOCTYPE html>
     select {
       width: 100%;
       background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border-subtle);
       color: var(--text-primary);
-      padding: 10px 14px;
+      padding: 9px 12px;
       border-radius: var(--radius-md);
       font-family: inherit;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
 
@@ -348,7 +565,7 @@ const BUILDER_HTML = `<!DOCTYPE html>
     select:focus {
       outline: none;
       border-color: var(--border-focus);
-      box-shadow: 0 0 0 3px var(--accent-focus);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
     }
 
     .mono {
@@ -358,37 +575,22 @@ const BUILDER_HTML = `<!DOCTYPE html>
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    .grid-2 > .form-group {
-      margin-bottom: 0;
-    }
-
-    .status-field-container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 6px 12px;
-      min-height: 42px;
-      box-sizing: border-box;
+      gap: 14px;
     }
 
     @media (max-width: 640px) {
       .grid-2 { grid-template-columns: 1fr; }
     }
 
+    /* Buttons */
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 10px 16px;
+      padding: 8px 14px;
       border-radius: var(--radius-md);
-      font-size: 0.9rem;
+      font-size: 0.86rem;
       font-weight: 600;
       cursor: pointer;
       border: 1px solid transparent;
@@ -397,12 +599,26 @@ const BUILDER_HTML = `<!DOCTYPE html>
     }
 
     .btn-primary {
-      background-color: var(--accent-primary);
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: #fff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
     }
 
     .btn-primary:hover {
-      background-color: var(--accent-hover);
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface-elevated);
+      border-color: var(--border-subtle);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-surface-subtle);
+      border-color: #334155;
     }
 
     .btn-success {
@@ -414,15 +630,15 @@ const BUILDER_HTML = `<!DOCTYPE html>
       background-color: #047857;
     }
 
-    .btn-secondary {
-      background-color: var(--bg-surface-elevated);
-      border-color: var(--border-color);
-      color: var(--text-primary);
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      border-color: transparent;
     }
 
-    .btn-secondary:hover {
-      background-color: var(--bg-surface-subtle);
-      border-color: #4b5563;
+    .btn-ghost:hover {
+      color: var(--text-primary);
+      background: var(--bg-surface-elevated);
     }
 
     .btn-sm {
@@ -431,10 +647,25 @@ const BUILDER_HTML = `<!DOCTYPE html>
     }
 
     .btn-large {
-      padding: 14px 24px;
-      font-size: 1.05rem;
+      padding: 12px 18px;
+      font-size: 0.95rem;
       width: 100%;
-      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+    }
+
+    .btn-icon {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 0.85rem;
+      transition: all 0.15s;
+    }
+
+    .btn-icon:hover {
+      background: var(--bg-surface-subtle);
+      color: var(--text-primary);
     }
 
     .badge {
@@ -443,14 +674,14 @@ const BUILDER_HTML = `<!DOCTYPE html>
       gap: 4px;
       padding: 2px 8px;
       border-radius: 9999px;
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       font-weight: 600;
     }
 
     .badge-gray {
       background: rgba(107, 114, 128, 0.2);
       color: var(--text-secondary);
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border-subtle);
     }
 
     .badge-green {
@@ -494,21 +725,160 @@ const BUILDER_HTML = `<!DOCTYPE html>
       align-items: center;
     }
 
-    .kv-row input:first-child {
-      flex: 1;
+    /* Editor Split: Form Left + Live Preview Right */
+    .editor-split-layout {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+      align-items: start;
     }
 
-    .kv-row input:nth-child(2) {
-      flex: 2;
+    @media (max-width: 1040px) {
+      .editor-split-layout {
+        grid-template-columns: 1fr;
+      }
     }
 
+    .editor-form-col {
+      min-width: 0;
+    }
+
+    .editor-preview-col {
+      min-width: 0;
+      position: sticky;
+      top: 76px;
+    }
+
+    /* Live Terminal Preview Component */
+    .preview-card-frame {
+      background: #060911;
+      border: 1px solid #1f2a40;
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .preview-frame-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #1a2336;
+      margin-bottom: 14px;
+    }
+
+    .preview-mode-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .preview-terminal-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+
+    .preview-item-row {
+      margin-bottom: 10px;
+    }
+
+    .preview-item-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .preview-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 3px;
+    }
+
+    .preview-value-box {
+      background: #090e1a;
+      border: 1px solid #1c263c;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .preview-chip-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 4px;
+    }
+
+    .preview-code-tag {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #a7f3d0;
+      padding: 3px 7px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+    }
+
+    .preview-seed-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      max-height: 180px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .preview-seed-item {
+      background: #0c1322;
+      border: 1px solid #1c2840;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 0.74rem;
+      font-family: var(--font-mono);
+      color: #cbd5e1;
+    }
+
+    .preview-totp-display {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #090f1d;
+      border: 1px solid #1a2742;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      margin-top: 4px;
+    }
+
+    .preview-totp-code {
+      font-family: var(--font-mono);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--status-green-text);
+      letter-spacing: 0.12em;
+    }
+
+    /* Deployment View */
     #view-deploy {
       display: none;
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 0 20px;
     }
 
     .code-block {
       background: #05080e;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
       padding: 12px 16px;
       font-family: var(--font-mono);
@@ -517,7 +887,6 @@ const BUILDER_HTML = `<!DOCTYPE html>
       overflow-x: auto;
       white-space: pre-wrap;
       word-break: break-all;
-      position: relative;
     }
 
     .dns-table {
@@ -528,15 +897,15 @@ const BUILDER_HTML = `<!DOCTYPE html>
 
     .dns-table th, .dns-table td {
       padding: 10px 12px;
-      border: 1px solid var(--border-color);
-      font-size: 0.9rem;
+      border: 1px solid var(--border-subtle);
+      font-size: 0.88rem;
       text-align: left;
     }
 
     .dns-table th {
       background: var(--bg-surface-elevated);
       color: var(--text-secondary);
-      font-size: 0.8rem;
+      font-size: 0.76rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
@@ -550,7 +919,7 @@ const BUILDER_HTML = `<!DOCTYPE html>
       flex-wrap: wrap;
       gap: 8px;
       margin-bottom: 12px;
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-subtle);
       padding-bottom: 8px;
     }
 
@@ -559,7 +928,7 @@ const BUILDER_HTML = `<!DOCTYPE html>
       border: none;
       color: var(--text-secondary);
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       padding: 6px 12px;
       border-radius: var(--radius-sm);
       cursor: pointer;
@@ -567,7 +936,7 @@ const BUILDER_HTML = `<!DOCTYPE html>
 
     .tab-btn.active {
       background: var(--bg-surface-elevated);
-      color: var(--border-focus);
+      color: var(--border-accent);
     }
 
     .toast {
@@ -579,7 +948,7 @@ const BUILDER_HTML = `<!DOCTYPE html>
       padding: 10px 18px;
       border-radius: var(--radius-md);
       font-weight: 600;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
       display: none;
       z-index: 2000;
       animation: fadeIn 0.2s;
@@ -593,290 +962,385 @@ const BUILDER_HTML = `<!DOCTYPE html>
 </head>
 <body>
 
-<div class="container">
-  <header>
-    <div class="brand-badge">🛡️ Offline Vault Compiler</div>
-    <h1>Cold-Start Identity Recovery</h1>
-    <p class="subtitle">Generate an encrypted, zero-dependency emergency recovery terminal entirely inside your browser.</p>
-  </header>
-
-  <div class="security-notice">
-    <span style="font-size: 1.3rem;">🔒</span>
-    <div>
-      <strong>100% Client-Side Privacy:</strong> Derivation and AES-GCM-256 encryption execute locally via <code>window.crypto.subtle</code>. Strict Content-Security-Policy guarantees zero network requests. Your credentials never touch a remote server.
+<!-- Studio Header Bar -->
+<header class="studio-header">
+  <div class="brand-wrap">
+    <div class="brand-title">
+      <span>🛡️ Cold-Start Recovery</span>
+      <span class="brand-tag">Studio</span>
+    </div>
+    <div class="security-status-badge">
+      <span class="pulse-dot"></span>
+      <span>RAM-Only WebCrypto • Zero-Network</span>
     </div>
   </div>
+  <div class="header-actions">
+    <button type="button" class="btn btn-secondary btn-sm" id="btn-load-sample">📋 Load Sample</button>
+    <button type="button" class="btn btn-secondary btn-sm" id="btn-import-json">📂 Import JSON</button>
+    <button type="button" class="btn btn-secondary btn-sm" id="btn-export-plaintext">💾 Export Plaintext</button>
+    <button type="button" class="btn btn-ghost btn-sm" id="btn-reset-all" style="color: var(--status-red-text);">🧹 Clear All</button>
+    <input type="file" id="input-json-file" accept=".json" style="display: none;">
+  </div>
+</header>
 
-  <!-- BUILDER FORM VIEW -->
-  <div id="view-form">
-    <!-- Top Quick Actions Bar -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-      <div style="display: flex; gap: 8px;">
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-load-sample">📋 Load Sample Data</button>
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-import-json">📂 Import payload.json</button>
-        <input type="file" id="input-json-file" accept=".json" style="display: none;">
-      </div>
-      <div>
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-export-plaintext">💾 Export Plaintext JSON</button>
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-all" style="color: var(--status-red-text);">🧹 Clear All</button>
-      </div>
-    </div>
-
-    <!-- CARD 1: Diceware Passphrase (Master Recovery Key) -->
-    <div class="card" style="border-color: rgba(56, 189, 248, 0.4);">
-      <div class="card-header">
-        <div>
-          <div class="card-title">🔑 1. Disaster Recovery Passphrase (Master Key)</div>
-          <div class="card-subtitle">Memorized Diceware phrase (≥6 words, or 8 generated words for ~80 bits entropy). This decrypts your vault.</div>
+<!-- STUDIO WORKSPACE (FORM VIEW) -->
+<div id="view-form">
+  <div class="studio-workspace">
+    
+    <!-- LEFT SIDEBAR: Navigation & Card Deck -->
+    <aside class="studio-sidebar">
+      <!-- Section 1: Recovery Key -->
+      <div class="sidebar-heading">Master Recovery Key</div>
+      <div class="sidebar-nav-item active" id="nav-item-passphrase" onclick="selectSection('passphrase')">
+        <div class="sidebar-nav-icon">🔑</div>
+        <div class="sidebar-nav-content">
+          <div class="sidebar-nav-title">Diceware Passphrase</div>
+          <div class="sidebar-nav-sub" id="sidebar-passphrase-status">Entropy: Incomplete</div>
         </div>
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-generate-diceware">🎲 Generate 8 Words (~80 bits)</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-generate-diceware" title="Generate 8-Word Diceware Passphrase" style="padding: 3px 7px; font-size: 0.72rem;">🎲 Gen</button>
       </div>
 
-      <div class="form-group">
-        <div class="input-with-button">
-          <input type="password" id="passphrase" class="mono" placeholder="word1 word2 word3 word4 word5 word6" autocomplete="off" autocorrect="off" spellcheck="false">
-          <button type="button" class="btn btn-secondary" id="btn-toggle-passphrase" title="Show/Hide Passphrase">👁️</button>
+      <!-- Section 2: Credential Deck -->
+      <div style="margin-top: 10px;">
+        <div class="sidebar-section-header">
+          <div class="sidebar-heading">Credentials <span class="badge badge-gray" id="sidebar-cards-count">0</span></div>
         </div>
 
-        <div class="validation-row" id="passphrase-validation">
-          <span class="badge badge-gray" id="badge-words">0 / 6 words</span>
-          <span class="badge badge-gray" id="badge-chars">0 / 20 chars</span>
-          <span class="badge badge-gray" id="badge-unique">0 unique</span>
-          <span class="badge badge-gray" id="badge-status">Entropy: Incomplete</span>
+        <!-- Quick Add Tool Palette -->
+        <div class="quick-add-grid">
+          <button type="button" id="btn-add-pm" class="quick-add-chip" onclick="addCard('password_manager')">🔑 Password</button>
+          <button type="button" id="btn-add-codes" class="quick-add-chip" onclick="addCard('backup_codes')">🛡️ Backup</button>
+          <button type="button" id="btn-add-seed" class="quick-add-chip" onclick="addCard('seed_phrase')">🌱 Seed</button>
+          <button type="button" id="btn-add-totp" class="quick-add-chip" onclick="addCard('totp_group')">⏱️ TOTP</button>
+          <button type="button" id="btn-add-kv" class="quick-add-chip" onclick="addCard('key_value')">🔐 Custom</button>
+          <button type="button" id="btn-add-notes" class="quick-add-chip" onclick="addCard('notes')">📝 Notes</button>
         </div>
-      </div>
-    </div>
 
-    <!-- SECTION 2: Modular Credential Cards -->
-    <div style="margin: 28px 0 16px 0;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-        <div>
-          <div class="card-title" style="font-size: 1.25rem;">📦 2. Credential Cards (Modular Architecture)</div>
-          <div class="card-subtitle">Add, customize, and arrange multiple password managers, single-use backup codes, seed phrases, TOTP seeds, or custom keys.</div>
-        </div>
+        <!-- Sidebar Cards List -->
+        <div class="sidebar-cards-list" id="sidebar-cards-list"></div>
       </div>
 
-      <!-- Add Card Action Toolbar -->
-      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 14px; align-items: center;">
-        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px;">+ Add Card:</span>
-        <button type="button" id="btn-add-pm" class="btn btn-secondary btn-sm" onclick="addCard('password_manager')">🔑 Password Manager</button>
-        <button type="button" id="btn-add-codes" class="btn btn-secondary btn-sm" onclick="addCard('backup_codes')">🛡️ Backup Codes</button>
-        <button type="button" id="btn-add-seed" class="btn btn-secondary btn-sm" onclick="addCard('seed_phrase')">🌱 Seed Phrase</button>
-        <button type="button" id="btn-add-totp" class="btn btn-secondary btn-sm" onclick="addCard('totp_group')">⏱️ Authenticator (TOTP)</button>
-        <button type="button" id="btn-add-kv" class="btn btn-secondary btn-sm" onclick="addCard('key_value')">🔐 Custom Key-Value</button>
-        <button type="button" id="btn-add-notes" class="btn btn-secondary btn-sm" onclick="addCard('notes')">📝 Secure Notes</button>
-      </div>
-
-      <!-- Container for Dynamic Cards -->
-      <div id="cards-container"></div>
-
-      <!-- Empty State Notice -->
-      <div id="empty-cards-notice" style="text-align: center; padding: 36px 20px; background: var(--bg-surface); border: 2px dashed var(--border-color); border-radius: var(--radius-lg); margin-bottom: 20px; display: none;">
-        <div style="font-size: 2rem; margin-bottom: 8px;">📦</div>
-        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 14px;">No credential cards added yet. Click an option above or load sample data.</p>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="loadSampleData()">📋 Load Sample Data</button>
-      </div>
-    </div>
-
-    <!-- CARD 3: Vault Configuration & Dead-Drop DNS -->
-    <div class="card" style="margin-top: 28px;">
-      <div class="card-header">
-        <div>
-          <div class="card-title">⚙️ 3. Vault Configuration & Dead-Drop DNS</div>
-          <div class="card-subtitle">Settings for staleness detection and the secondary RFC 1035 DNS TXT dead-drop.</div>
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <div class="form-group">
-          <label for="recovery-domain">Recovery DNS Domain</label>
-          <input type="text" id="recovery-domain" class="mono" value="recovery.yourdomain.com" placeholder="recovery.yourdomain.com">
-        </div>
-        <div class="form-group">
-          <label for="canary-code">Canary Code (Quick 2SV Verification)</label>
-          <div class="input-with-button">
-            <input type="text" id="canary-code" class="mono" placeholder="12345678">
-            <button type="button" class="btn btn-secondary" id="btn-random-canary" title="Generate Random Canary Code">🎲</button>
+      <!-- Section 3: Vault & DNS Settings -->
+      <div style="margin-top: 10px;">
+        <div class="sidebar-heading">Vault & Dead-Drop DNS</div>
+        <div class="sidebar-nav-item" id="nav-item-settings" onclick="selectSection('settings')">
+          <div class="sidebar-nav-icon">⚙️</div>
+          <div class="sidebar-nav-content">
+            <div class="sidebar-nav-title">DNS & Staleness</div>
+            <div class="sidebar-nav-sub" id="sidebar-domain-status">recovery.yourdomain.com</div>
           </div>
         </div>
       </div>
 
-      <div class="grid-2" style="margin-top: 16px;">
-        <div class="form-group">
-          <label for="stale-months">Stale After (Months)</label>
-          <input type="number" id="stale-months" value="6" min="1" max="24">
-        </div>
-        <div class="form-group">
-          <label>HTML Template Status</label>
-          <div class="status-field-container">
-            <span class="badge badge-green" id="template-status">✓ Default embedded</span>
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-select-template">Change Template...</button>
-            <input type="file" id="input-template-file" accept=".html" style="display: none;">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PRIMARY ACTION BUTTON -->
-    <div style="margin-top: 24px; margin-bottom: 40px;">
-      <button type="button" class="btn btn-primary btn-large" id="btn-build-vault">
-        🔒 Encrypt & Build Recovery Terminal (index.html)
-      </button>
-      <div id="build-status" style="text-align: center; margin-top: 10px; font-size: 0.9rem; color: var(--border-focus); display: none;">
-        Deriving key via PBKDF2-SHA-256 (600,000 rounds) & encrypting...
-      </div>
-    </div>
-  </div>
-
-  <!-- DEPLOYMENT & MANUAL STEPS VIEW (Shown after successful build) -->
-  <div id="view-deploy">
-    <div class="card" style="border-color: var(--status-green-border); background: rgba(6, 78, 59, 0.15);">
-      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-        <div>
-          <h2 style="color: var(--status-green-text); font-size: 1.4rem; display: flex; align-items: center; gap: 8px;">
-            ✓ Recovery Vault Encrypted Successfully!
-          </h2>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">
-            PBKDF2-SHA-256 (600,000 rounds) • AES-GCM-256 • Verified round-trip decryption
-          </p>
-        </div>
-        <button type="button" class="btn btn-success" id="btn-download-html" style="font-size: 1rem; padding: 12px 20px;">
-          ⬇️ Download index.html
+      <!-- Sticky Sidebar Footer: Build Action -->
+      <div class="sidebar-footer">
+        <button type="button" class="btn btn-primary btn-large" id="btn-build-vault">
+          🔒 Encrypt & Build Terminal
         </button>
+        <div id="build-status" style="text-align: center; margin-top: 8px; font-size: 0.8rem; color: var(--accent-primary); display: none;">
+          Deriving key via PBKDF2 (600,000 rounds) & encrypting...
+        </div>
+        <div style="font-size: 0.72rem; color: var(--text-muted); text-align: center; margin-top: 8px;">
+          PBKDF2-SHA256 • AES-GCM-256 • RAM Only
+        </div>
       </div>
-    </div>
+    </aside>
 
-    <!-- Step 1: Deploy to Edge Hosting -->
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">🌐 Step 1: Deploy to Edge Hosting (Cloudflare / Netlify / Vercel)</div>
-          <div class="card-subtitle">Host your hardened single-file recovery terminal at <code>https://sos.yourdomain.com</code></div>
+    <!-- RIGHT CANVAS: Focused Active Panel -->
+    <main class="studio-canvas">
+      
+      <!-- CANVAS PANEL 1: PASSPHRASE -->
+      <div class="canvas-panel" id="panel-passphrase">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">🔑 Disaster Recovery Passphrase</h2>
+            <p class="panel-subtitle">A memorized 6+ word Diceware passphrase (~77 bits entropy) that decrypts your offline vault on any borrowed browser.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="form-group">
+            <label for="passphrase">Emergency Passphrase</label>
+            <div class="input-with-button">
+              <input type="password" id="passphrase" class="mono" placeholder="word1 word2 word3 word4 word5 word6" autocomplete="off" autocorrect="off" spellcheck="false">
+              <button type="button" class="btn btn-secondary" id="btn-toggle-passphrase" title="Show/Hide Passphrase">👁️</button>
+            </div>
+
+            <div class="validation-row" id="passphrase-validation">
+              <span class="badge badge-gray" id="badge-words">0 / 6 words</span>
+              <span class="badge badge-gray" id="badge-chars">0 / 20 chars</span>
+              <span class="badge badge-gray" id="badge-unique">0 unique</span>
+              <span class="badge badge-gray" id="badge-status">Entropy: Incomplete</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2);">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="font-size: 1.4rem;">🛡️</div>
+            <div>
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--accent-primary); margin-bottom: 4px;">Zero-Hardware Cold-Start Recovery Guarantee</div>
+              <p style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.6;">
+                Because all physical hardware (phones, security keys, laptops) is assumed lost or stolen in a cold-start disaster, your passphrase is the sole cryptographic root of trust. 600,000 PBKDF2 iterations render offline brute-force attacks computationally infeasible.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="focusFirstCardOrAdd()">
+            <span>Configure Credential Cards →</span>
+          </button>
         </div>
       </div>
 
-      <div class="tab-bar">
-        <button type="button" class="tab-btn active" id="tab-cf-btn">Cloudflare Pages</button>
-        <button type="button" class="tab-btn" id="tab-netlify-btn">Netlify</button>
-        <button type="button" class="tab-btn" id="tab-vercel-btn">Vercel</button>
-        <button type="button" class="tab-btn" id="tab-git-btn">Git Push (All Providers)</button>
+      <!-- CANVAS PANEL 2: CREDENTIAL CARD EDITOR + LIVE PREVIEW -->
+      <div class="canvas-panel" id="panel-card-editor" style="display: none;">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" id="editor-card-heading">Credential Card Editor</h2>
+            <p class="panel-subtitle">Edit credential fields on the left. See exact emergency terminal output in real-time on the right.</p>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="editor-btn-up" title="Move card up">↑ Up</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="editor-btn-down" title="Move card down">↓ Down</button>
+            <button type="button" class="btn btn-secondary btn-sm btn-delete" id="editor-btn-delete" title="Delete card" style="color: var(--status-red-text);">🗑️ Delete</button>
+          </div>
+        </div>
+
+        <div class="editor-split-layout">
+          <!-- Left Column: Form Editor -->
+          <div class="editor-form-col">
+            <div id="cards-container"></div>
+            
+            <div id="empty-cards-notice" style="display: none; text-align: center; padding: 48px 24px; background: var(--bg-surface); border: 2px dashed var(--border-subtle); border-radius: var(--radius-lg);">
+              <div style="font-size: 2.2rem; margin-bottom: 10px;">📦</div>
+              <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">No Credential Cards Added Yet</h3>
+              <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 16px;">Add a password manager, backup codes, or crypto seed phrase from the sidebar palette.</p>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="loadSampleData()">📋 Load Sample Cards</button>
+            </div>
+          </div>
+
+          <!-- Right Column: Live Terminal Preview -->
+          <div class="editor-preview-col">
+            <div class="preview-card-frame">
+              <div class="preview-frame-header">
+                <div class="preview-mode-tag">
+                  <span class="pulse-dot"></span>
+                  <span>Live Terminal Preview</span>
+                </div>
+                <span class="badge badge-green" style="font-size: 0.7rem;">Decrypted Mode</span>
+              </div>
+              <div id="live-preview-content">
+                <!-- Dynamically updated in real-time -->
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Cloudflare Tab -->
-      <div id="tab-cf-content">
-        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">
-          <strong>Option A: Direct Upload via Web Dashboard (Zero Git Clone, Zero Terminal)</strong>
-        </p>
-        <ol style="margin-left: 20px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
-          <li>Log into the <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener" style="color: var(--border-focus);">Cloudflare Dashboard</a>.</li>
-          <li>Navigate to <strong>Workers & Pages</strong> → Select your Pages project (or click <strong>Create application → Pages → Direct Upload</strong>).</li>
-          <li>Create an empty folder, place the downloaded <code>index.html</code> (and <code>_headers</code>) inside, and drag it into the dropzone.</li>
-          <li>Click <strong>Deploy site</strong>. Your vault is live worldwide on Cloudflare's Anycast Edge!</li>
-        </ol>
-        <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 12px 0 6px 0;">
-          <strong>Option B: 1-Command Automated CLI (Zero Git Clone)</strong>
-        </p>
-        <div class="code-block">npx github:janhrabcak/identity-recovery --provider cloudflare</div>
+      <!-- CANVAS PANEL 3: SETTINGS -->
+      <div class="canvas-panel" id="panel-settings" style="display: none;">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">⚙️ Vault Configuration & Dead-Drop DNS</h2>
+            <p class="panel-subtitle">Configure RFC 1035 DNS TXT dead-drop parameters and vault staleness alerts.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="recovery-domain">Recovery DNS Subdomain</label>
+              <input type="text" id="recovery-domain" class="mono" value="recovery.yourdomain.com" placeholder="recovery.yourdomain.com">
+              <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px;">Subdomain hosting your emergency DNS TXT record.</div>
+            </div>
+            <div class="form-group">
+              <label for="canary-code">Canary Verification Code</label>
+              <div class="input-with-button">
+                <input type="text" id="canary-code" class="mono" placeholder="12345678">
+                <button type="button" class="btn btn-secondary" id="btn-random-canary" title="Generate Random Canary Code">🎲</button>
+              </div>
+              <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px;">Used for instant zero-knowledge decryption verification.</div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-top: 16px;">
+            <div class="form-group">
+              <label for="stale-months">Stale After (Months)</label>
+              <input type="number" id="stale-months" value="6" min="1" max="24">
+              <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px;">Automated warning trigger when the vault hasn't been rotated.</div>
+            </div>
+            <div class="form-group">
+              <label>HTML Terminal Template</label>
+              <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 7px 12px; min-height: 42px;">
+                <span class="badge badge-green" id="template-status">✓ Default Embedded</span>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-select-template">Change Template...</button>
+                <input type="file" id="input-template-file" accept=".html" style="display: none;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="background: rgba(56, 189, 248, 0.05); border-color: rgba(56, 189, 248, 0.2);">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="font-size: 1.4rem;">📡</div>
+            <div>
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--border-accent); margin-bottom: 4px;">Pillar 2: RFC 1035 DNS TXT Dead-Drop</div>
+              <p style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.6;">
+                Even if your web hosting provider is offline or blocked, your encrypted ciphertext can be fetched directly via Cloudflare or Google DNS-over-HTTPS (DoH) queries to your recovery domain.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Netlify Tab -->
-      <div id="tab-netlify-content" style="display: none;">
-        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">
-          <strong>Option A: Netlify Drop Web Dashboard (Zero Git Clone, Zero Terminal)</strong>
-        </p>
-        <ol style="margin-left: 20px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
-          <li>Log into the <a href="https://app.netlify.com/" target="_blank" rel="noopener" style="color: var(--border-focus);">Netlify Dashboard</a>.</li>
-          <li>Navigate to <strong>Sites</strong> and scroll down to the <strong>Deploy manually / Netlify Drop</strong> section.</li>
-          <li>Drag-and-drop the folder containing your downloaded <code>index.html</code> (and <code>netlify.toml</code>).</li>
-          <li>Your recovery vault is live with full edge security header parity!</li>
-        </ol>
-        <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 12px 0 6px 0;">
-          <strong>Option B: 1-Command Automated CLI (Zero Git Clone)</strong>
-        </p>
-        <div class="code-block">npx github:janhrabcak/identity-recovery --provider netlify</div>
-      </div>
+    </main>
+  </div>
+</div>
 
-      <!-- Vercel Tab -->
-      <div id="tab-vercel-content" style="display: none;">
-        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">
-          <strong>Option A: 1-Command Automated CLI (Zero Git Clone)</strong>
+<!-- DEPLOYMENT & VERIFICATION VIEW (Shown after successful build) -->
+<div id="view-deploy">
+  <div class="card" style="border-color: var(--status-green-border); background: rgba(6, 78, 59, 0.15); margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h2 style="color: var(--status-green-text); font-size: 1.35rem; display: flex; align-items: center; gap: 8px;">
+          ✓ Recovery Vault Encrypted Successfully!
+        </h2>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; margin-top: 4px;">
+          PBKDF2-SHA-256 (600,000 rounds) • AES-GCM-256 • Verified round-trip decryption
         </p>
-        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px;">
-          Deploy directly to Vercel production edge without cloning or committing ciphertext:
-        </p>
-        <div class="code-block">npx github:janhrabcak/identity-recovery --provider vercel</div>
-        <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 12px 0 6px 0;">
-          <strong>Option B: Git Integration (Private Repositories)</strong>
-        </p>
-        <ol style="margin-left: 20px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
-          <li>Import your repository in the <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" style="color: var(--border-focus);">Vercel Dashboard</a>.</li>
-          <li>Configure <strong>Root Directory:</strong> <code>.</code> and <strong>Output Directory:</strong> <code>public</code>.</li>
-          <li>Deployments automatically apply strict security headers from <code>vercel.json</code>.</li>
-        </ol>
       </div>
+      <button type="button" class="btn btn-success" id="btn-download-html" style="font-size: 0.95rem; padding: 12px 20px;">
+        ⬇️ Download index.html
+      </button>
+    </div>
+  </div>
 
-      <!-- Git Tab -->
-      <div id="tab-git-content" style="display: none;">
-        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">
-          For private repositories or standard Git workflows across any provider, commit and push:
-        </p>
-        <div class="code-block" id="code-git-snippet">mv ~/Downloads/index.html public/index.html
+  <!-- Step 1: Deploy to Edge Hosting -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle);">
+      <div>
+        <div style="font-size: 1.05rem; font-weight: 700;">🌐 Step 1: Deploy to Edge Hosting (Cloudflare / Netlify / Vercel)</div>
+        <div style="font-size: 0.82rem; color: var(--text-secondary);">Host your hardened single-file recovery terminal at <code>https://sos.yourdomain.com</code></div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <button type="button" class="tab-btn active" id="tab-cf-btn">Cloudflare Pages</button>
+      <button type="button" class="tab-btn" id="tab-netlify-btn">Netlify</button>
+      <button type="button" class="tab-btn" id="tab-vercel-btn">Vercel</button>
+      <button type="button" class="tab-btn" id="tab-git-btn">Git Push (All Providers)</button>
+    </div>
+
+    <!-- Cloudflare Tab -->
+    <div id="tab-cf-content">
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 8px;">
+        <strong>Option A: Direct Upload via Web Dashboard (Zero Git Clone, Zero Terminal)</strong>
+      </p>
+      <ol style="margin-left: 20px; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.8;">
+        <li>Log into the <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener" style="color: var(--border-accent);">Cloudflare Dashboard</a>.</li>
+        <li>Navigate to <strong>Workers & Pages</strong> → Select your Pages project (or click <strong>Create application → Pages → Direct Upload</strong>).</li>
+        <li>Create an empty folder, place the downloaded <code>index.html</code> inside, and drag it into the dropzone.</li>
+        <li>Click <strong>Deploy site</strong>. Your vault is live worldwide on Cloudflare's Anycast Edge!</li>
+      </ol>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 12px 0 6px 0;">
+        <strong>Option B: 1-Command Automated CLI (Zero Git Clone)</strong>
+      </p>
+      <div class="code-block">npx github:janhrabcak/identity-recovery --provider cloudflare</div>
+    </div>
+
+    <!-- Netlify Tab -->
+    <div id="tab-netlify-content" style="display: none;">
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 8px;">
+        <strong>Option A: Netlify Drop Web Dashboard (Zero Git Clone, Zero Terminal)</strong>
+      </p>
+      <ol style="margin-left: 20px; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.8;">
+        <li>Log into the <a href="https://app.netlify.com/" target="_blank" rel="noopener" style="color: var(--border-accent);">Netlify Dashboard</a>.</li>
+        <li>Navigate to <strong>Sites</strong> and scroll down to the <strong>Deploy manually / Netlify Drop</strong> section.</li>
+        <li>Drag-and-drop the folder containing your downloaded <code>index.html</code>.</li>
+        <li>Your recovery vault is live with full edge security header parity!</li>
+      </ol>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 12px 0 6px 0;">
+        <strong>Option B: 1-Command Automated CLI (Zero Git Clone)</strong>
+      </p>
+      <div class="code-block">npx github:janhrabcak/identity-recovery --provider netlify</div>
+    </div>
+
+    <!-- Vercel Tab -->
+    <div id="tab-vercel-content" style="display: none;">
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 8px;">
+        <strong>Option A: 1-Command Automated CLI (Zero Git Clone)</strong>
+      </p>
+      <div class="code-block">npx github:janhrabcak/identity-recovery --provider vercel</div>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 12px 0 6px 0;">
+        <strong>Option B: Git Integration (Private Repositories)</strong>
+      </p>
+      <ol style="margin-left: 20px; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.8;">
+        <li>Import your repository in the <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" style="color: var(--border-accent);">Vercel Dashboard</a>.</li>
+        <li>Deployments automatically apply strict security headers from <code>vercel.json</code>.</li>
+      </ol>
+    </div>
+
+    <!-- Git Tab -->
+    <div id="tab-git-content" style="display: none;">
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 8px;">
+        For private repositories or standard Git workflows across any provider, commit and push:
+      </p>
+      <div class="code-block" id="code-git-snippet">mv ~/Downloads/index.html public/index.html
 git add public/index.html
 git commit -m "vault: rotate encrypted recovery payload"
 git push origin main</div>
-        <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 8px;" id="btn-copy-git-snippet">📋 Copy Git Commands</button>
-      </div>
+      <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 8px;" id="btn-copy-git-snippet">📋 Copy Git Commands</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Update DNS TXT Dead-Drop -->
+  <div class="card">
+    <div style="margin-bottom: 12px;">
+      <div style="font-size: 1.05rem; font-weight: 700;">📡 Step 2: Update DNS TXT Dead-Drop (Cloudflare, Route53, or Any DNS)</div>
+      <div style="font-size: 0.82rem; color: var(--text-secondary);">Secondary emergency fallback queryable via DoH if your web URL is unreachable.</div>
     </div>
 
-    <!-- Step 2: Update DNS TXT Dead-Drop -->
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">📡 Step 2: Update DNS TXT Dead-Drop (Cloudflare, Route53, or Any DNS)</div>
-          <div class="card-subtitle">Secondary fallback queryable via DoH if your web URL is unreachable.</div>
-        </div>
-      </div>
+    <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 12px;">
+      In your DNS provider, add or update the following TXT record in your domain zone:
+    </p>
 
-      <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;">
-        In your DNS provider (such as <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener" style="color: var(--border-focus);">Cloudflare DNS</a>, AWS Route 53, etc.), add or update the following TXT record in your domain zone:
-      </p>
+    <table class="dns-table">
+      <tr>
+        <th style="width: 120px;">Field</th>
+        <th>Value</th>
+        <th style="width: 90px;">Action</th>
+      </tr>
+      <tr>
+        <td><strong>Type</strong></td>
+        <td><code>TXT</code></td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td><strong>Name / Host</strong></td>
+        <td><code id="dns-record-name">recovery.yourdomain.com</code></td>
+        <td><button type="button" class="btn btn-secondary btn-sm" id="btn-copy-dns-name">📋 Copy</button></td>
+      </tr>
+      <tr>
+        <td><strong>TTL</strong></td>
+        <td><code>120</code> (2 minutes, or Auto)</td>
+        <td>-</td>
+      </tr>
+      <tr>
+        <td><strong>Content / Value</strong></td>
+        <td>
+          <div id="dns-record-value" class="mono" style="max-height: 80px; overflow-y: auto; font-size: 0.78rem; word-break: break-all; color: var(--status-green-text);"></div>
+        </td>
+        <td><button type="button" class="btn btn-secondary btn-sm" id="btn-copy-ciphertext">📋 Copy</button></td>
+      </tr>
+    </table>
+  </div>
 
-      <table class="dns-table">
-        <tr>
-          <th style="width: 120px;">Field</th>
-          <th>Value</th>
-          <th style="width: 90px;">Action</th>
-        </tr>
-        <tr>
-          <td><strong>Type</strong></td>
-          <td><code>TXT</code></td>
-          <td>-</td>
-        </tr>
-        <tr>
-          <td><strong>Name / Host</strong></td>
-          <td><code id="dns-record-name">recovery.yourdomain.com</code></td>
-          <td><button type="button" class="btn btn-secondary btn-sm" id="btn-copy-dns-name">📋 Copy</button></td>
-        </tr>
-        <tr>
-          <td><strong>TTL</strong></td>
-          <td><code>120</code> (2 minutes, or Auto)</td>
-          <td>-</td>
-        </tr>
-        <tr>
-          <td><strong>Content / Value</strong></td>
-          <td>
-            <div id="dns-record-value" class="mono" style="max-height: 80px; overflow-y: auto; font-size: 0.8rem; word-break: break-all; color: var(--status-green-text);"></div>
-          </td>
-          <td><button type="button" class="btn btn-secondary btn-sm" id="btn-copy-ciphertext">📋 Copy</button></td>
-        </tr>
-      </table>
-    </div>
-
-    <!-- Bottom Action Buttons -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; margin-bottom: 40px; flex-wrap: wrap; gap: 12px;">
-      <button type="button" class="btn btn-secondary" id="btn-back-to-edit">✏️ Back to Edit</button>
-      <button type="button" class="btn btn-secondary" id="btn-purge-and-lock" style="color: var(--status-red-text); border-color: var(--status-red-border);">🔒 Wipe Memory & Reset Builder</button>
-    </div>
+  <!-- Bottom Action Buttons -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; margin-bottom: 40px; flex-wrap: wrap; gap: 12px;">
+    <button type="button" class="btn btn-secondary" id="btn-back-to-edit">✏️ Back to Edit</button>
+    <button type="button" class="btn btn-secondary" id="btn-purge-and-lock" style="color: var(--status-red-text); border-color: var(--status-red-border);">🔒 Wipe Memory & Reset Builder</button>
   </div>
 </div>
 
@@ -898,16 +1362,20 @@ const IV_BYTES = 12;
 let generatedCiphertextB64 = null;
 let generatedHtml = null;
 
+// Studio Workspace active state
+let activeSection = 'passphrase';
+let currentSelectedCardId = null;
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.innerText = msg;
   t.style.display = 'block';
-  setTimeout(() => { t.style.display = 'none'; }, 2500);
+  setTimeout(function() { t.style.display = 'none'; }, 2500);
 }
 
 function copyText(text) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!'));
+    navigator.clipboard.writeText(text).then(function() { showToast('Copied to clipboard!'); });
   } else {
     const ta = document.createElement('textarea');
     ta.value = text;
@@ -919,19 +1387,16 @@ function copyText(text) {
   }
 }
 
-function normalizePassphrase(passphrase) {
-  if (!passphrase || typeof passphrase !== 'string') return '';
-  return passphrase.trim().normalize('NFKC').replace(/\\s+/g, ' ');
+function normalizePassphrase(str) {
+  if (!str) return '';
+  return str.normalize('NFKC').trim().replace(/\s+/g, ' ');
 }
 
 function evaluatePassphraseEntropy(passphrase) {
-  if (!passphrase || typeof passphrase !== 'string' || passphrase.trim().length === 0) {
-    return { valid: false, reason: 'Passphrase cannot be empty.', wordCount: 0, charCount: 0, uniqueCount: 0 };
-  }
   const normalized = normalizePassphrase(passphrase);
-  const words = normalized.split(' ').filter(w => w.length > 0);
+  const words = normalized ? normalized.split(' ') : [];
+  const unique = new Set(words.map(function(w) { return w.toLowerCase(); }));
   const charCount = normalized.length;
-  const unique = new Set(words.map(w => w.toLowerCase()));
 
   const res = {
     valid: false,
@@ -942,18 +1407,18 @@ function evaluatePassphraseEntropy(passphrase) {
   };
 
   if (words.length < 6) {
-    res.reason = \`Insufficient words (\${words.length}/6). Minimum 6 words required.\`;
+    res.reason = 'Insufficient words (' + words.length + '/6). Minimum 6 words required.';
     return res;
   }
   if (charCount < 20) {
-    res.reason = \`Passphrase too short (\${charCount}/20 chars).\`;
+    res.reason = 'Passphrase too short (' + charCount + '/20 chars).';
     return res;
   }
   if (unique.size < 4) {
     res.reason = 'Too many repeated words.';
     return res;
   }
-  if (words.some(w => w.length < 2)) {
+  if (words.some(function(w) { return w.length < 2; })) {
     res.reason = 'Words must be at least 2 characters.';
     return res;
   }
@@ -971,25 +1436,30 @@ function updatePassphraseUI() {
   const bChars = document.getElementById('badge-chars');
   const bUnique = document.getElementById('badge-unique');
   const bStatus = document.getElementById('badge-status');
+  const sbStatus = document.getElementById('sidebar-passphrase-status');
 
-  bWords.innerText = \`\${evalRes.wordCount} / 6 words\`;
+  bWords.innerText = evalRes.wordCount + ' / 6 words';
   bWords.className = evalRes.wordCount >= 6 ? 'badge badge-green' : 'badge badge-gray';
 
-  bChars.innerText = \`\${evalRes.charCount} / 20 chars\`;
+  bChars.innerText = evalRes.charCount + ' / 20 chars';
   bChars.className = evalRes.charCount >= 20 ? 'badge badge-green' : 'badge badge-gray';
 
-  bUnique.innerText = \`\${evalRes.uniqueCount} unique\`;
+  bUnique.innerText = evalRes.uniqueCount + ' unique';
   bUnique.className = evalRes.uniqueCount >= 4 ? 'badge badge-green' : 'badge badge-gray';
 
   if (evalRes.valid) {
-    bStatus.innerText = evalRes.wordCount >= 8 ? '✓ Strong (~80 bits entropy)' : '✓ Valid (≥6 words)';
+    const text = evalRes.wordCount >= 8 ? '✓ Strong (~80 bits entropy)' : '✓ Valid (≥6 words)';
+    bStatus.innerText = text;
     bStatus.className = 'badge badge-green';
+    if (sbStatus) sbStatus.innerText = evalRes.wordCount + ' words • Strong';
   } else if (evalRes.wordCount >= 4) {
     bStatus.innerText = 'Moderate entropy';
     bStatus.className = 'badge badge-amber';
+    if (sbStatus) sbStatus.innerText = evalRes.wordCount + ' words • Moderate';
   } else {
     bStatus.innerText = 'Incomplete';
     bStatus.className = 'badge badge-red';
+    if (sbStatus) sbStatus.innerText = 'Entropy: Incomplete';
   }
 }
 
@@ -1023,8 +1493,11 @@ let cardCounter = 0;
 function updateEmptyNotice() {
   const container = document.getElementById('cards-container');
   const empty = document.getElementById('empty-cards-notice');
-  if (!container || !empty) return;
-  empty.style.display = container.children.length === 0 ? 'block' : 'none';
+  const hasCards = container && container.children.length > 0;
+  if (empty) empty.style.display = hasCards ? 'none' : 'block';
+  
+  const countBadge = document.getElementById('sidebar-cards-count');
+  if (countBadge) countBadge.innerText = container ? container.children.length : 0;
 }
 
 function getDefaultTitleForType(type, service) {
@@ -1039,7 +1512,351 @@ function getDefaultTitleForType(type, service) {
   }
 }
 
-function addCard(type, data = {}) {
+function getCardIcon(type) {
+  switch (type) {
+    case 'password_manager': return '🔑';
+    case 'backup_codes': return '🛡️';
+    case 'seed_phrase': return '🌱';
+    case 'totp_group': return '⏱️';
+    case 'key_value': return '🔐';
+    case 'notes': return '📝';
+    default: return '📄';
+  }
+}
+
+function selectSection(sectionId) {
+  activeSection = sectionId;
+  const navPass = document.getElementById('nav-item-passphrase');
+  const navSet = document.getElementById('nav-item-settings');
+  const panelPass = document.getElementById('panel-passphrase');
+  const panelEditor = document.getElementById('panel-card-editor');
+  const panelSet = document.getElementById('panel-settings');
+
+  if (sectionId === 'passphrase') {
+    navPass.classList.add('active');
+    navSet.classList.remove('active');
+    panelPass.style.display = 'block';
+    panelEditor.style.display = 'none';
+    panelSet.style.display = 'none';
+    currentSelectedCardId = null;
+    updateSidebarCardsHighlight();
+  } else if (sectionId === 'settings') {
+    navPass.classList.remove('active');
+    navSet.classList.add('active');
+    panelPass.style.display = 'none';
+    panelEditor.style.display = 'none';
+    panelSet.style.display = 'block';
+    currentSelectedCardId = null;
+    updateSidebarCardsHighlight();
+  } else {
+    navPass.classList.remove('active');
+    navSet.classList.remove('active');
+    panelPass.style.display = 'none';
+    panelEditor.style.display = 'block';
+    panelSet.style.display = 'none';
+    currentSelectedCardId = sectionId;
+
+    const cards = document.querySelectorAll('#cards-container .card-item');
+    let activeCardEl = null;
+    cards.forEach(function(c) {
+      if (c.dataset.id === sectionId) {
+        c.style.display = 'block';
+        activeCardEl = c;
+      } else {
+        c.style.display = 'none';
+      }
+    });
+
+    if (activeCardEl) {
+      const heading = document.getElementById('editor-card-heading');
+      const titleInput = activeCardEl.querySelector('.card-title-input');
+      if (heading && titleInput) {
+        heading.innerText = titleInput.value || 'Edit Credential Card';
+      }
+    }
+
+    updateSidebarCardsHighlight();
+    renderLivePreview(sectionId);
+  }
+}
+
+function updateSidebarCardsHighlight() {
+  const rows = document.querySelectorAll('.sidebar-card-row');
+  rows.forEach(function(r) {
+    if (r.dataset.id === currentSelectedCardId) {
+      r.classList.add('active');
+    } else {
+      r.classList.remove('active');
+    }
+  });
+}
+
+function focusFirstCardOrAdd() {
+  const first = document.querySelector('#cards-container .card-item');
+  if (first) {
+    selectSection(first.dataset.id);
+  } else {
+    addCard('password_manager');
+  }
+}
+
+function updateSidebarCardRow(cardId) {
+  const card = document.querySelector('#cards-container .card-item[data-id="' + cardId + '"]');
+  const row = document.querySelector('.sidebar-card-row[data-id="' + cardId + '"]');
+  if (!card || !row) return;
+
+  const type = card.dataset.type;
+  const titleInput = card.querySelector('.card-title-input');
+  const title = (titleInput && titleInput.value.trim()) || getDefaultTitleForType(type);
+  
+  const titleEl = row.querySelector('.sidebar-card-title');
+  if (titleEl) titleEl.innerText = title;
+
+  const metaEl = row.querySelector('.sidebar-card-meta');
+  if (metaEl) {
+    if (type === 'password_manager') {
+      const email = card.querySelector('.pm-email')?.value.trim();
+      metaEl.innerText = email || card.querySelector('.pm-service')?.value || 'Credentials';
+    } else if (type === 'backup_codes') {
+      const ta = card.querySelector('.codes-textarea')?.value || '';
+      const count = (ta.match(/\b[A-Za-z0-9_-]{6,16}\b/g) || []).length;
+      metaEl.innerText = count + ' backup codes';
+    } else if (type === 'seed_phrase') {
+      const ta = card.querySelector('.seed-textarea')?.value.trim() || '';
+      const count = ta ? ta.split(/\s+/).filter(function(w) { return w.length > 0; }).length : 0;
+      metaEl.innerText = count + ' words';
+    } else if (type === 'totp_group') {
+      const count = card.querySelectorAll('.totp-rows-container .kv-row').length;
+      metaEl.innerText = count + ' accounts';
+    } else if (type === 'key_value') {
+      const count = card.querySelectorAll('.kv-rows-container .kv-row').length;
+      metaEl.innerText = count + ' fields';
+    } else if (type === 'notes') {
+      metaEl.innerText = 'Text instructions';
+    }
+  }
+
+  if (currentSelectedCardId === cardId) {
+    const heading = document.getElementById('editor-card-heading');
+    if (heading) heading.innerText = title;
+  }
+}
+
+function renderSidebarCards() {
+  const list = document.getElementById('sidebar-cards-list');
+  list.innerHTML = '';
+
+  const cards = document.querySelectorAll('#cards-container .card-item');
+  cards.forEach(function(card) {
+    const cardId = card.dataset.id;
+    const type = card.dataset.type;
+    const icon = getCardIcon(type);
+
+    const row = document.createElement('div');
+    row.className = 'sidebar-card-row' + (cardId === currentSelectedCardId ? ' active' : '');
+    row.dataset.id = cardId;
+
+    row.innerHTML = 
+      '<div class="sidebar-card-info" onclick="selectSection(\'' + cardId + '\')">' +
+        '<div class="sidebar-card-icon">' + icon + '</div>' +
+        '<div class="sidebar-card-text">' +
+          '<div class="sidebar-card-title">Card</div>' +
+          '<div class="sidebar-card-meta">...</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sidebar-card-actions">' +
+        '<button type="button" class="btn-card-action" title="Move Up" onclick="moveCardUp(\'' + cardId + '\')">↑</button>' +
+        '<button type="button" class="btn-card-action" title="Move Down" onclick="moveCardDown(\'' + cardId + '\')">↓</button>' +
+        '<button type="button" class="btn-card-action btn-card-delete" title="Delete" onclick="deleteCard(\'' + cardId + '\')">✕</button>' +
+      '</div>';
+
+    list.appendChild(row);
+    updateSidebarCardRow(cardId);
+  });
+
+  updateEmptyNotice();
+}
+
+function moveCardUp(cardId) {
+  const card = document.querySelector('#cards-container .card-item[data-id="' + cardId + '"]');
+  if (!card) return;
+  const prev = card.previousElementSibling;
+  if (prev) {
+    card.parentNode.insertBefore(card, prev);
+    renderSidebarCards();
+  }
+}
+
+function moveCardDown(cardId) {
+  const card = document.querySelector('#cards-container .card-item[data-id="' + cardId + '"]');
+  if (!card) return;
+  const next = card.nextElementSibling;
+  if (next) {
+    card.parentNode.insertBefore(next, card);
+    renderSidebarCards();
+  }
+}
+
+function deleteCard(cardId) {
+  if (!confirm('Delete this credential card?')) return;
+  const card = document.querySelector('#cards-container .card-item[data-id="' + cardId + '"]');
+  if (card) card.remove();
+  
+  const remaining = document.querySelectorAll('#cards-container .card-item');
+  if (remaining.length > 0) {
+    selectSection(remaining[0].dataset.id);
+  } else {
+    selectSection('passphrase');
+  }
+  renderSidebarCards();
+  updateEmptyNotice();
+}
+
+function renderLivePreview(cardId) {
+  const container = document.getElementById('live-preview-content');
+  if (!container) return;
+  
+  const card = document.querySelector('#cards-container .card-item[data-id="' + cardId + '"]');
+  if (!card) {
+    container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 12px 0;">No active card selected.</div>';
+    return;
+  }
+
+  const type = card.dataset.type;
+  const title = card.querySelector('.card-title-input')?.value || getDefaultTitleForType(type);
+  const icon = getCardIcon(type);
+
+  let html = 
+    '<div class="preview-terminal-card">' +
+      '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle);">' +
+        '<div style="font-weight: 700; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">' +
+          '<span>' + icon + '</span>' +
+          '<span>' + escapeHtml(title) + '</span>' +
+        '</div>' +
+        '<span class="badge badge-green">Decrypted</span>' +
+      '</div>';
+
+  if (type === 'password_manager') {
+    const service = card.querySelector('.pm-service')?.value || '1Password';
+    const email = card.querySelector('.pm-email')?.value.trim() || 'user@example.com';
+    const secret = card.querySelector('.pm-secret')?.value.trim() || 'A3-XXXXXX-XXXXXX-XXXXX';
+    const hint = card.querySelector('.pm-hint')?.value.trim();
+    const inst = card.querySelector('.pm-instructions')?.value.trim();
+
+    html += 
+      '<div class="preview-item-row">' +
+        '<div class="preview-label">Account / Email</div>' +
+        '<div class="preview-value-box mono">' +
+          '<span>' + escapeHtml(email) + '</span>' +
+          '<span style="color: var(--status-green-text); font-size: 0.75rem; cursor: pointer;">Copy</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="preview-item-row">' +
+        '<div class="preview-label">Secret Key / Token</div>' +
+        '<div class="preview-value-box mono">' +
+          '<span style="color: #6ee7b7;">' + escapeHtml(secret) + '</span>' +
+          '<span style="color: var(--status-green-text); font-size: 0.75rem; cursor: pointer;">Copy</span>' +
+        '</div>' +
+      '</div>';
+    if (hint) {
+      html += 
+        '<div class="preview-item-row">' +
+          '<div class="preview-label">Key Hint</div>' +
+          '<div style="font-size: 0.82rem; color: var(--text-secondary);">' + escapeHtml(hint) + '</div>' +
+        '</div>';
+    }
+    if (inst) {
+      html += 
+        '<div class="preview-item-row" style="margin-top: 8px;">' +
+          '<div class="preview-label">Sign-In Instructions</div>' +
+          '<div style="font-size: 0.78rem; color: var(--text-secondary); background: #070c17; border: 1px solid #1c263c; padding: 6px 10px; border-radius: 4px; white-space: pre-wrap;">' + escapeHtml(inst) + '</div>' +
+        '</div>';
+    }
+  } else if (type === 'backup_codes') {
+    const raw = card.querySelector('.codes-textarea')?.value || '';
+    const codes = raw.match(/\b[A-Za-z0-9_-]{6,16}\b/g) || ['48291042', '71039821', '33029184'];
+    html += 
+      '<div class="preview-item-row">' +
+        '<div style="display: flex; justify-content: space-between; align-items: center;">' +
+          '<div class="preview-label">Available Backup Codes (' + codes.length + ')</div>' +
+          '<span style="font-size: 0.72rem; color: var(--status-green-text); cursor: pointer;">Copy All</span>' +
+        '</div>' +
+        '<div class="preview-chip-wrap">';
+    codes.slice(0, 12).forEach(function(c) {
+      html += '<span class="preview-code-tag">' + escapeHtml(c) + '</span>';
+    });
+    if (codes.length > 12) {
+      html += '<span class="badge badge-gray">+' + (codes.length - 12) + ' more</span>';
+    }
+    html += '</div><div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px;">Click code in terminal to mark as used.</div></div>';
+  } else if (type === 'seed_phrase') {
+    const raw = card.querySelector('.seed-textarea')?.value.trim() || 'witch collapse practice feed shame open despair creek road again ice least';
+    const words = raw.split(/\s+/).filter(function(w) { return w.length > 0; });
+    html += 
+      '<div class="preview-item-row">' +
+        '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">' +
+          '<div class="preview-label">BIP-39 Mnemonic Seed (' + words.length + ' words)</div>' +
+          '<span style="font-size: 0.72rem; color: var(--status-green-text); cursor: pointer;">Copy Seed</span>' +
+        '</div>' +
+        '<div class="preview-seed-grid">';
+    words.forEach(function(w, idx) {
+      html += '<div class="preview-seed-item"><span style="color:var(--text-muted); margin-right:4px;">' + String(idx + 1).padStart(2, '0') + '.</span>' + escapeHtml(w) + '</div>';
+    });
+    html += '</div></div>';
+  } else if (type === 'totp_group') {
+    const rows = card.querySelectorAll('.totp-rows-container .kv-row');
+    html += '<div class="preview-item-row"><div class="preview-label">Live In-Browser TOTP Seeds</div>';
+    if (rows.length === 0) {
+      html += '<div style="font-size:0.8rem; color:var(--text-muted);">No TOTP seeds configured.</div>';
+    } else {
+      rows.forEach(function(r) {
+        const acc = r.querySelector('.totp-acc')?.value.trim() || 'Account';
+        html += 
+          '<div class="preview-totp-display">' +
+            '<div>' +
+              '<div style="font-size: 0.8rem; font-weight: 600;">' + escapeHtml(acc) + '</div>' +
+              '<div style="font-size: 0.7rem; color: var(--text-muted);">Refreshes every 30s</div>' +
+            '</div>' +
+            '<div class="preview-totp-code">849 201</div>' +
+          '</div>';
+      });
+    }
+    html += '</div>';
+  } else if (type === 'key_value') {
+    const rows = card.querySelectorAll('.kv-rows-container .kv-row');
+    html += '<div class="preview-item-row"><div class="preview-label">Custom Secrets & Keys</div>';
+    if (rows.length === 0) {
+      html += '<div style="font-size:0.8rem; color:var(--text-muted);">No key-value entries.</div>';
+    } else {
+      rows.forEach(function(r) {
+        const k = r.querySelector('.kv-key')?.value.trim() || 'Key';
+        const v = r.querySelector('.kv-val')?.value.trim() || 'Secret Value';
+        html += 
+          '<div class="preview-item-row" style="margin-bottom: 6px;">' +
+            '<div style="font-size: 0.72rem; color: var(--text-secondary);">' + escapeHtml(k) + '</div>' +
+            '<div class="preview-value-box mono">' +
+              '<span>' + escapeHtml(v) + '</span>' +
+              '<span style="color: var(--status-green-text); font-size: 0.75rem; cursor: pointer;">Copy</span>' +
+            '</div>' +
+          '</div>';
+      });
+    }
+    html += '</div>';
+  } else if (type === 'notes') {
+    const content = card.querySelector('.notes-textarea')?.value.trim() || 'Emergency instructions...';
+    html += 
+      '<div class="preview-item-row">' +
+        '<div class="preview-label">Emergency Protocol Notes</div>' +
+        '<div style="font-size: 0.82rem; color: #cbd5e1; background: #070c17; border: 1px solid #1c263c; padding: 10px; border-radius: 6px; line-height: 1.5; white-space: pre-wrap;">' + escapeHtml(content) + '</div>' +
+      '</div>';
+  }
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function addCard(type, data) {
+  data = data || {};
   cardCounter++;
   const cardId = data.id || ('card_' + cardCounter + '_' + Date.now().toString(36));
   const container = document.getElementById('cards-container');
@@ -1049,179 +1866,135 @@ function addCard(type, data = {}) {
   card.dataset.id = cardId;
   card.dataset.type = type;
 
-  let headerHtml = '';
-  let bodyHtml = '';
-
   const titleText = data.title || getDefaultTitleForType(type, data.service);
 
+  let formFields = '';
   if (type === 'password_manager') {
     const service = data.service || '1Password';
-    headerHtml = '<div>' +
-      '<div class="card-title">🔑 <input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="background:none; border:none; color:inherit; font-weight:700; font-size:1.05rem; padding:0; width:auto; max-width:350px;"></div>' +
-      '<div class="card-subtitle">Password Manager & Master Vault</div>' +
-      '</div>';
-    bodyHtml = '<div class="grid-2">' +
-      '<div class="form-group">' +
-      '<label>Service Preset</label>' +
-      '<select class="pm-service">' +
-      '<option value="1Password"' + (service === '1Password' ? ' selected' : '') + '>1Password</option>' +
-      '<option value="Bitwarden"' + (service === 'Bitwarden' ? ' selected' : '') + '>Bitwarden</option>' +
-      '<option value="KeePassXC"' + (service === 'KeePassXC' ? ' selected' : '') + '>KeePassXC</option>' +
-      '<option value="Dashlane"' + (service === 'Dashlane' ? ' selected' : '') + '>Dashlane</option>' +
-      '<option value="Proton Pass"' + (service === 'Proton Pass' ? ' selected' : '') + '>Proton Pass</option>' +
-      '<option value="Other"' + (!['1Password', 'Bitwarden', 'KeePassXC', 'Dashlane', 'Proton Pass'].includes(service) ? ' selected' : '') + '>Other / Custom</option>' +
-      '</select>' +
-      '</div>' +
-      '<div class="form-group">' +
-      '<label>Account / Key Hint</label>' +
-      '<input type="text" class="pm-hint" placeholder="Personal Emergency Vault" value="' + escapeHtml(data.hint || '') + '">' +
-      '</div>' +
+    formFields = 
+      '<div class="grid-2">' +
+        '<div class="form-group">' +
+          '<label>Service Preset</label>' +
+          '<select class="pm-service">' +
+            '<option value="1Password"' + (service === '1Password' ? ' selected' : '') + '>1Password</option>' +
+            '<option value="Bitwarden"' + (service === 'Bitwarden' ? ' selected' : '') + '>Bitwarden</option>' +
+            '<option value="KeePassXC"' + (service === 'KeePassXC' ? ' selected' : '') + '>KeePassXC</option>' +
+            '<option value="Dashlane"' + (service === 'Dashlane' ? ' selected' : '') + '>Dashlane</option>' +
+            '<option value="Proton Pass"' + (service === 'Proton Pass' ? ' selected' : '') + '>Proton Pass</option>' +
+            '<option value="Other"' + (!['1Password', 'Bitwarden', 'KeePassXC', 'Dashlane', 'Proton Pass'].includes(service) ? ' selected' : '') + '>Other / Custom</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label>Account / Key Hint</label>' +
+          '<input type="text" class="pm-hint" placeholder="Personal Emergency Vault" value="' + escapeHtml(data.hint || '') + '">' +
+        '</div>' +
       '</div>' +
       '<div class="grid-2" style="margin-top: 12px;">' +
-      '<div class="form-group">' +
-      '<label>Account Email / Username</label>' +
-      '<input type="text" class="pm-email mono" placeholder="user@example.com" value="' + escapeHtml(data.email || '') + '">' +
-      '</div>' +
-      '<div class="form-group">' +
-      '<label>Secret Key / Master Key Token</label>' +
-      '<input type="text" class="pm-secret mono" placeholder="A3-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX" value="' + escapeHtml(data.secretKey || '') + '">' +
-      '</div>' +
+        '<div class="form-group">' +
+          '<label>Account Email / Username</label>' +
+          '<input type="text" class="pm-email mono" placeholder="user@example.com" value="' + escapeHtml(data.email || '') + '">' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label>Secret Key / Master Key Token</label>' +
+          '<input type="text" class="pm-secret mono" placeholder="A3-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX" value="' + escapeHtml(data.secretKey || '') + '">' +
+        '</div>' +
       '</div>' +
       '<div class="form-group" style="margin-top: 12px;">' +
-      '<label>Optional Sign-in Instructions</label>' +
-      '<textarea class="pm-instructions" rows="2" placeholder="1. Go to https://my.1password.com&#10;2. Paste email and secret key&#10;3. Enter memorized master password">' + escapeHtml(data.instructions || '') + '</textarea>' +
+        '<label>Optional Sign-in Instructions</label>' +
+        '<textarea class="pm-instructions" rows="2" placeholder="1. Go to https://my.1password.com\n2. Paste email and secret key\n3. Enter memorized master password">' + escapeHtml(data.instructions || '') + '</textarea>' +
       '</div>';
   } else if (type === 'backup_codes') {
     const service = data.service || 'Google';
-    const codesStr = Array.isArray(data.codes) ? data.codes.join('\\n') : (data.codes || '');
-    headerHtml = '<div>' +
-      '<div class="card-title">🛡️ <input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="background:none; border:none; color:inherit; font-weight:700; font-size:1.05rem; padding:0; width:auto; max-width:350px;"></div>' +
-      '<div class="card-subtitle">Single-use emergency recovery backup codes</div>' +
-      '</div>';
-    bodyHtml = '<div class="grid-2">' +
-      '<div class="form-group">' +
-      '<label>Service Preset</label>' +
-      '<select class="codes-service">' +
-      '<option value="Google"' + (service === 'Google' ? ' selected' : '') + '>Google (8-digit)</option>' +
-      '<option value="GitHub"' + (service === 'GitHub' ? ' selected' : '') + '>GitHub (10-char)</option>' +
-      '<option value="Apple"' + (service === 'Apple' ? ' selected' : '') + '>Apple (Recovery Key)</option>' +
-      '<option value="Microsoft"' + (service === 'Microsoft' ? ' selected' : '') + '>Microsoft</option>' +
-      '<option value="AWS"' + (service === 'AWS' ? ' selected' : '') + '>AWS</option>' +
-      '<option value="Other"' + (!['Google', 'GitHub', 'Apple', 'Microsoft', 'AWS'].includes(service) ? ' selected' : '') + '>Other</option>' +
-      '</select>' +
-      '</div>' +
-      '<div class="form-group">' +
-      '<label>Parsed Code Count</label>' +
-      '<div style="display: flex; align-items: center; height: 42px;">' +
-      '<span class="badge badge-gray codes-badge">0 codes parsed</span>' +
-      '</div>' +
-      '</div>' +
+    const codesStr = Array.isArray(data.codes) ? data.codes.join('\n') : (data.codes || '');
+    formFields = 
+      '<div class="grid-2">' +
+        '<div class="form-group">' +
+          '<label>Service Preset</label>' +
+          '<select class="codes-service">' +
+            '<option value="Google"' + (service === 'Google' ? ' selected' : '') + '>Google (8-digit)</option>' +
+            '<option value="GitHub"' + (service === 'GitHub' ? ' selected' : '') + '>GitHub (10-char)</option>' +
+            '<option value="Apple"' + (service === 'Apple' ? ' selected' : '') + '>Apple (Recovery Key)</option>' +
+            '<option value="Microsoft"' + (service === 'Microsoft' ? ' selected' : '') + '>Microsoft</option>' +
+            '<option value="AWS"' + (service === 'AWS' ? ' selected' : '') + '>AWS</option>' +
+            '<option value="Other"' + (!['Google', 'GitHub', 'Apple', 'Microsoft', 'AWS'].includes(service) ? ' selected' : '') + '>Other</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label>Parsed Code Count</label>' +
+          '<div style="display: flex; align-items: center; height: 38px;">' +
+            '<span class="badge badge-gray codes-badge">0 codes parsed</span>' +
+          '</div>' +
+        '</div>' +
       '</div>' +
       '<div class="form-group" style="margin-top: 12px;">' +
-      '<label>Backup Codes (One per line, space, or comma separated)</label>' +
-      '<textarea class="codes-textarea mono" rows="4" placeholder="23456789&#10;34567890&#10;45678901&#10;...">' + escapeHtml(codesStr) + '</textarea>' +
+        '<label>Backup Codes (One per line, space, or comma separated)</label>' +
+        '<textarea class="codes-textarea mono" rows="4" placeholder="23456789\n34567890\n45678901\n...">' + escapeHtml(codesStr) + '</textarea>' +
       '</div>';
   } else if (type === 'seed_phrase') {
     const service = data.service || 'Ledger';
     const phrase = data.phrase || '';
-    headerHtml = '<div>' +
-      '<div class="card-title">🌱 <input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="background:none; border:none; color:inherit; font-weight:700; font-size:1.05rem; padding:0; width:auto; max-width:350px;"></div>' +
-      '<div class="card-subtitle">BIP-39 Crypto Wallet / Hardware Key Recovery Phrase</div>' +
-      '</div>';
-    bodyHtml = '<div class="grid-2">' +
-      '<div class="form-group">' +
-      '<label>Wallet / Service Preset</label>' +
-      '<select class="seed-service">' +
-      '<option value="Ledger"' + (service === 'Ledger' ? ' selected' : '') + '>Ledger</option>' +
-      '<option value="Trezor"' + (service === 'Trezor' ? ' selected' : '') + '>Trezor</option>' +
-      '<option value="MetaMask"' + (service === 'MetaMask' ? ' selected' : '') + '>MetaMask</option>' +
-      '<option value="Phantom"' + (service === 'Phantom' ? ' selected' : '') + '>Phantom</option>' +
-      '<option value="BIP-39"' + (service === 'BIP-39' ? ' selected' : '') + '>Standard BIP-39 (12/24 words)</option>' +
-      '<option value="Other"' + (!['Ledger', 'Trezor', 'MetaMask', 'Phantom', 'BIP-39'].includes(service) ? ' selected' : '') + '>Other</option>' +
-      '</select>' +
-      '</div>' +
-      '<div class="form-group">' +
-      '<label>Word Count Status</label>' +
-      '<div style="display: flex; align-items: center; height: 42px;">' +
-      '<span class="badge badge-gray seed-badge">0 words</span>' +
-      '</div>' +
-      '</div>' +
+    formFields = 
+      '<div class="grid-2">' +
+        '<div class="form-group">' +
+          '<label>Wallet / Service Preset</label>' +
+          '<select class="seed-service">' +
+            '<option value="Ledger"' + (service === 'Ledger' ? ' selected' : '') + '>Ledger</option>' +
+            '<option value="Trezor"' + (service === 'Trezor' ? ' selected' : '') + '>Trezor</option>' +
+            '<option value="MetaMask"' + (service === 'MetaMask' ? ' selected' : '') + '>MetaMask</option>' +
+            '<option value="Phantom"' + (service === 'Phantom' ? ' selected' : '') + '>Phantom</option>' +
+            '<option value="BIP-39"' + (service === 'BIP-39' ? ' selected' : '') + '>Standard BIP-39 (12/24 words)</option>' +
+            '<option value="Other"' + (!['Ledger', 'Trezor', 'MetaMask', 'Phantom', 'BIP-39'].includes(service) ? ' selected' : '') + '>Other</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label>Word Count Status</label>' +
+          '<div style="display: flex; align-items: center; height: 38px;">' +
+            '<span class="badge badge-gray seed-badge">0 words</span>' +
+          '</div>' +
+        '</div>' +
       '</div>' +
       '<div class="form-group" style="margin-top: 12px;">' +
-      '<label>Mnemonic Recovery Words (Space-separated 12, 18, or 24 words)</label>' +
-      '<textarea class="seed-textarea mono" rows="3" placeholder="witch collapse practice feed shame open despair creek road again ice least">' + escapeHtml(phrase) + '</textarea>' +
+        '<label>Mnemonic Recovery Words (Space-separated 12, 18, or 24 words)</label>' +
+        '<textarea class="seed-textarea mono" rows="3" placeholder="witch collapse practice feed shame open despair creek road again ice least">' + escapeHtml(phrase) + '</textarea>' +
       '</div>';
   } else if (type === 'totp_group') {
-    headerHtml = '<div>' +
-      '<div class="card-title">⏱️ <input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="background:none; border:none; color:inherit; font-weight:700; font-size:1.05rem; padding:0; width:auto; max-width:350px;"></div>' +
-      '<div class="card-subtitle">Live In-Browser Time-Based OTP Authenticator Seeds</div>' +
-      '</div>';
-    bodyHtml = '<div class="form-group">' +
-      '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">' +
-      '<label style="margin-bottom: 0;">Authenticator Accounts</label>' +
-      '<button type="button" class="btn btn-secondary btn-sm btn-add-totp-row">+ Add Account</button>' +
-      '</div>' +
-      '<div class="totp-rows-container"></div>' +
+    formFields = 
+      '<div class="form-group">' +
+        '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">' +
+          '<label style="margin-bottom: 0;">Authenticator Accounts</label>' +
+          '<button type="button" class="btn btn-secondary btn-sm btn-add-totp-row">+ Add Account</button>' +
+        '</div>' +
+        '<div class="totp-rows-container"></div>' +
       '</div>';
   } else if (type === 'key_value') {
-    headerHtml = '<div>' +
-      '<div class="card-title">🔐 <input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="background:none; border:none; color:inherit; font-weight:700; font-size:1.05rem; padding:0; width:auto; max-width:350px;"></div>' +
-      '<div class="card-subtitle">Arbitrary Secrets, SSH Keys, PINs, or Recovery Questions</div>' +
-      '</div>';
-    bodyHtml = '<div class="form-group">' +
-      '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">' +
-      '<label style="margin-bottom: 0;">Key-Value Entries</label>' +
-      '<button type="button" class="btn btn-secondary btn-sm btn-add-kv-row">+ Add Field</button>' +
-      '</div>' +
-      '<div class="kv-rows-container"></div>' +
+    formFields = 
+      '<div class="form-group">' +
+        '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">' +
+          '<label style="margin-bottom: 0;">Key-Value Entries</label>' +
+          '<button type="button" class="btn btn-secondary btn-sm btn-add-kv-row">+ Add Field</button>' +
+        '</div>' +
+        '<div class="kv-rows-container"></div>' +
       '</div>';
   } else if (type === 'notes') {
-    headerHtml = '<div>' +
-      '<div class="card-title">📝 <input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="background:none; border:none; color:inherit; font-weight:700; font-size:1.05rem; padding:0; width:auto; max-width:350px;"></div>' +
-      '<div class="card-subtitle">Emergency instructions, contacts, and fallback protocols</div>' +
-      '</div>';
-    bodyHtml = '<div class="form-group">' +
-      '<label>Emergency Instructions / Contacts</label>' +
-      '<textarea class="notes-textarea" rows="4" placeholder="Emergency contact: Alice (+1-555-0199).">' + escapeHtml(data.content || data.notes || '') + '</textarea>' +
+    formFields = 
+      '<div class="form-group">' +
+        '<label>Emergency Instructions / Contacts</label>' +
+        '<textarea class="notes-textarea" rows="4" placeholder="Emergency contact: Alice (+1-555-0199).">' + escapeHtml(data.content || data.notes || '') + '</textarea>' +
       '</div>';
   }
 
-  const headerDiv = document.createElement('div');
-  headerDiv.className = 'card-header';
-  headerDiv.innerHTML = headerHtml;
-
-  const controls = document.createElement('div');
-  controls.className = 'card-controls';
-  controls.innerHTML = '<button type="button" class="btn-icon btn-move-up" title="Move card up">↑</button>' +
-    '<button type="button" class="btn-icon btn-move-down" title="Move card down">↓</button>' +
-    '<button type="button" class="btn-icon btn-delete" title="Delete card">🗑️</button>';
-  headerDiv.appendChild(controls);
-  card.appendChild(headerDiv);
-
-  const bodyDiv = document.createElement('div');
-  bodyDiv.innerHTML = bodyHtml;
-  card.appendChild(bodyDiv);
-
-  controls.querySelector('.btn-move-up').onclick = () => {
-    const prev = card.previousElementSibling;
-    if (prev) container.insertBefore(card, prev);
-  };
-  controls.querySelector('.btn-move-down').onclick = () => {
-    const next = card.nextElementSibling;
-    if (next) container.insertBefore(next, card);
-  };
-  controls.querySelector('.btn-delete').onclick = () => {
-    if (confirm('Delete this credential card?')) {
-      card.remove();
-      updateEmptyNotice();
-    }
-  };
+  card.innerHTML = 
+    '<div class="form-group" style="margin-bottom: 16px;">' +
+      '<label>Card Title / Label</label>' +
+      '<input type="text" class="card-title-input" value="' + escapeHtml(titleText) + '" style="font-weight: 700;">' +
+    '</div>' +
+    formFields;
 
   if (type === 'backup_codes') {
     const ta = card.querySelector('.codes-textarea');
     const badge = card.querySelector('.codes-badge');
-    const updateCodes = () => {
-      const matches = (ta.value.match(/\\b[A-Za-z0-9_-]{6,16}\\b/g) || []);
+    const updateCodes = function() {
+      const matches = (ta.value.match(/\b[A-Za-z0-9_-]{6,16}\b/g) || []);
       badge.textContent = matches.length + ' codes parsed';
       badge.className = matches.length >= 10 ? 'badge badge-green' : (matches.length > 0 ? 'badge badge-amber' : 'badge badge-gray');
     };
@@ -1230,8 +2003,8 @@ function addCard(type, data = {}) {
   } else if (type === 'seed_phrase') {
     const ta = card.querySelector('.seed-textarea');
     const badge = card.querySelector('.seed-badge');
-    const updateSeed = () => {
-      const words = ta.value.trim().split(/\\s+/).filter(w => w.length > 0);
+    const updateSeed = function() {
+      const words = ta.value.trim().split(/\s+/).filter(function(w) { return w.length > 0; });
       badge.textContent = words.length + ' words';
       badge.className = (words.length === 12 || words.length === 24) ? 'badge badge-green' : (words.length > 0 ? 'badge badge-amber' : 'badge badge-gray');
     };
@@ -1240,16 +2013,33 @@ function addCard(type, data = {}) {
   } else if (type === 'totp_group') {
     const totpContainer = card.querySelector('.totp-rows-container');
     const addRowBtn = card.querySelector('.btn-add-totp-row');
-    const addRow = (acc = '', sec = '') => {
+    const addRow = function(acc, sec) {
+      acc = acc || '';
+      sec = sec || '';
       const row = document.createElement('div');
       row.className = 'kv-row';
-      row.innerHTML = '<input type="text" class="totp-acc" placeholder="Account / Service (e.g. Google)" value="' + escapeHtml(acc) + '" style="flex:1;">' +
-        '<input type="text" class="totp-sec mono" placeholder="Base32 Secret Key" value="' + escapeHtml(sec) + '" style="flex:1.5;">' +
+      row.innerHTML = 
+        '<input type="text" class="totp-acc" placeholder="Account / Service" value="' + escapeHtml(acc) + '" style="flex:1;">' +
+        '<input type="text" class="totp-sec mono" placeholder="Base32 Secret" value="' + escapeHtml(sec) + '" style="flex:1.5;">' +
         '<button type="button" class="btn-icon btn-delete" style="padding:6px 10px;">✕</button>';
-      row.querySelector('.btn-delete').onclick = () => row.remove();
+      row.querySelector('.btn-delete').onclick = function() {
+        row.remove();
+        updateSidebarCardRow(cardId);
+        renderLivePreview(cardId);
+      };
+      row.querySelectorAll('input').forEach(function(inp) {
+        inp.addEventListener('input', function() {
+          updateSidebarCardRow(cardId);
+          renderLivePreview(cardId);
+        });
+      });
       totpContainer.appendChild(row);
     };
-    addRowBtn.onclick = () => addRow();
+    addRowBtn.onclick = function() {
+      addRow();
+      updateSidebarCardRow(cardId);
+      renderLivePreview(cardId);
+    };
     if (data.seeds && typeof data.seeds === 'object') {
       for (const [k, v] of Object.entries(data.seeds)) addRow(k, v);
     } else {
@@ -1258,18 +2048,35 @@ function addCard(type, data = {}) {
   } else if (type === 'key_value') {
     const kvContainer = card.querySelector('.kv-rows-container');
     const addRowBtn = card.querySelector('.btn-add-kv-row');
-    const addRow = (k = '', v = '') => {
+    const addRow = function(k, v) {
+      k = k || '';
+      v = v || '';
       const row = document.createElement('div');
       row.className = 'kv-row';
-      row.innerHTML = '<input type="text" class="kv-key" placeholder="Key / Label (e.g. SSH Key)" value="' + escapeHtml(k) + '" style="flex:1;">' +
+      row.innerHTML = 
+        '<input type="text" class="kv-key" placeholder="Label / Key" value="' + escapeHtml(k) + '" style="flex:1;">' +
         '<input type="text" class="kv-val mono" placeholder="Value / Secret" value="' + escapeHtml(v) + '" style="flex:2;">' +
         '<button type="button" class="btn-icon btn-delete" style="padding:6px 10px;">✕</button>';
-      row.querySelector('.btn-delete').onclick = () => row.remove();
+      row.querySelector('.btn-delete').onclick = function() {
+        row.remove();
+        updateSidebarCardRow(cardId);
+        renderLivePreview(cardId);
+      };
+      row.querySelectorAll('input').forEach(function(inp) {
+        inp.addEventListener('input', function() {
+          updateSidebarCardRow(cardId);
+          renderLivePreview(cardId);
+        });
+      });
       kvContainer.appendChild(row);
     };
-    addRowBtn.onclick = () => addRow();
+    addRowBtn.onclick = function() {
+      addRow();
+      updateSidebarCardRow(cardId);
+      renderLivePreview(cardId);
+    };
     if (Array.isArray(data.entries)) {
-      data.entries.forEach(e => addRow(e.label || e.key || '', e.value || ''));
+      data.entries.forEach(function(e) { addRow(e.label || e.key || '', e.value || ''); });
     } else if (data.entries && typeof data.entries === 'object') {
       for (const [k, v] of Object.entries(data.entries)) addRow(k, String(v));
     } else {
@@ -1277,8 +2084,16 @@ function addCard(type, data = {}) {
     }
   }
 
+  card.addEventListener('input', function() {
+    updateSidebarCardRow(cardId);
+    if (currentSelectedCardId === cardId) {
+      renderLivePreview(cardId);
+    }
+  });
+
   container.appendChild(card);
-  updateEmptyNotice();
+  renderSidebarCards();
+  selectSection(cardId);
   return card;
 }
 
@@ -1287,7 +2102,7 @@ function getCardsData() {
   const cardEls = container.querySelectorAll('.card-item');
   const items = [];
 
-  cardEls.forEach((card, idx) => {
+  cardEls.forEach(function(card, idx) {
     const type = card.dataset.type;
     const id = card.dataset.id || ('card_' + (idx + 1));
     const titleInput = card.querySelector('.card-title-input');
@@ -1295,9 +2110,9 @@ function getCardsData() {
 
     if (type === 'password_manager') {
       items.push({
-        id,
-        type,
-        title,
+        id: id,
+        type: type,
+        title: title,
         service: card.querySelector('.pm-service').value,
         hint: card.querySelector('.pm-hint').value.trim() || undefined,
         email: card.querySelector('.pm-email').value.trim(),
@@ -1306,54 +2121,54 @@ function getCardsData() {
       });
     } else if (type === 'backup_codes') {
       const raw = card.querySelector('.codes-textarea').value;
-      const codes = raw.match(/\\b[A-Za-z0-9_-]{6,16}\\b/g) || [];
+      const codes = raw.match(/\b[A-Za-z0-9_-]{6,16}\b/g) || [];
       items.push({
-        id,
-        type,
-        title,
+        id: id,
+        type: type,
+        title: title,
         service: card.querySelector('.codes-service').value,
-        codes
+        codes: codes
       });
     } else if (type === 'seed_phrase') {
-      const phrase = card.querySelector('.seed-textarea').value.trim().replace(/\\s+/g, ' ');
+      const phrase = card.querySelector('.seed-textarea').value.trim().replace(/\s+/g, ' ');
       items.push({
-        id,
-        type,
-        title,
+        id: id,
+        type: type,
+        title: title,
         service: card.querySelector('.seed-service').value,
-        phrase
+        phrase: phrase
       });
     } else if (type === 'totp_group') {
       const seeds = {};
-      card.querySelectorAll('.totp-rows-container .kv-row').forEach(row => {
+      card.querySelectorAll('.totp-rows-container .kv-row').forEach(function(row) {
         const acc = row.querySelector('.totp-acc').value.trim();
-        const sec = row.querySelector('.totp-sec').value.trim().replace(/\\s+/g, '').toUpperCase();
+        const sec = row.querySelector('.totp-sec').value.trim().replace(/\s+/g, '').toUpperCase();
         if (acc && sec) seeds[acc] = sec;
       });
       items.push({
-        id,
-        type,
-        title,
-        seeds
+        id: id,
+        type: type,
+        title: title,
+        seeds: seeds
       });
     } else if (type === 'key_value') {
       const entries = [];
-      card.querySelectorAll('.kv-rows-container .kv-row').forEach(row => {
+      card.querySelectorAll('.kv-rows-container .kv-row').forEach(function(row) {
         const k = row.querySelector('.kv-key').value.trim();
         const v = row.querySelector('.kv-val').value.trim();
         if (k || v) entries.push({ label: k, value: v });
       });
       items.push({
-        id,
-        type,
-        title,
-        entries
+        id: id,
+        type: type,
+        title: title,
+        entries: entries
       });
     } else if (type === 'notes') {
       items.push({
-        id,
-        type,
-        title,
+        id: id,
+        type: type,
+        title: title,
         content: card.querySelector('.notes-textarea').value.trim()
       });
     }
@@ -1375,8 +2190,7 @@ function buildVaultPayload(items) {
     items: items
   };
 
-  // Attach legacy root fields for complete backward compatibility
-  const firstPm = items.find(it => it.type === 'password_manager');
+  const firstPm = items.find(function(it) { return it.type === 'password_manager'; });
   if (firstPm) {
     payload.onePassword = {
       email: firstPm.email || '',
@@ -1384,15 +2198,15 @@ function buildVaultPayload(items) {
       accountKeyHint: firstPm.hint || 'Personal Emergency Vault'
     };
   }
-  const firstCodes = items.find(it => it.type === 'backup_codes');
+  const firstCodes = items.find(function(it) { return it.type === 'backup_codes'; });
   if (firstCodes) {
     payload.googleBackupCodes = firstCodes.codes || [];
   }
-  const firstTotp = items.find(it => it.type === 'totp_group' || it.type === 'totp');
+  const firstTotp = items.find(function(it) { return it.type === 'totp_group' || it.type === 'totp'; });
   if (firstTotp && firstTotp.seeds) {
     payload.totpSeeds = firstTotp.seeds;
   }
-  const firstNotes = items.find(it => it.type === 'notes');
+  const firstNotes = items.find(function(it) { return it.type === 'notes'; });
   if (firstNotes) {
     payload.notes = firstNotes.content;
   }
@@ -1404,7 +2218,7 @@ function normalizeVaultPayload(payload) {
   if (!payload || typeof payload !== 'object') {
     return { metadata: {}, items: [] };
   }
-  const res = { ...payload };
+  const res = Object.assign({}, payload);
   if (!Array.isArray(res.items)) {
     res.items = [];
     if (res.onePassword && (res.onePassword.email || res.onePassword.secretKey)) {
@@ -1416,7 +2230,7 @@ function normalizeVaultPayload(payload) {
         email: res.onePassword.email || '',
         secretKey: res.onePassword.secretKey || '',
         hint: res.onePassword.accountKeyHint || '',
-        instructions: '1. Go to https://my.1password.com\\n2. Paste email and secret key\\n3. Enter memorized master password.'
+        instructions: '1. Go to https://my.1password.com\n2. Paste email and secret key\n3. Enter memorized master password.'
       });
     }
     if (Array.isArray(res.googleBackupCodes) && res.googleBackupCodes.length > 0) {
@@ -1465,7 +2279,7 @@ function loadSampleData() {
     email: 'user@example.com',
     secretKey: 'A3-XXXXXX-XXXXXX-XXXXX-XXXXX-XXXXX-XXXXX',
     hint: 'Personal Emergency Vault',
-    instructions: '1. Go to https://my.1password.com in a clean browser tab.\\n2. Paste email and secret key.\\n3. Enter memorized master password.'
+    instructions: '1. Go to https://my.1password.com in a clean browser tab.\n2. Paste email and secret key.\n3. Enter memorized master password.'
   });
 
   addCard('backup_codes', {
@@ -1498,16 +2312,20 @@ function loadSampleData() {
     document.getElementById('passphrase').value = 'correct horse battery staple zebra guitar';
   }
   updatePassphraseUI();
-  showToast('Loaded modular sample cards!');
+  
+  const first = document.querySelector('#cards-container .card-item');
+  if (first) selectSection(first.dataset.id);
+  showToast('Loaded sample credential cards!');
 }
 
 function clearAll() {
   if (!confirm('Are you sure you want to clear all entered credentials and keys?')) return;
   document.getElementById('passphrase').value = '';
   document.getElementById('cards-container').innerHTML = '';
-  updateEmptyNotice();
+  renderSidebarCards();
   document.getElementById('canary-code').value = '';
   updatePassphraseUI();
+  selectSection('passphrase');
   showToast('Cleared all fields.');
 }
 
@@ -1548,7 +2366,7 @@ async function encryptPayload(payloadObj, passphrase) {
   const plaintextBytes = enc.encode(jsonString);
 
   const ciphertextBuffer = await window.crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
+    { name: 'AES-GCM', iv: iv },
     key,
     plaintextBytes
   );
@@ -1581,7 +2399,7 @@ async function verifyDecryption(b64Ciphertext, passphrase) {
 
   const key = await deriveKey(passphrase, salt, ['decrypt']);
   const decryptedBuffer = await window.crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv },
+    { name: 'AES-GCM', iv: iv },
     key,
     ciphertext
   );
@@ -1602,30 +2420,30 @@ function escapeHtmlAttr(str) {
 function injectIntoTemplate(templateHtml, ciphertextB64, metadata, domain) {
   let html = templateHtml;
 
-  const placeholderRegex = /const\\s+EMBEDDED_CIPHERTEXT\\s*=\\s*["'][^"']*["'];/;
+  const placeholderRegex = /const\s+EMBEDDED_CIPHERTEXT\s*=\s*["'][^"']*["'];/;
   if (!placeholderRegex.test(html)) {
     throw new Error('Template is missing "const EMBEDDED_CIPHERTEXT = ...;" placeholder.');
   }
-  html = html.replace(placeholderRegex, \`const EMBEDDED_CIPHERTEXT = "\${ciphertextB64}";\`);
+  html = html.replace(placeholderRegex, 'const EMBEDDED_CIPHERTEXT = "' + ciphertextB64 + '";');
 
   if (metadata.generatedAt) {
-    const genMetaRegex = /<meta\\s+name=["']vault-generated-at["']\\s+content=["'][^"']*["']\\s*\\/?>/i;
+    const genMetaRegex = /<meta\s+name=["']vault-generated-at["']\s+content=["'][^"']*["']\s*\/?>/i;
     if (genMetaRegex.test(html)) {
-      html = html.replace(genMetaRegex, \`<meta name="vault-generated-at" content="\${escapeHtmlAttr(metadata.generatedAt)}">\`);
+      html = html.replace(genMetaRegex, '<meta name="vault-generated-at" content="' + escapeHtmlAttr(metadata.generatedAt) + '">');
     }
   }
 
   if (metadata.staleAfterMonths !== undefined) {
-    const staleMetaRegex = /<meta\\s+name=["']vault-stale-after-months["']\\s+content=["'][^"']*["']\\s*\\/?>/i;
+    const staleMetaRegex = /<meta\s+name=["']vault-stale-after-months["']\s+content=["'][^"']*["']\s*\/?>/i;
     if (staleMetaRegex.test(html)) {
-      html = html.replace(staleMetaRegex, \`<meta name="vault-stale-after-months" content="\${escapeHtmlAttr(metadata.staleAfterMonths)}">\`);
+      html = html.replace(staleMetaRegex, '<meta name="vault-stale-after-months" content="' + escapeHtmlAttr(metadata.staleAfterMonths) + '">');
     }
   }
 
   if (domain) {
-    const domainMetaRegex = /<meta\\s+name=["']recovery-dns-domain["']\\s+content=["'][^"']*["']\\s*\\/?>/i;
+    const domainMetaRegex = /<meta\s+name=["']recovery-dns-domain["']\s+content=["'][^"']*["']\s*\/?>/i;
     if (domainMetaRegex.test(html)) {
-      html = html.replace(domainMetaRegex, \`<meta name="recovery-dns-domain" content="\${escapeHtmlAttr(domain.trim())}">\`);
+      html = html.replace(domainMetaRegex, '<meta name="recovery-dns-domain" content="' + escapeHtmlAttr(domain.trim()) + '">');
     }
   }
 
@@ -1641,7 +2459,7 @@ function triggerDownload(filename, textContent) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
 }
 
 async function handleBuildVault() {
@@ -1649,6 +2467,7 @@ async function handleBuildVault() {
   const entropy = evaluatePassphraseEntropy(pass);
   if (!entropy.valid) {
     alert('Passphrase error: ' + entropy.reason);
+    selectSection('passphrase');
     document.getElementById('passphrase').focus();
     return;
   }
@@ -1669,7 +2488,7 @@ async function handleBuildVault() {
   statusDiv.style.display = 'block';
 
   try {
-    await new Promise(r => setTimeout(r, 40));
+    await new Promise(function(r) { setTimeout(r, 40); });
 
     const ciphertextB64 = await encryptPayload(payload, pass);
 
@@ -1705,10 +2524,10 @@ async function handleBuildVault() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('passphrase').addEventListener('input', updatePassphraseUI);
 
-  document.getElementById('btn-toggle-passphrase').addEventListener('click', () => {
+  document.getElementById('btn-toggle-passphrase').addEventListener('click', function() {
     const p = document.getElementById('passphrase');
     p.type = p.type === 'password' ? 'text' : 'password';
   });
@@ -1718,50 +2537,76 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-load-sample').addEventListener('click', loadSampleData);
   document.getElementById('btn-reset-all').addEventListener('click', clearAll);
 
-  document.getElementById('btn-select-template').addEventListener('click', () => {
+  document.getElementById('editor-btn-up').addEventListener('click', function() {
+    if (currentSelectedCardId) moveCardUp(currentSelectedCardId);
+  });
+  document.getElementById('editor-btn-down').addEventListener('click', function() {
+    if (currentSelectedCardId) moveCardDown(currentSelectedCardId);
+  });
+  document.getElementById('editor-btn-delete').addEventListener('click', function() {
+    if (currentSelectedCardId) deleteCard(currentSelectedCardId);
+  });
+
+  document.getElementById('recovery-domain').addEventListener('input', function(e) {
+    const el = document.getElementById('sidebar-domain-status');
+    if (el) el.innerText = e.target.value.trim() || 'recovery.yourdomain.com';
+  });
+
+  document.getElementById('btn-select-template').addEventListener('click', function() {
     document.getElementById('input-template-file').click();
   });
 
-  document.getElementById('input-template-file').addEventListener('change', (e) => {
+  document.getElementById('input-template-file').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = function(evt) {
       activeTemplate = evt.target.result;
       const statusBadge = document.getElementById('template-status');
-      statusBadge.innerText = \`✓ Custom (\${file.name})\`;
+      statusBadge.innerText = '✓ Custom (' + file.name + ')';
       statusBadge.className = 'badge badge-green';
       showToast('Loaded custom template: ' + file.name);
     };
     reader.readAsText(file);
   });
 
-  document.getElementById('btn-import-json').addEventListener('click', () => {
+  document.getElementById('btn-import-json').addEventListener('click', function() {
     document.getElementById('input-json-file').click();
   });
 
-  document.getElementById('input-json-file').addEventListener('change', (e) => {
+  document.getElementById('input-json-file').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = function(evt) {
       try {
         const json = JSON.parse(evt.target.result);
         const normalized = normalizeVaultPayload(json);
 
-        document.getElementById('cards-container').innerHTML = '';
+        const container = document.getElementById('cards-container');
+        container.innerHTML = '';
 
-        (normalized.items || []).forEach(item => {
-          addCard(item.type, item);
-        });
-
-        if (normalized.metadata) {
-          if (normalized.metadata.canaryCode) document.getElementById('canary-code').value = normalized.metadata.canaryCode;
-          if (normalized.metadata.staleAfterMonths) document.getElementById('stale-months').value = normalized.metadata.staleAfterMonths;
+        if (Array.isArray(normalized.items)) {
+          normalized.items.forEach(function(item) {
+            if (item.type) {
+              addCard(item.type, item);
+            }
+          });
         }
 
-        updateEmptyNotice();
-        showToast('Successfully imported ' + file.name);
+        if (normalized.metadata) {
+          if (normalized.metadata.canaryCode) {
+            document.getElementById('canary-code').value = normalized.metadata.canaryCode;
+          }
+          if (normalized.metadata.staleAfterMonths) {
+            document.getElementById('stale-months').value = normalized.metadata.staleAfterMonths;
+          }
+        }
+
+        renderSidebarCards();
+        const first = document.querySelector('#cards-container .card-item');
+        if (first) selectSection(first.dataset.id);
+        showToast('Imported payload.json successfully!');
       } catch (err) {
         alert('Invalid JSON file: ' + err.message);
       }
@@ -1769,7 +2614,7 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.readAsText(file);
   });
 
-  document.getElementById('btn-export-plaintext').addEventListener('click', () => {
+  document.getElementById('btn-export-plaintext').addEventListener('click', function() {
     const items = getCardsData();
     if (items.length === 0) {
       alert('Vault is empty. Add at least one credential card.');
@@ -1783,7 +2628,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-build-vault').addEventListener('click', handleBuildVault);
 
-  document.getElementById('btn-download-html').addEventListener('click', () => {
+  document.getElementById('btn-download-html').addEventListener('click', function() {
     if (!generatedHtml) {
       alert('No vault generated yet.');
       return;
@@ -1791,17 +2636,17 @@ document.addEventListener('DOMContentLoaded', () => {
     triggerDownload('index.html', generatedHtml);
   });
 
-  document.getElementById('btn-copy-ciphertext').addEventListener('click', () => {
+  document.getElementById('btn-copy-ciphertext').addEventListener('click', function() {
     if (generatedCiphertextB64) {
       copyText(generatedCiphertextB64);
     }
   });
 
-  document.getElementById('btn-copy-dns-name').addEventListener('click', () => {
+  document.getElementById('btn-copy-dns-name').addEventListener('click', function() {
     copyText(document.getElementById('dns-record-name').innerText);
   });
 
-  document.getElementById('btn-copy-git-snippet').addEventListener('click', () => {
+  document.getElementById('btn-copy-git-snippet').addEventListener('click', function() {
     copyText(document.getElementById('code-git-snippet').innerText);
   });
 
@@ -1816,23 +2661,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabGitContent = document.getElementById('tab-git-content');
 
   function selectTab(activeBtn, activeContent) {
-    [tabCfBtn, tabNetlifyBtn, tabVercelBtn, tabGitBtn].forEach(btn => btn.classList.remove('active'));
-    [tabCfContent, tabNetlifyContent, tabVercelContent, tabGitContent].forEach(c => c.style.display = 'none');
+    [tabCfBtn, tabNetlifyBtn, tabVercelBtn, tabGitBtn].forEach(function(btn) { btn.classList.remove('active'); });
+    [tabCfContent, tabNetlifyContent, tabVercelContent, tabGitContent].forEach(function(c) { c.style.display = 'none'; });
     activeBtn.classList.add('active');
     activeContent.style.display = 'block';
   }
 
-  tabCfBtn.addEventListener('click', () => selectTab(tabCfBtn, tabCfContent));
-  tabNetlifyBtn.addEventListener('click', () => selectTab(tabNetlifyBtn, tabNetlifyContent));
-  tabVercelBtn.addEventListener('click', () => selectTab(tabVercelBtn, tabVercelContent));
-  tabGitBtn.addEventListener('click', () => selectTab(tabGitBtn, tabGitContent));
+  tabCfBtn.addEventListener('click', function() { selectTab(tabCfBtn, tabCfContent); });
+  tabNetlifyBtn.addEventListener('click', function() { selectTab(tabNetlifyBtn, tabNetlifyContent); });
+  tabVercelBtn.addEventListener('click', function() { selectTab(tabVercelBtn, tabVercelContent); });
+  tabGitBtn.addEventListener('click', function() { selectTab(tabGitBtn, tabGitContent); });
 
-  document.getElementById('btn-back-to-edit').addEventListener('click', () => {
+  document.getElementById('btn-back-to-edit').addEventListener('click', function() {
     document.getElementById('view-deploy').style.display = 'none';
     document.getElementById('view-form').style.display = 'block';
   });
 
-  document.getElementById('btn-purge-and-lock').addEventListener('click', () => {
+  document.getElementById('btn-purge-and-lock').addEventListener('click', function() {
     if (!confirm('This will wipe all generated ciphertext and sensitive fields from browser memory. Proceed?')) return;
     generatedCiphertextB64 = null;
     generatedHtml = null;
