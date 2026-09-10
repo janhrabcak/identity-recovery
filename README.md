@@ -86,48 +86,59 @@ Deploy your private, encrypted recovery terminal to your preferred serverless ed
 
 ---
 
-## ⚡ 5-Minute Quick Start (Deploying Your Vault)
+## ⚡ 60-Second Quick Start (Deploying Your Vault)
 
-Anyone can clone and deploy their own recovery vault in 5 minutes:
+A complete recovery setup consists of **two defensive pillars**:
+1. **🌐 Pillar 1: The Web Recovery Terminal** — Hardened client-side decryption app hosted on Cloudflare Pages, Netlify, or Vercel.
+2. **📡 Pillar 2: The DNS TXT Dead-Drop** — An independent emergency fallback record queryable via DNS-over-HTTPS (DoH) if your web host is unreachable or censored.
 
-### 1. Clone or Use as Template
-Click **Use this template** on GitHub (or clone into a private repository):
+Choose the path that fits your workflow:
+
+---
+
+### Option A: In-Browser Web App (Zero Installs, Zero Git Clone)
+*Recommended for most users. No terminal, Git, or Node.js required.*
+
+1. **Build Your Vault & Ciphertext:**
+   Open **[idrecoverykit.com/app](https://idrecoverykit.com/app)** (or download [`tools/builder.html`](tools/builder.html) for offline air-gapped use).
+   - Enter your credentials (1Password Secret Key, Google backup codes, TOTP seeds).
+   - Generate or enter your memorized 6-word Diceware passphrase.
+   - Enter your target recovery domain (e.g. `sos.yourdomain.com`).
+   - Click **Encrypt & Build Recovery Terminal**.
+
+2. **Deploy the Web Terminal (Pillar 1):**
+   Click **⬇️ Download index.html** and deploy it in 10 seconds:
+   - **Cloudflare Pages:** Dashboard &rarr; **Workers & Pages** &rarr; **Create application** &rarr; **Pages** &rarr; **Direct Upload** (drag-and-drop the folder containing `index.html`).
+   - **Netlify:** Dashboard &rarr; **Sites** &rarr; **Netlify Drop** (drag-and-drop the folder).
+   *Your recovery terminal is now live at `https://sos.yourdomain.com`.*
+
+3. **Publish the DNS TXT Dead-Drop (Pillar 2):**
+   The builder screen displays your generated **Base64 Ciphertext**. In your DNS provider (Cloudflare DNS, AWS Route 53, Namecheap, etc.), add a `TXT` record:
+   - **Record Type:** `TXT`
+   - **Name / Host:** `sos` (or full subdomain `sos.yourdomain.com`)
+   - **Content / Value:** `<paste your Base64 ciphertext>`
+   - **TTL:** `120` seconds (or Auto)
+
+> [!TIP]
+> **Why the DNS dead-drop matters:** If your website is ever blocked, offline, or expired, you can open any recovery terminal, enter your domain, and click **⚡ Fetch from DNS**. The browser queries Cloudflare & Google DoH resolvers to pull your payload directly from DNS!
+
+---
+
+### Option B: 1-Command Automated CLI (Automates Web + DNS Sync)
+*Recommended for terminal users and automated rotation.*
+
+Run the interactive setup wizard directly with **zero repository cloning**:
 ```bash
-git clone https://github.com/janhrabcak/identity-recovery.git my-vault
-cd my-vault
+npx github:janhrabcak/identity-recovery
 ```
+*(Or if you prefer a private Git repository, click the green **[Use this template]** button on GitHub and run `./scripts/deploy.sh payload.json`)*
 
-### 2. Configure Environment
-```bash
-cp .env.example .env
-# Set your recovery DNS domain (e.g. RECOVERY_DOMAIN=recovery.yourdomain.com)
-```
-
-### 3. Prepare Credentials & Deploy
-
-#### Option A: Offline Web Builder (No Node.js/Terminal Needed)
-Simply double-click or open `tools/builder.html` in your web browser:
-1. Enter your credentials or load from `templates/sample-payload.json`.
-2. Generate or enter your 6-word Diceware passphrase.
-3. Click **Encrypt & Build Recovery Terminal** and download `index.html`.
-4. Follow the on-screen manual instructions to update Cloudflare Pages and your DNS TXT record.
-
-#### Option B: Hardened CLI Pipeline
-```bash
-# Generate a clean starting schema:
-node scripts/encrypt.js --sample fresh
-cp templates/sample-payload.json payload.json
-# Edit payload.json with your real secrets
-
-# Run the automated deployment pipeline:
-./scripts/deploy.sh payload.json
-```
-The script will prompt for your 6-word passphrase, verify entropy, run 20 automated tests, commit strictly `public/index.html`, push to `main`, and securely shred `payload.json`.
-
-### 4. Connect Cloudflare Pages, Netlify, or Vercel (Free)
-- **Cloudflare Pages:** Connect Git or deploy via Wrangler (`./scripts/deploy.sh`).
-- **Netlify:** Connect Git (uses `netlify.toml`) or Direct Upload (`./scripts/deploy.sh --provider netlify`).
-- **Vercel:** Connect Git (uses `vercel.json`) or Direct Upload (`./scripts/deploy.sh --provider vercel`).
+**What the CLI automates in one shot:**
+1. Derives encryption keys using PBKDF2-SHA256 (600,000 iterations) + AES-GCM-256.
+2. Direct-uploads to Cloudflare Pages, Netlify, or Vercel with zero Git secrets.
+3. **Automatically publishes or updates your Cloudflare DNS TXT dead-drop** via API (or prints the exact DNS table for other providers).
+4. Executes all 20 automated cryptographic and edge security tests.
+5. Securely shreds plaintext credentials from disk.
 
 ---
 
