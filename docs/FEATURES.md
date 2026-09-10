@@ -6,7 +6,7 @@
 
 ## 1. Minimalist Lock Screen & Live Diceware Counter
 - Clean, distraction-free UI eliminating cryptographic noise.
-- **Live Diceware Counter:** Real-time `X / 6 words` badge turns green (`✓ 6 / 6 words`) upon entering all 6 words.
+- **Live Diceware Counter:** Real-time `X / 6+ words` badge turns cyan (`✓ X words (Valid)`) at 6–7 words and green (`✓ X words (Strong)`) at $\ge 8$ words.
 - Masked password input with instant Show/Hide toggle.
 - Automatically handles Unicode NFKC normalization and whitespace collapsing.
 

@@ -47,9 +47,10 @@ export function normalizePassphrase(passphrase) {
 
 /**
  * Evaluates the entropy and complexity of a Diceware passphrase.
- * Enforces >= 6 words, >= 20 characters, >= 4 unique words, and min 2 chars per token.
+ * Enforces >= 6 words (minimum), recommended >= 8 words (~80 bits entropy with built-in list),
+ * >= 20 characters, >= 4 unique words, and min 2 chars per token.
  * @param {string} passphrase 
- * @returns {{ valid: boolean, reason?: string, wordCount: number, normalized?: string }}
+ * @returns {{ valid: boolean, reason?: string, wordCount: number, normalized?: string, strength?: 'valid'|'strong' }}
  */
 export function evaluatePassphraseEntropy(passphrase) {
   if (!passphrase || typeof passphrase !== 'string' || passphrase.trim().length === 0) {
@@ -61,7 +62,7 @@ export function evaluatePassphraseEntropy(passphrase) {
   if (words.length < 6) {
     return {
       valid: false,
-      reason: `Insufficient words (${words.length}/6). A minimum 6-word Diceware phrase (~77 bits entropy) is required.`,
+      reason: `Insufficient words (${words.length}/6). A minimum 6-word Diceware phrase is required (8 words recommended with built-in dictionary).`,
       wordCount: words.length
     };
   }
@@ -91,7 +92,12 @@ export function evaluatePassphraseEntropy(passphrase) {
     };
   }
 
-  return { valid: true, normalized, wordCount: words.length };
+  return {
+    valid: true,
+    normalized,
+    wordCount: words.length,
+    strength: words.length >= 8 ? 'strong' : 'valid'
+  };
 }
 
 /**
@@ -491,7 +497,7 @@ async function main() {
   }
   if (!pass) {
     while (true) {
-      pass = await promptUser('Enter 6-word Diceware passphrase: ', true);
+      pass = await promptUser('Enter Diceware passphrase (min 6 words, 8 recommended): ', true);
       if (!pass || pass.trim().length === 0) {
         console.error('Error: Passphrase cannot be empty.');
         continue;
@@ -499,7 +505,7 @@ async function main() {
       const entropy = evaluatePassphraseEntropy(pass);
       if (!entropy.valid && !allowLowEntropy) {
         console.error(`\n✗ Entropy warning: ${entropy.reason}`);
-        console.error('Please enter a valid 6-word Diceware passphrase (~77 bits entropy).\n');
+        console.error('Please enter a valid Diceware passphrase (minimum 6 words, 8 recommended for ~80 bits entropy).\n');
         continue;
       }
       break;

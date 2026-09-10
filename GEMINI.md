@@ -7,6 +7,11 @@
   - 16-byte random salt, 12-byte random IV.
   - AES-GCM-256 with 128-bit authentication tag.
   - Combined binary wire format: `[salt (16B)][iv (12B)][ciphertext + tag]`, encoded as standard Base64.
+- **Diceware Passphrase Tiering (Solution 3 Model):**
+  - Validation Floor: Minimum $\ge 6$ whitespace-delimited words, $\ge 20$ chars, $\ge 4$ unique words (accepts external 7,776-word EFF passphrases at ~77.5 bits).
+  - Built-in Dictionary: Contains 1,000 words ($\approx 9.97$ bits/word).
+  - Default Generator: Both CLI (`scripts/cli.js`) and Web Studio (`tools/builder.html`) generate **8 words** (`Uint32Array(8)`), guaranteeing $\approx 79.7$ bits (~80 bits) entropy.
+  - UI State Indicators: `< 6 words` (Incomplete/gray), `6–7 words` (Valid/cyan), `≥ 8 words` (Strong/green).
 - **Strict Content-Security-Policy:**
   - Terminal: `default-src 'none'; connect-src https://cloudflare-dns.com https://dns.google; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none';`
   - Builder / Studio: `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';`

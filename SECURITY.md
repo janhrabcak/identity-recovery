@@ -24,7 +24,7 @@ We will acknowledge receipt within 48 hours and coordinate remediation before pu
 |---|---|
 | **Cipher** | AES-GCM-256 (NIST SP 800-38D, 12-byte IV, 16-byte authentication tag) |
 | **KDF** | PBKDF2 with HMAC-SHA-256, 600,000 iterations (OWASP password storage guidelines) |
-| **Passphrase** | 6-word Diceware (~77 bits of entropy) with NFKC normalization |
+| **Passphrase** | Diceware passphrase (min 6 words, recommended 8 words for ~80 bits entropy) with NFKC normalization |
 | **Network Boundaries** | Strict Content Security Policy (`default-src 'none'`), zero external dependencies |
 | **Memory Sanitation** | Ephemeral DOM lifecycle, 45s clipboard auto-scrubbing, panic lock keybind (`Esc` x 3) |
 

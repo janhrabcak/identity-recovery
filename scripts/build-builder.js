@@ -684,6 +684,12 @@ const BUILDER_HTML = `<!DOCTYPE html>
       border: 1px solid var(--border-subtle);
     }
 
+    .badge-cyan {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
     .badge-green {
       background: var(--status-green-bg);
       color: var(--status-green-text);
@@ -1054,7 +1060,7 @@ const BUILDER_HTML = `<!DOCTYPE html>
         <div class="panel-header">
           <div>
             <h2 class="panel-title">🔑 Disaster Recovery Passphrase</h2>
-            <p class="panel-subtitle">A memorized 6+ word Diceware passphrase (~77 bits entropy) that decrypts your offline vault on any borrowed browser.</p>
+            <p class="panel-subtitle">A memorized Diceware passphrase (min 6 words, 8 recommended for ~80 bits entropy) that decrypts your offline vault on any borrowed browser.</p>
           </div>
         </div>
 
@@ -1062,12 +1068,12 @@ const BUILDER_HTML = `<!DOCTYPE html>
           <div class="form-group">
             <label for="passphrase">Emergency Passphrase</label>
             <div class="input-with-button">
-              <input type="password" id="passphrase" class="mono" placeholder="word1 word2 word3 word4 word5 word6" autocomplete="off" autocorrect="off" spellcheck="false">
+              <input type="password" id="passphrase" class="mono" placeholder="word1 word2 word3 word4 word5 word6..." autocomplete="off" autocorrect="off" spellcheck="false">
               <button type="button" class="btn btn-secondary" id="btn-toggle-passphrase" title="Show/Hide Passphrase">👁️</button>
             </div>
 
             <div class="validation-row" id="passphrase-validation">
-              <span class="badge badge-gray" id="badge-words">0 / 6 words</span>
+              <span class="badge badge-gray" id="badge-words">0 / 6+ words</span>
               <span class="badge badge-gray" id="badge-chars">0 / 20 chars</span>
               <span class="badge badge-gray" id="badge-unique">0 unique</span>
               <span class="badge badge-gray" id="badge-status">Entropy: Incomplete</span>
@@ -1407,7 +1413,7 @@ function evaluatePassphraseEntropy(passphrase) {
   };
 
   if (words.length < 6) {
-    res.reason = 'Insufficient words (' + words.length + '/6). Minimum 6 words required.';
+    res.reason = 'Insufficient words (' + words.length + '/6). Minimum 6 words required (8 recommended).';
     return res;
   }
   if (charCount < 20) {
@@ -1425,6 +1431,7 @@ function evaluatePassphraseEntropy(passphrase) {
 
   res.valid = true;
   res.normalized = normalized;
+  res.strength = words.length >= 8 ? 'strong' : 'valid';
   return res;
 }
 
@@ -1438,8 +1445,16 @@ function updatePassphraseUI() {
   const bStatus = document.getElementById('badge-status');
   const sbStatus = document.getElementById('sidebar-passphrase-status');
 
-  bWords.innerText = evalRes.wordCount + ' / 6 words';
-  bWords.className = evalRes.wordCount >= 6 ? 'badge badge-green' : 'badge badge-gray';
+  if (evalRes.wordCount >= 8) {
+    bWords.innerText = '✓ ' + evalRes.wordCount + ' words (Strong)';
+    bWords.className = 'badge badge-green';
+  } else if (evalRes.wordCount >= 6) {
+    bWords.innerText = '✓ ' + evalRes.wordCount + ' words (Valid)';
+    bWords.className = 'badge badge-cyan';
+  } else {
+    bWords.innerText = evalRes.wordCount + ' / 6+ words';
+    bWords.className = 'badge badge-gray';
+  }
 
   bChars.innerText = evalRes.charCount + ' / 20 chars';
   bChars.className = evalRes.charCount >= 20 ? 'badge badge-green' : 'badge badge-gray';
@@ -1448,10 +1463,15 @@ function updatePassphraseUI() {
   bUnique.className = evalRes.uniqueCount >= 4 ? 'badge badge-green' : 'badge badge-gray';
 
   if (evalRes.valid) {
-    const text = evalRes.wordCount >= 8 ? '✓ Strong (~80 bits entropy)' : '✓ Valid (≥6 words)';
-    bStatus.innerText = text;
-    bStatus.className = 'badge badge-green';
-    if (sbStatus) sbStatus.innerText = evalRes.wordCount + ' words • Strong';
+    if (evalRes.wordCount >= 8) {
+      bStatus.innerText = '✓ Strong (~80 bits entropy)';
+      bStatus.className = 'badge badge-green';
+      if (sbStatus) sbStatus.innerText = evalRes.wordCount + ' words • Strong';
+    } else {
+      bStatus.innerText = '✓ Valid (≥6 words)';
+      bStatus.className = 'badge badge-cyan';
+      if (sbStatus) sbStatus.innerText = evalRes.wordCount + ' words • Valid';
+    }
   } else if (evalRes.wordCount >= 4) {
     bStatus.innerText = 'Moderate entropy';
     bStatus.className = 'badge badge-amber';

@@ -17,7 +17,7 @@ Cloudflare Pages is the optimal hosting platform for this protocol because:
 The simplest and most accessible workflow:
 
 1. Open **[idrecoverykit.com/app](https://idrecoverykit.com/app)** in your browser (or open [`tools/builder.html`](../tools/builder.html) locally for offline air-gapped usage).
-2. Enter your credentials, generate a 6-word Diceware passphrase (~77 bits entropy), and specify your recovery domain (e.g. `sos.yourdomain.com`).
+2. Enter your credentials, generate a Diceware passphrase (min 6 words, 8 words recommended for ~80 bits entropy), and specify your recovery domain (e.g. `sos.yourdomain.com`).
 3. Click **Encrypt & Build Recovery Terminal**.
 4. Download your compiled `index.html` (and copy `_headers`).
 5. In the [Cloudflare Dashboard](https://dash.cloudflare.com/), navigate to:

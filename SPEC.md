@@ -62,8 +62,8 @@ identity-recovery/
 - **Key Derivation Function (KDF):** PBKDF2 with HMAC-SHA-256.
   - **Iterations:** 600,000 rounds (exceeding OWASP password storage recommendations).
   - **Salt:** 16 bytes (128 bits), cryptographically secure random.
-- **Key Material:** Memorized 6-word Diceware passphrase (~77 bits of entropy), strictly distinct from your password manager master password.
-  - **Entropy Validation Rules:** Validated at generation time for $\ge 6$ whitespace-delimited words, $\ge 20$ characters total length, $\ge 4$ unique words, and $\ge 2$ characters per token.
+- **Key Material:** Memorized Diceware passphrase (minimum 6 words for ~60–77 bits entropy, recommended 8 words for ~80 bits entropy with built-in dictionary), strictly distinct from your password manager master password.
+  - **Entropy Validation Rules:** Validated at generation time for $\ge 6$ whitespace-delimited words (minimum required; $\ge 8$ words categorized as "Strong"), $\ge 20$ characters total length, $\ge 4$ unique words, and $\ge 2$ characters per token.
   - **Normalization:** Passphrases undergo Unicode NFKC normalization, leading/trailing whitespace trimming, and collapse of consecutive whitespace (`\s+` to `\u0020`) before key derivation to guarantee consistency across terminals.
 - **Serialized Binary Format:**
   ```text
@@ -205,7 +205,7 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
 
 ### 3.7 Minimalist Lock Screen & Live Diceware Counter
 - Low-stress, distraction-free interface eliminating cryptographic jargon and developer noise.
-- Live `X / 6 words` counter badge that highlights green (`✓ 6 / 6 words`) upon entering all 6 words to prevent whitespace and counting mistakes.
+- Live `X / 6+ words` counter badge that highlights cyan (`✓ X words (Valid)`) at 6–7 words and green (`✓ X words (Strong)`) at $\ge 8$ words to prevent whitespace and counting mistakes.
 - Masked input with instant Show/Hide toggle.
 - Streamlined button states (`Unlock Vault` and `Unlocking...`).
 
@@ -256,14 +256,14 @@ Google 2SV backup codes are single-use. Re-entering consumed codes burns recover
   - `-p, --passphrase <phrase>`: Accepts Diceware passphrase (masked interactive prompt with entropy validation if omitted).
   - `-o, --output <file>`: Writes Base64 ciphertext to file.
   - `-d, --domain <domain>`: Configures recovery DNS domain.
-  - `--allow-low-entropy`: Explicitly bypasses the 6-word Diceware entropy validation rules.
+  - `--allow-low-entropy`: Explicitly bypasses Diceware entropy validation rules.
   - `--embed-html <file>`: Automatically injects the Base64 ciphertext into `const EMBEDDED_CIPHERTEXT = "..."` within `public/index.html`.
   - `--decrypt <base64>`: Decrypts and outputs formatted JSON to verify payload integrity offline.
 
 ### 5.2 Automated Deployment Script (`scripts/deploy.sh`)
 Hardened Bash orchestration script for rotation and multi-provider production publishing:
 1. **Pre-flight Checks:** Validates git repository, remote connectivity, and payload schema completeness.
-2. **Passphrase Ingestion:** Prompts for Diceware passphrase with masked input, verifies $\ge 6$ Diceware words via `evaluatePassphraseEntropy`, and confirms input to prevent typos.
+2. **Passphrase Ingestion:** Prompts for Diceware passphrase with masked input, verifies $\ge 6$ Diceware words via `evaluatePassphraseEntropy` (recommending 8 words), and confirms input to prevent typos.
 3. **Encryption & HTML Embedding:** Invokes `scripts/encrypt.js` to derive PBKDF2-600k keys and inject the Base64 ciphertext into `public/index.html` (or ephemeral staging directory).
 4. **Pre-Deploy Verification:** Executes `tests/test-suite.js` to guarantee cryptographic and runtime validity before deployment.
 5. **Deployment Execution:**
@@ -277,14 +277,14 @@ Hardened Bash orchestration script for rotation and multi-provider production pu
 - **Scheduled CI Automation:** Runs on the 1st and 15th of every month via GitHub Actions (`cron: '0 9 1,15 * *'`).
 - **Multi-Channel Push Alerting:** Supports `STALENESS_WEBHOOK_URL` (ntfy.sh, Discord, Slack, or generic HTTP endpoints) delivering high-priority push notifications directly to the operator's devices when the vault reaches `EXPIRING_SOON` or `STALE` status.
 - **Issue Lifecycle Management:**
-  - Automatically creates/updates an issue labeled `vault-staleness` when the vault is within 30 days of staleness or expired.
-  - Automatically closes open staleness issues when a newly rotated vault is deployed (`status == FRESH`).
+   - Automatically creates/updates an issue labeled `vault-staleness` when the vault is within 30 days of staleness or expired.
+   - Automatically closes open staleness issues when a newly rotated vault is deployed (`status == FRESH`).
 
 ### 5.4 Offline Web Compiler (`tools/builder.html` & `scripts/build-builder.js`)
 - **Runtime & Execution Model:** Standalone, single-file zero-dependency HTML application executable in any modern web browser via `file://` or local HTTP.
 - **Security Boundary:** Bound by strict CSP (`default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none';`), mathematically barring network transmission.
 - **Cryptographic Engine:** Executes browser-native WebCrypto (`window.crypto.subtle`) for PBKDF2-SHA-256 (600,000 rounds) key derivation and AES-GCM-256 authenticated encryption.
-- **CSPRNG Diceware Engine:** Generates 6-word Diceware phrases using `window.crypto.getRandomValues` and an embedded 1,000-word dictionary with real-time entropy evaluation.
+- **CSPRNG Diceware Engine:** Generates 8-word Diceware phrases (~80 bits entropy) using `window.crypto.getRandomValues` and an embedded 1,000-word dictionary with real-time entropy evaluation.
 - **Pre-Flight In-Memory Round-Trip Verification:** Automatically attempts decryption against the in-memory payload and validates the canary code prior to compiling the final output.
 - **Template Embedding & Override:** Ships with `public/index.html` embedded as Base64, with interactive drag-and-drop file input allowing custom template ingestion.
 - **Deployment & Dead-Drop Assistance:** Generates a downloadable `index.html` alongside pre-formatted manual deployment guides for Cloudflare Pages (Git & Direct Upload) and DNS TXT dead-drop tables with 1-click clipboard helpers.

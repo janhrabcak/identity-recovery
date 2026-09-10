@@ -29,7 +29,7 @@ When physical disaster strikes (stolen phone, laptop, and YubiKey), you enter a 
 - **1Password / Bitwarden** require a **34-character Secret Key or Master Password** (stored on your stolen laptop).
 - **Google / Apple / GitHub** require a **hardware key or 2SV prompt** (sent to your stolen phone).
 
-**The Solution:** An offline AES-GCM-256 encrypted single-file recovery terminal unlocked on **any untrusted browser** using a single memorized 6-word Diceware passphrase (~77 bits entropy). Supports modular cards for **Password Managers**, **2SV Backup Codes**, **BIP-39 Seed Phrases**, **Live TOTP**, and **SSH/LUKS keys**.
+**The Solution:** An offline AES-GCM-256 encrypted single-file recovery terminal unlocked on **any untrusted browser** using a single memorized Diceware passphrase (minimum 6 words, recommended 8 words for ~80 bits entropy). Supports modular cards for **Password Managers**, **2SV Backup Codes**, **BIP-39 Seed Phrases**, **Live TOTP**, and **SSH/LUKS keys**.
 
 ### Two Defensive Pillars
 1. **🌐 Pillar 1: Web Recovery Terminal** — Hardened client-side decryption app hosted on Cloudflare Pages, Netlify, or Vercel.
@@ -44,7 +44,7 @@ When physical disaster strikes (stolen phone, laptop, and YubiKey), you enter a 
 
 1. **Build Your Vault & Ciphertext:**
    Open **[idrecoverykit.com/app](https://idrecoverykit.com/app)** (or save [`tools/builder.html`](tools/builder.html) for offline air-gapped use).
-   - Enter your credentials, set your 6-word Diceware passphrase, and specify your recovery domain (e.g. `sos.yourdomain.com`).
+   - Enter your credentials, set your Diceware passphrase (min 6 words, 8 recommended), and specify your recovery domain (e.g. `sos.yourdomain.com`).
    - Click **Encrypt & Build Recovery Terminal**.
 
 2. **Deploy the Web Terminal (Pillar 1):**

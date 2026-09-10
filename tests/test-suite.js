@@ -165,8 +165,13 @@ async function runTests() {
   // Test 10: Diceware Passphrase Entropy Validation
   console.log("\n[Test 10] Diceware Passphrase Entropy Validation");
   const validEntropy = evaluatePassphraseEntropy("correct horse battery staple zebra guitar");
-  if (!validEntropy.valid || validEntropy.wordCount !== 6) {
-    throw new Error("Test 10 Failed: Valid Diceware phrase was rejected!");
+  if (!validEntropy.valid || validEntropy.wordCount !== 6 || validEntropy.strength !== 'valid') {
+    throw new Error("Test 10 Failed: Valid 6-word Diceware phrase was rejected or did not have strength 'valid'!");
+  }
+
+  const strongEntropy = evaluatePassphraseEntropy("correct horse battery staple zebra guitar beacon alpine");
+  if (!strongEntropy.valid || strongEntropy.wordCount !== 8 || strongEntropy.strength !== 'strong') {
+    throw new Error("Test 10 Failed: 8-word Diceware phrase was rejected or did not have strength 'strong'!");
   }
 
   const shortWords = evaluatePassphraseEntropy("correct horse battery");

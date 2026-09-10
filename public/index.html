@@ -818,13 +818,13 @@
           <div class="form-group" style="margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <label for="passphrase-input" style="margin-bottom: 0;">Passphrase</label>
-              <span id="word-count-badge" style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">0 / 6 words</span>
+              <span id="word-count-badge" style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">0 / 6+ words</span>
             </div>
             <div class="input-wrapper">
               <input 
                 type="password" 
                 id="passphrase-input" 
-                placeholder="word1 word2 word3 word4 word5 word6" 
+                placeholder="word1 word2 word3 word4 word5 word6..." 
                 autocomplete="off" 
                 autocorrect="off" 
                 autocapitalize="off" 
@@ -1943,14 +1943,14 @@ var qrcodegen;
       if (!badge) return;
       const words = (val || "").trim().normalize("NFKC").split(/\s+/).filter(w => w.length > 0);
       const count = words.length;
-      if (count === 6) {
-        badge.textContent = "✓ 6 / 6 words";
+      if (count >= 8) {
+        badge.textContent = `✓ ${count} words (Strong)`;
         badge.style.color = "#34d399";
-      } else if (count > 6) {
-        badge.textContent = `${count} words`;
+      } else if (count >= 6) {
+        badge.textContent = `✓ ${count} words (Valid)`;
         badge.style.color = "#38bdf8";
       } else {
-        badge.textContent = `${count} / 6 words`;
+        badge.textContent = `${count} / 6+ words`;
         badge.style.color = "var(--text-muted)";
       }
     }

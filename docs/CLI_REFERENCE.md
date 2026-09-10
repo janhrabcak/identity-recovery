@@ -15,7 +15,7 @@ npx github:janhrabcak/identity-recovery
 ### What the 1-Command CLI Automates:
 1. **Zero Git Clone:** Runs instantly via `npx` without needing to clone or manage a local Git repository.
 2. **Interactive Setup Wizard:** Automatically creates a starter `payload.json` template or uses your existing credentials file.
-3. **Diceware Passphrase Handling:** Generates a cryptographically secure 6-word Diceware passphrase (~77 bits entropy) or strictly validates your custom passphrase.
+3. **Diceware Passphrase Handling:** Generates a cryptographically secure 8-word Diceware passphrase (~80 bits entropy) or strictly validates your custom passphrase (minimum 6 words).
 4. **Offline WebCrypto Encryption:** Uses PBKDF2-SHA256 (600,000 rounds) and AES-GCM-256 to build the self-contained `index.html` Web Recovery Terminal (Pillar 1) and generates the secondary DNS TXT dead-drop ciphertext (Pillar 2).
 5. **Automated Verification:** Executes all 20 end-to-end cryptographic and edge security test suites before publishing.
 6. **Direct Edge Deployment:** Uploads directly to Cloudflare Pages, Netlify, or Vercel with zero Git secrets.
@@ -57,7 +57,7 @@ For users working within a cloned repository, air-gapped offline environments, o
 
 ### What `deploy.sh` Does Automatically:
 1. **Pre-flight Checks:** Verifies Git repository status, remote connectivity, and payload schema completeness.
-2. **Passphrase Ingestion:** Prompts with masked input, calculates Diceware entropy (~77 bits required), and requires confirmation to avoid typos.
+2. **Passphrase Ingestion:** Prompts with masked input, calculates Diceware entropy (minimum 6 words, 8 recommended for ~80 bits), and requires confirmation to avoid typos.
 3. **Offline WebCrypto Encryption:** Derives PBKDF2-600k keys and injects ciphertext directly into HTML.
 4. **Automated Verification:** Runs all 20 automated tests in `tests/test-suite.js` to guarantee cryptographic, edge security, and runtime integrity.
 5. **Edge Deployment:** Deploys directly via provider CLI or pushes to Git.
@@ -88,7 +88,7 @@ node scripts/encrypt.js [options]
 | `--embed-html <file>` | Injects ciphertext directly into `public/index.html` placeholder |
 | `--decrypt <base64>` | Decrypts ciphertext and outputs formatted JSON to stdout |
 | `--sample [fresh\|stale]` | Generates a template `templates/sample-payload.json` |
-| `--allow-low-entropy` | Overrides the 6-word Diceware entropy requirement (testing only) |
+| `--allow-low-entropy` | Overrides the Diceware entropy requirement (testing only) |
 | `-h, --help` | Displays help documentation |
 
 ### Common CLI Examples
@@ -101,11 +101,11 @@ node scripts/encrypt.js --sample fresh
 node scripts/encrypt.js -i payload.json --embed-html public/index.html
 
 # 3. Encrypt to standalone base64 file
-ENCRYPT_PASSPHRASE="my six secret diceware words here" \
+ENCRYPT_PASSPHRASE="my eight secret diceware words phrase here" \
   node scripts/encrypt.js -i payload.json -o ciphertext.b64
 
 # 4. Verify decryption of a ciphertext string offline
-node scripts/encrypt.js --decrypt "$(cat ciphertext.b64)" -p "my six secret diceware words here"
+node scripts/encrypt.js --decrypt "$(cat ciphertext.b64)" -p "my eight secret diceware words phrase here"
 ```
 
 ---

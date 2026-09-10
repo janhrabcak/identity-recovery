@@ -224,7 +224,7 @@ echo -e "${C_GREEN}✓ Pre-flight checks passed. Using payload: ${PAYLOAD_FILE}$
 # 2. Secure Passphrase Prompt
 # ------------------------------------------------------------------------------
 echo -e "${C_BOLD}[2/7] Passphrase Ingestion${C_RESET}"
-echo "Enter your memorized 6-word Diceware passphrase."
+echo "Enter your memorized Diceware passphrase (minimum 6 words, 8 recommended)."
 
 while true; do
   read -s -rp "Passphrase: " PASSPHRASE
@@ -250,7 +250,7 @@ while true; do
 
   if [[ "${ENTROPY_STATUS:-0}" -ne 0 ]]; then
     echo -e "${C_RED}✗ Passphrase Entropy Error: ${ENTROPY_CHECK}${C_RESET}"
-    echo -e "${C_YELLOW}Please enter a valid 6-word Diceware passphrase (~77 bits entropy).${C_RESET}\n"
+    echo -e "${C_YELLOW}Please enter a valid Diceware passphrase (minimum 6 words, 8 recommended for ~80 bits entropy).${C_RESET}\n"
     unset ENTROPY_STATUS
     continue
   fi
@@ -260,7 +260,7 @@ while true; do
   if [[ "$PASSPHRASE" != "$PASSPHRASE_CONFIRM" ]]; then
     echo -e "${C_RED}✗ Passphrases did not match. Please try again.${C_RESET}"
   else
-    echo -e "${C_GREEN}✓ Passphrase confirmed (${ENTROPY_CHECK} words, ~77 bits entropy verified).${C_RESET}\n"
+    echo -e "${C_GREEN}✓ Passphrase confirmed (${ENTROPY_CHECK} words, valid entropy verified).${C_RESET}\n"
     break
   fi
 done

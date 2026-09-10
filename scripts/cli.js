@@ -120,7 +120,7 @@ const DICEWARE_WORDS = [
 ];
 
 function generateDiceware() {
-  const arr = new Uint32Array(6);
+  const arr = new Uint32Array(8);
   getRandomValues(arr);
   return Array.from(arr).map(n => DICEWARE_WORDS[n % DICEWARE_WORDS.length]).join(' ');
 }
@@ -217,18 +217,23 @@ async function main() {
 
   // Step 2: Passphrase
   console.log('\n--- Step 2: Diceware Passphrase ---');
-  console.log('[1] Enter my own 6-word Diceware passphrase');
-  console.log('[2] Generate a cryptographically secure 6-word Diceware passphrase (~77 bits)');
+  console.log('[1] Enter my own Diceware passphrase (minimum 6 words)');
+  console.log('[2] Generate a cryptographically secure 8-word Diceware passphrase (~80 bits)');
   const passChoice = await promptText('Select [1 or 2, default 2]: ');
 
   let passphrase = '';
   if (passChoice === '1') {
     while (true) {
-      passphrase = await promptText('Enter 6-word Diceware passphrase: ', true);
+      passphrase = await promptText('Enter Diceware passphrase (min 6 words, 8 recommended): ', true);
       const evalRes = evaluatePassphraseEntropy(passphrase);
       if (!evalRes.valid) {
         console.log(`❌ ${evalRes.reason}. Please try again.\n`);
         continue;
+      }
+      if (evalRes.strength === 'strong') {
+        console.log(`✓ Strong passphrase accepted (${evalRes.wordCount} words, ~80+ bits entropy).\n`);
+      } else {
+        console.log(`✓ Valid passphrase accepted (${evalRes.wordCount} words).\n`);
       }
       break;
     }
@@ -237,7 +242,7 @@ async function main() {
     console.log('\n🔑 Generated Passphrase:');
     console.log(`\x1b[32m\x1b[1m  ${passphrase}  \x1b[0m\n`);
     console.log('⚠️  WRITE THIS DOWN ON PHYSICAL PAPER OR MEMORIZE IT.');
-    console.log('This 6-word phrase is the ONLY key to decrypt your recovery terminal.\n');
+    console.log('This 8-word phrase (~80 bits entropy) is the ONLY key to decrypt your recovery terminal.\n');
     await promptText('Press Enter once you have securely written it down...');
   }
 
