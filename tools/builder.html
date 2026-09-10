@@ -642,7 +642,7 @@
       <!-- Cloudflare Tab -->
       <div id="tab-cf-content">
         <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">
-          <strong>Option A: Direct Upload via Web Dashboard (Zero Git Secrets)</strong>
+          <strong>Option A: Direct Upload via Web Dashboard (Zero Git Clone, Zero Terminal)</strong>
         </p>
         <ol style="margin-left: 20px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
           <li>Log into the <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener" style="color: var(--border-focus);">Cloudflare Dashboard</a>.</li>
@@ -651,15 +651,15 @@
           <li>Click <strong>Deploy site</strong>. Your vault is live worldwide on Cloudflare's Anycast Edge!</li>
         </ol>
         <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 12px 0 6px 0;">
-          <strong>Option B: CLI Direct Deploy</strong>
+          <strong>Option B: 1-Command Automated CLI (Zero Git Clone)</strong>
         </p>
-        <div class="code-block">./scripts/deploy.sh payload.json --provider cloudflare --project identity-recovery</div>
+        <div class="code-block">npx github:janhrabcak/identity-recovery --provider cloudflare</div>
       </div>
 
       <!-- Netlify Tab -->
       <div id="tab-netlify-content" style="display: none;">
         <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">
-          <strong>Option A: Netlify Drop Web Dashboard (Zero Git Secrets)</strong>
+          <strong>Option A: Netlify Drop Web Dashboard (Zero Git Clone, Zero Terminal)</strong>
         </p>
         <ol style="margin-left: 20px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
           <li>Log into the <a href="https://app.netlify.com/" target="_blank" rel="noopener" style="color: var(--border-focus);">Netlify Dashboard</a>.</li>
@@ -668,22 +668,22 @@
           <li>Your recovery vault is live with full edge security header parity!</li>
         </ol>
         <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 12px 0 6px 0;">
-          <strong>Option B: CLI Direct Deploy</strong>
+          <strong>Option B: 1-Command Automated CLI (Zero Git Clone)</strong>
         </p>
-        <div class="code-block">./scripts/deploy.sh payload.json --provider netlify --site &lt;YOUR_NETLIFY_SITE_ID&gt;</div>
+        <div class="code-block">npx github:janhrabcak/identity-recovery --provider netlify</div>
       </div>
 
       <!-- Vercel Tab -->
       <div id="tab-vercel-content" style="display: none;">
         <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">
-          <strong>Option A: CLI Direct Deploy (Zero Git Secrets)</strong>
+          <strong>Option A: 1-Command Automated CLI (Zero Git Clone)</strong>
         </p>
         <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px;">
-          Deploy directly to Vercel production edge without committing ciphertext:
+          Deploy directly to Vercel production edge without cloning or committing ciphertext:
         </p>
-        <div class="code-block">./scripts/deploy.sh payload.json --provider vercel --project identity-recovery</div>
+        <div class="code-block">npx github:janhrabcak/identity-recovery --provider vercel</div>
         <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 12px 0 6px 0;">
-          <strong>Option B: Git Integration</strong>
+          <strong>Option B: Git Integration (Private Repositories)</strong>
         </p>
         <ol style="margin-left: 20px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
           <li>Import your repository in the <a href="https://vercel.com/dashboard" target="_blank" rel="noopener" style="color: var(--border-focus);">Vercel Dashboard</a>.</li>

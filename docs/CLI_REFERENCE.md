@@ -4,9 +4,37 @@ All offline scripts are strictly zero-dependency, running exclusively on the Nod
 
 ---
 
-## 1. Automated Deployment Pipeline (`scripts/deploy.sh`)
+## 1. 1-Command Automated CLI Wizard (Zero Git Clone)
 
-The recommended way to rotate credentials and publish to the edge in one hardened operation:
+The fastest and most secure way to build, test, and deploy your vault with **zero repository cloning**:
+
+```bash
+npx github:janhrabcak/identity-recovery
+```
+
+### What the 1-Command CLI Automates:
+1. **Zero Git Clone:** Runs instantly via `npx` without needing to clone or manage a local Git repository.
+2. **Interactive Setup Wizard:** Automatically creates a starter `payload.json` template or uses your existing credentials file.
+3. **Diceware Passphrase Handling:** Generates a cryptographically secure 6-word Diceware passphrase (~77 bits entropy) or strictly validates your custom passphrase.
+4. **Offline WebCrypto Encryption:** Uses PBKDF2-SHA256 (600,000 rounds) and AES-GCM-256 to build the self-contained `index.html` Web Recovery Terminal (Pillar 1) and generates the secondary DNS TXT dead-drop ciphertext (Pillar 2).
+5. **Automated Verification:** Executes all 20 end-to-end cryptographic and edge security test suites before publishing.
+6. **Direct Edge Deployment:** Uploads directly to Cloudflare Pages, Netlify, or Vercel with zero Git secrets.
+7. **Cloudflare DNS Dead-Drop Sync:** Automatically pushes the encrypted Base64 ciphertext to your Cloudflare DNS zone as a `TXT` record with 120s TTL (or prints the exact DNS table for other registrars).
+8. **Secure Plaintext Shredding:** Offers to securely wipe unencrypted credentials from disk (3-pass overwrite + zero-fill).
+
+You can also pass arguments directly:
+```bash
+# Direct deploy with an existing payload to a specific provider
+npx github:janhrabcak/identity-recovery payload.json --provider cloudflare --project my-vault
+npx github:janhrabcak/identity-recovery payload.json --provider netlify --site <SITE_ID>
+npx github:janhrabcak/identity-recovery payload.json --provider vercel
+```
+
+---
+
+## 2. Local Deployment Pipeline (`scripts/deploy.sh`)
+
+For users working within a cloned repository, air-gapped offline environments, or custom CI/CD pipelines:
 
 ```bash
 ./scripts/deploy.sh [options] [path-to-payload.json]
@@ -38,7 +66,7 @@ The recommended way to rotate credentials and publish to the edge in one hardene
 
 ---
 
-## 2. Encryption CLI (`scripts/encrypt.js`)
+## 3. Encryption CLI (`scripts/encrypt.js`)
 
 Standalone Node.js CLI utility implementing PBKDF2-SHA-256 (600,000 rounds) and AES-GCM-256:
 
@@ -82,7 +110,7 @@ node scripts/encrypt.js --decrypt "$(cat ciphertext.b64)" -p "my six secret dice
 
 ---
 
-## 3. Staleness Evaluator (`scripts/check-staleness.js`)
+## 4. Staleness Evaluator (`scripts/check-staleness.js`)
 
 Zero-knowledge vault freshness evaluator used locally and in GitHub Actions:
 
@@ -105,7 +133,7 @@ Does **not** require any decryption passphrase. It inspects the public `<meta na
 
 ---
 
-## 4. Test Suite (`tests/test-suite.js`)
+## 5. Test Suite (`tests/test-suite.js`)
 
 Runs end-to-end cryptographic and structural tests across 20 test suites:
 
@@ -138,7 +166,7 @@ npm test
 
 ---
 
-## 5. Builder Generator (`scripts/build-builder.js`)
+## 6. Builder Generator (`scripts/build-builder.js`)
 
 Recompiles the standalone `tools/builder.html` tool, embedding the latest base64 template from `public/index.html` and updating the Diceware dictionary:
 
@@ -151,7 +179,7 @@ Run this command whenever you make improvements to `public/index.html` or styles
 
 ---
 
-## 6. Site Builder (`scripts/build-site.js`)
+## 7. Site Builder (`scripts/build-site.js`)
 
 Synchronizes the web platform assets (`site/`) and GitHub Pages demo (`docs/`), and generates multi-provider edge security headers and canonical redirects via the provider registry:
 
@@ -162,7 +190,7 @@ npm run build:site
 
 ---
 
-## 7. Modular Web Platform Deployment (`scripts/deploy-site.sh`)
+## 8. Modular Web Platform Deployment (`scripts/deploy-site.sh`)
 
 Deploys the public web platform (`site/`) to your preferred edge hosting provider (Cloudflare Pages, Netlify, or Vercel):
 
@@ -184,7 +212,7 @@ npm run deploy:site -- --provider vercel
 
 ---
 
-## 8. Hosting Provider Registry CLI (`scripts/providers/index.js`)
+## 9. Hosting Provider Registry CLI (`scripts/providers/index.js`)
 
 Command-line utility for inspecting and managing modular hosting providers:
 

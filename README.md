@@ -71,7 +71,7 @@ Run the interactive setup wizard directly with **zero repository cloning**:
 ```bash
 npx github:janhrabcak/identity-recovery
 ```
-*(Or click **[Use this template]** on GitHub and run `./scripts/deploy.sh payload.json`)*
+*(For offline air-gapped environments or local cloning, `./scripts/deploy.sh payload.json` is also available)*
 
 **What the CLI automates in one shot:**
 1. Derives encryption keys using PBKDF2-SHA256 (600,000 iterations) + AES-GCM-256.
@@ -98,7 +98,7 @@ npx github:janhrabcak/identity-recovery
 |---|---|
 | [**`SPEC.md`**](SPEC.md) | Cryptographic specification, data schemas, and threat model. |
 | [**`docs/DEPLOYMENT.md`**](docs/DEPLOYMENT.md) | Multi-provider deployment (Cloudflare Pages, Netlify, Vercel, Caddy, Nginx) and DNS TXT dead-drop configuration. |
-| [**`docs/CLI_REFERENCE.md`**](docs/CLI_REFERENCE.md) | Command-line reference for `deploy.sh`, `encrypt.js`, `check-staleness.js`, and test suites. |
+| [**`docs/CLI_REFERENCE.md`**](docs/CLI_REFERENCE.md) | Command-line reference for the 1-command CLI wizard, `deploy.sh`, `encrypt.js`, and test suites. |
 | [**`docs/FEATURES.md`**](docs/FEATURES.md) | Live TOTP generation, offline QR codes, panic purge, and emergency paper printout. |
 
 ---
