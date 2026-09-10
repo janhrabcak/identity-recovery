@@ -23,7 +23,7 @@ Deploy your private, encrypted recovery terminal to your preferred serverless ed
 [![Deploy to Cloudflare Pages](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/janhrabcak/identity-recovery)
 
 <p align="center">
-  <img src="docs/demo.gif" alt="Identity Recovery Protocol Web Builder Demo" width="800">
+  <img src="https://idrecoverykit.com/demo.gif" alt="Identity Recovery Protocol Web Builder Demo" width="800">
 </p>
 
 ### 🛡️ Repository Health & Cryptographic Posture
@@ -146,33 +146,22 @@ The script will prompt for your 6-word passphrase, verify entropy, run 20 automa
 
 ```text
 identity-recovery/
-├── public/                       # 🌐 Public edge deployment (Cloudflare Pages / Netlify / Vercel)
+├── public/                       # 🌐 Private recovery terminal edge deployment (Cloudflare Pages / Netlify / Vercel)
 │   ├── index.html                # Recovery terminal UI (contains encrypted ciphertext)
 │   └── _headers                  # Strict HTTP security headers (CSP, HSTS, no-store)
-│
-├── site/                         # 🌐 Public product hub (idrecoverykit.com)
-│   ├── index.html                # Project landing page & documentation hub
-│   ├── app/index.html            # Hosted web vault builder (synced from tools/builder.html)
-│   ├── _headers                  # Cloudflare/Netlify edge headers & app no-store rules
-│   ├── _redirects                # Canonical www to apex domain redirects
-│   ├── netlify.toml              # Netlify edge security header configuration
-│   └── vercel.json               # Vercel edge headers & app no-store rules
 │
 ├── tools/                        # 🖥️ Offline client-side browser tools
 │   └── builder.html              # Standalone web builder to generate index.html offline
 │
 ├── scripts/                      # 🛠️ Private offline tooling (trusted machine only)
 │   ├── build-builder.js          # Generator script to refresh tools/builder.html
-│   ├── build-site.js             # Generator script to sync site/app and edge headers
 │   ├── deploy.sh                 # 7-step rotation, verification, and publish pipeline (Direct Upload or Git)
-│   ├── deploy-site.sh            # Modular web platform deployment script (idrecoverykit.com)
 │   ├── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
 │   ├── check-staleness.js        # Zero-knowledge staleness evaluator for CI/alerts
 │   └── providers/                # 🔌 Pluggable hosting provider framework (Cloudflare, Netlify, Vercel, etc.)
 │
 ├── .github/workflows/            # ⏰ CI & scheduled monitoring
 │   ├── ci.yml                    # Automated tests across Node 18, 20, 22
-│   ├── deploy-site.yml           # Automated web platform deployment to Cloudflare Pages
 │   └── staleness-check.yml       # Bi-monthly automated staleness alert workflow
 │
 ├── docs/                         # 📖 In-depth guides
@@ -194,6 +183,9 @@ identity-recovery/
 ├── README.md                     # Landing page & quick run guide
 └── SPEC.md                       # Full cryptographic specification
 ```
+
+> 🌐 **Domain Separation & Decoupled Architecture:**
+> The public product website and hosted offline vault compiler at [**idrecoverykit.com**](https://idrecoverykit.com) is decoupled into its own standalone repository: [**`janhrabcak/idrecoverykit-site`**](https://github.com/janhrabcak/idrecoverykit-site). This maintains strict origin isolation between the public web product and personal vault deployments, eliminates cross-site contamination risks, and guarantees that the core cryptographic protocol in `identity-recovery` requires zero third-party dependencies.
 
 ---
 

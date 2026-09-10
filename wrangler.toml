@@ -1,8 +1,8 @@
-name = "idrecoverykit"
+name = "identity-recovery"
 compatibility_date = "2024-09-01"
 
 [build]
 command = "npm run build"
 
 [assets]
-directory = "./site"
+directory = "./public"

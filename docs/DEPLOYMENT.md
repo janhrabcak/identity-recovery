@@ -217,59 +217,48 @@ server {
 
 ---
 
-## 8. Deploying the Web Platform to `idrecoverykit.com` (Cloudflare Pages)
+## 8. Decoupled Web Platform Architecture (`idrecoverykit.com`)
 
-The public product hub and client-side web vault builder reside in the [`site/`](../site/) directory:
-- **`site/index.html`:** Product landing page, cryptographic specification, and security transparency hub.
-- **`site/app/index.html`:** Offline-capable PWA web vault builder.
-- **`site/_headers`:** Edge security headers (strict CSP, HSTS, anti-clickjacking) with `/app/*` cache prevention.
-- **`site/_redirects`:** Automatic 301 redirection from `www.idrecoverykit.com` to `idrecoverykit.com`.
+To adhere to the principle of least privilege and strict web origin isolation, the public product hub and hosted vault compiler for [**idrecoverykit.com**](https://idrecoverykit.com) are maintained in a completely separate repository: [**`janhrabcak/idrecoverykit-site`**](https://github.com/janhrabcak/idrecoverykit-site).
 
-### Option A: Automated CI/CD via GitHub Actions (Recommended)
+### Why Separate the Web Platform from the Protocol Repository?
 
-The repository includes [`.github/workflows/deploy-site.yml`](../.github/workflows/deploy-site.yml) which automatically runs tests, builds the web platform, and deploys to Cloudflare Pages on every push to `main` touching web assets.
+1. **Origin & Attack Surface Isolation:** A public website requires marketing content, sitemaps, AI discovery manifests, and community media. Keeping it isolated in a separate repository ensures that public web changes can never compromise or introduce vulnerabilities into the core cryptographic recovery codebase.
+2. **Zero Dependencies in Core Vault:** The `identity-recovery` repository requires zero external npm runtime or build packages, relying entirely on Node native APIs and browser WebCrypto (`crypto.subtle`).
+3. **Independent Deployments & Access Control:** Public marketing releases do not trigger or interfere with personal recovery vault deployments or staleness checks.
 
-1. In your GitHub repository, navigate to **Settings** → **Secrets and variables** → **Actions**.
-2. Add the following repository secrets:
-   - `CLOUDFLARE_API_TOKEN`: Cloudflare API Token with `Cloudflare Pages: Edit` permissions.
-   - `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare Account ID (found on the right sidebar of the Cloudflare Dashboard overview).
-3. Push to `main` or trigger manually from the **Actions** tab.
+### Deploying `idrecoverykit.com` from `idrecoverykit-site`
 
-### Option B: Local CLI Deployment via Wrangler
-
-You can deploy directly from your local terminal using the preconfigured deploy script:
-
+Within the standalone `idrecoverykit-site` repository:
 ```bash
-# 1. Build and verify site integrity
-npm run build:site
+# Verify integrity of standalone site assets
+npm test
 
-# 2. Deploy directly to Cloudflare Pages
-npm run deploy:site
-# Or: ./scripts/deploy-site.sh --project idrecoverykit
+# Deploy to Cloudflare Pages (or Netlify/Vercel)
+npm run deploy
+# Or via CLI: ./scripts/deploy.sh --provider cloudflare --project idrecoverykit
 ```
 
-If `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` are set in your local `.env`, the script deploys headlessly; otherwise, Wrangler will authenticate via your browser.
-
-### Option C: Configuring Custom Domain `idrecoverykit.com` (Cloudflare Registrar)
+### Configuring Custom Domain `idrecoverykit.com` (Cloudflare Registrar)
 
 Because your domain is registered directly with Cloudflare Registrar:
 1. Go to the [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages**.
-2. Select the **`idrecoverykit`** Pages project.
+2. Select the **`idrecoverykit`** Pages project (pointing to the `idrecoverykit-site` repository).
 3. Open the **Custom domains** tab and click **Set up a custom domain**.
 4. Enter `idrecoverykit.com` and click **Continue**. Cloudflare automatically adds the apex CNAME flattening record to your DNS zone.
-5. Repeat for `www.idrecoverykit.com` (handled via `site/_redirects` to point to the apex).
+5. Repeat for `www.idrecoverykit.com` (handled via `_redirects` to point to the apex).
 6. Under **SSL/TLS** settings for your zone, ensure encryption mode is set to **Full (strict)**.
 
 ---
 
-## 9. Modular Hosting Provider Architecture
+## 9. Modular Hosting Provider Architecture for Private Vaults
 
-Hosting provider support is structured as a pluggable, modular system located in [`scripts/providers/`](../scripts/providers/):
+Private encrypted recovery terminals can be deployed to any major edge hosting provider using the modular provider framework in [`scripts/providers/`](../scripts/providers/):
 
 ```text
 scripts/providers/
 ├── base-provider.js     # Shared security headers (CSP, HSTS, no-store) & BaseProvider interface
-├── cloudflare.js        # Cloudflare Pages provider (_headers, _redirects, wrangler.toml)
+├── cloudflare.js        # Cloudflare Pages provider (_headers, wrangler.toml)
 ├── netlify.js           # Netlify provider (_headers, netlify.toml)
 ├── vercel.js            # Vercel provider (vercel.json)
 ├── github-pages.js      # GitHub Pages fallback provider (.nojekyll)
@@ -278,26 +267,22 @@ scripts/providers/
 
 ### Listing Providers & Capabilities
 
-Inspect all supported providers and check which credentials are configured in your local environment:
-
 ```bash
-./scripts/deploy-site.sh --list-providers
+./scripts/deploy.sh --help
 # Or: node scripts/providers/index.js list
 ```
 
-### Deploying the Web Platform to Any Provider
-
-The deployment tooling dynamically adapts to your target provider:
+### Deploying Your Private Encrypted Vault
 
 ```bash
 # Cloudflare Pages (default):
-npm run deploy:site -- --provider cloudflare
+./scripts/deploy.sh payload.json --provider cloudflare --project identity-recovery
 
 # Netlify:
-npm run deploy:site -- --provider netlify
+./scripts/deploy.sh payload.json --provider netlify --site <YOUR_NETLIFY_SITE_ID>
 
 # Vercel:
-npm run deploy:site -- --provider vercel
+./scripts/deploy.sh payload.json --provider vercel
 ```
 
 ### Adding a New Hosting Provider

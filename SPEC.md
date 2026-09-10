@@ -27,30 +27,19 @@ identity-recovery/
 │
 ├── scripts/                      # 🛠️ Private offline tools (runs on trusted machine only)
 │   ├── build-builder.js          # Generator script to refresh tools/builder.html
-│   ├── build-site.js             # Generator script to sync site/app and edge headers
 │   ├── deploy.sh                 # Hardened 7-step rotation & publish pipeline (Direct Upload or Git)
-│   ├── deploy-site.sh            # Modular web platform deployment script (idrecoverykit.com)
 │   ├── encrypt.js                # WebCrypto AES-GCM / PBKDF2 offline CLI
 │   ├── check-staleness.js        # Zero-knowledge staleness evaluator for CI
 │   └── providers/                # 🔌 Pluggable hosting provider framework (Cloudflare, Netlify, Vercel, etc.)
 │
 ├── .github/workflows/            # ⏰ CI & scheduled monitoring
 │   ├── ci.yml                    # Automated matrix CI testing (Node 18, 20, 22)
-│   ├── deploy-site.yml           # Automated web platform deployment to Cloudflare Pages
 │   └── staleness-check.yml       # Monthly automated staleness alert workflow
 │
 ├── docs/                         # 📖 In-depth guides
 │   ├── DEPLOYMENT.md             # Cloudflare Pages, Netlify, Vercel, Caddy, Nginx & DNS setup
 │   ├── CLI_REFERENCE.md          # Manual CLI flags & offline workflow
 │   └── FEATURES.md               # UI features (TOTP, QR, panic keybind)
-│
-├── site/                         # 🌐 Public product hub (idrecoverykit.com)
-│   ├── index.html                # Project landing page & documentation hub
-│   ├── app/index.html            # Hosted web vault builder (synced from tools/builder.html)
-│   ├── _headers                  # Cloudflare/Netlify edge headers & app no-store rules
-│   ├── _redirects                # Canonical www to apex domain redirects
-│   ├── netlify.toml              # Netlify edge security header configuration
-│   └── vercel.json               # Vercel edge headers & app no-store rules
 │
 ├── templates/                    # 📋 Safe dummy templates
 │   └── sample-payload.json       # Template recovery schema
@@ -329,4 +318,4 @@ Automated test runner verifying:
 17. Offline Vault Builder (`tools/builder.html`) security, CSP, and parity check.
 18. Multi-provider edge security parity verifying identical strict CSP, HSTS, and `Cache-Control: no-store` headers across Cloudflare (`_headers`), Vercel (`vercel.json`), and Netlify (`netlify.toml`), along with modular provider registry verification.
 19. Modular Credential Card Architecture & Normalization Parity verifying password manager, backup codes, seed phrase, TOTP group, key-value, and notes cards.
-20. Public Product Hub (`site/`), Cloudflare Pages configuration, GitHub Pages (`docs/`), and repository trust assets verified for `idrecoverykit.com`.
+20. Decoupled Domain Architecture & Core Protocol Integrity verifying strict origin separation, deletion of public web platform from core vault repo, edge security parity (`public/_headers`), standalone offline builder (`tools/builder.html`), and trust assets (`LICENSE`, `SECURITY.md`).

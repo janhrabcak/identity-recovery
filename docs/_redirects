@@ -1,3 +1,0 @@
-# Cloudflare redirects for idrecoverykit.com
-/vault /app/ 301
-/builder /app/ 301

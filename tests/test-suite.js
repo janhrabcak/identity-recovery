@@ -581,124 +581,70 @@ async function runTests() {
 
   console.log("✓ Test 19 Passed: Modular Credential Card Architecture & Normalization Parity verified.");
 
-  // Test 20: Public Product Hub (idrecoverykit.com) Site & App Parity
-  console.log("\n[Test 20] Public Product Hub (idrecoverykit.com) Site & App Parity Verification");
-  const SITE_INDEX_PATH = path.join(REPO_ROOT, 'site', 'index.html');
-  const SITE_APP_INDEX_PATH = path.join(REPO_ROOT, 'site', 'app', 'index.html');
-  const SITE_HEADERS_PATH = path.join(REPO_ROOT, 'site', '_headers');
+  // Test 20: Decoupled Domain Architecture & Core Protocol Integrity Verification
+  console.log("\n[Test 20] Decoupled Domain Architecture & Core Protocol Integrity Verification");
 
-  if (!fs.existsSync(SITE_INDEX_PATH)) {
-    throw new Error("Test 20 Failed: site/index.html not found!");
-  }
-  const siteIndexContent = fs.readFileSync(SITE_INDEX_PATH, 'utf8');
-  if (!siteIndexContent.includes("Content-Security-Policy") || !siteIndexContent.includes("default-src 'none'")) {
-    throw new Error("Test 20 Failed: site/index.html missing strict CSP!");
-  }
-  if (!siteIndexContent.includes("./app/")) {
-    throw new Error("Test 20 Failed: site/index.html missing link to Web App (./app/)!");
-  }
-  if (!siteIndexContent.includes("https://github.com/janhrabcak/identity-recovery")) {
-    throw new Error("Test 20 Failed: site/index.html missing link to GitHub repository!");
+  // 1. Domain Separation: Ensure site/ is decoupled from core protocol repository
+  const SITE_DIR_PATH = path.join(REPO_ROOT, 'site');
+  if (fs.existsSync(SITE_DIR_PATH)) {
+    throw new Error("Test 20 Failed: site/ directory still exists in core repository! Domains must remain decoupled.");
   }
 
-  if (!fs.existsSync(SITE_APP_INDEX_PATH)) {
-    throw new Error("Test 20 Failed: site/app/index.html not found! Run scripts/build-site.js.");
-  }
-  const expectedBuilderHtml = fs.readFileSync(path.join(REPO_ROOT, 'tools', 'builder.html'), 'utf8');
-  const siteAppHtml = fs.readFileSync(SITE_APP_INDEX_PATH, 'utf8');
-  if (expectedBuilderHtml !== siteAppHtml) {
-    throw new Error("Test 20 Failed: site/app/index.html does not match tools/builder.html! Run npm run build.");
-  }
-
-  if (!fs.existsSync(SITE_HEADERS_PATH)) {
-    throw new Error("Test 20 Failed: site/_headers not found!");
-  }
-  const siteHeaders = fs.readFileSync(SITE_HEADERS_PATH, 'utf8');
-  if (!siteHeaders.includes("default-src 'none'") || !siteHeaders.includes("/app/*") || !siteHeaders.includes("no-store")) {
-    throw new Error("Test 20 Failed: site/_headers missing CSP or /app/* no-store rules!");
-  }
-
-  // Verify GitHub Pages (docs/) parity
-  const DOCS_INDEX_PATH = path.join(REPO_ROOT, 'docs', 'index.html');
-  const DOCS_APP_INDEX_PATH = path.join(REPO_ROOT, 'docs', 'app', 'index.html');
-  if (!fs.existsSync(DOCS_INDEX_PATH)) {
-    throw new Error("Test 20 Failed: docs/index.html not found! Run npm run build.");
-  }
-  if (!fs.existsSync(DOCS_APP_INDEX_PATH)) {
-    throw new Error("Test 20 Failed: docs/app/index.html not found! Run npm run build.");
-  }
-  const docsIndexContent = fs.readFileSync(DOCS_INDEX_PATH, 'utf8');
-  if (docsIndexContent !== siteIndexContent) {
-    throw new Error("Test 20 Failed: docs/index.html does not match site/index.html! Run npm run build.");
-  }
-  const docsAppContent = fs.readFileSync(DOCS_APP_INDEX_PATH, 'utf8');
-  if (docsAppContent !== expectedBuilderHtml) {
-    throw new Error("Test 20 Failed: docs/app/index.html does not match tools/builder.html! Run npm run build.");
-  }
-
-  // Verify PWA and Community files
-  if (!fs.existsSync(path.join(REPO_ROOT, 'docs', 'manifest.json')) ||
-      !fs.existsSync(path.join(REPO_ROOT, 'docs', 'sw.js')) ||
-      !fs.existsSync(path.join(REPO_ROOT, 'docs', 'social-preview.png'))) {
-    throw new Error("Test 20 Failed: Missing PWA manifest, service worker, or social preview in docs/!");
-  }
+  // 2. Core Protocol Trust & Security Assets
   if (!fs.existsSync(path.join(REPO_ROOT, 'LICENSE')) || !fs.existsSync(path.join(REPO_ROOT, 'SECURITY.md'))) {
     throw new Error("Test 20 Failed: Missing LICENSE or SECURITY.md in repo root!");
   }
-
-  // Verify Cloudflare Pages configuration & deployment tooling for idrecoverykit.com
-  const SITE_REDIRECTS_PATH = path.join(REPO_ROOT, 'site', '_redirects');
-  if (!fs.existsSync(SITE_REDIRECTS_PATH)) {
-    throw new Error("Test 20 Failed: site/_redirects not found! Run npm run build:site.");
-  }
-  const siteRedirects = fs.readFileSync(SITE_REDIRECTS_PATH, 'utf8');
-  if (!siteRedirects.includes("idrecoverykit.com")) {
-    throw new Error("Test 20 Failed: site/_redirects missing canonical redirect rule!");
+  if (!fs.existsSync(path.join(REPO_ROOT, 'docs', 'DEPLOYMENT.md'))) {
+    throw new Error("Test 20 Failed: Missing docs/DEPLOYMENT.md in repo root!");
   }
 
+  // 3. Edge Recovery Terminal Configuration Parity
   const WRANGLER_CONFIG_PATH = path.join(REPO_ROOT, 'wrangler.toml');
   if (!fs.existsSync(WRANGLER_CONFIG_PATH)) {
     throw new Error("Test 20 Failed: wrangler.toml missing!");
   }
   const wranglerConfig = fs.readFileSync(WRANGLER_CONFIG_PATH, 'utf8');
-  if ((!wranglerConfig.includes("pages_build_output_dir") && !wranglerConfig.includes("[assets]")) || !wranglerConfig.includes("idrecoverykit")) {
-    throw new Error("Test 20 Failed: wrangler.toml missing assets/pages_build_output_dir or project name!");
+  if (!wranglerConfig.includes("identity-recovery") || !wranglerConfig.includes("./public")) {
+    throw new Error("Test 20 Failed: wrangler.toml must configure identity-recovery pointing to ./public!");
   }
 
-  const DEPLOY_SITE_SCRIPT = path.join(REPO_ROOT, 'scripts', 'deploy-site.sh');
-  if (!fs.existsSync(DEPLOY_SITE_SCRIPT)) {
-    throw new Error("Test 20 Failed: scripts/deploy-site.sh missing!");
+  const PUBLIC_HEADERS_PATH = path.join(REPO_ROOT, 'public', '_headers');
+  if (!fs.existsSync(PUBLIC_HEADERS_PATH)) {
+    throw new Error("Test 20 Failed: public/_headers not found!");
+  }
+  const publicHeaders = fs.readFileSync(PUBLIC_HEADERS_PATH, 'utf8');
+  if (!publicHeaders.includes("default-src 'none'") || !publicHeaders.includes("no-store")) {
+    throw new Error("Test 20 Failed: public/_headers missing CSP default-src 'none' or no-store rules!");
   }
 
-  const DEPLOY_SITE_WORKFLOW = path.join(REPO_ROOT, '.github', 'workflows', 'deploy-site.yml');
-  if (!fs.existsSync(DEPLOY_SITE_WORKFLOW)) {
-    throw new Error("Test 20 Failed: .github/workflows/deploy-site.yml missing!");
+  // 4. Standalone Recovery Builder Integrity
+  const TEST20_BUILDER_PATH = path.join(REPO_ROOT, 'tools', 'builder.html');
+  if (!fs.existsSync(TEST20_BUILDER_PATH)) {
+    throw new Error("Test 20 Failed: tools/builder.html not found! Run npm run build.");
+  }
+  const test20BuilderHtml = fs.readFileSync(TEST20_BUILDER_PATH, 'utf8');
+  if (!test20BuilderHtml.includes("window.crypto.subtle") || !test20BuilderHtml.includes("PBKDF2")) {
+    throw new Error("Test 20 Failed: tools/builder.html missing client-side cryptographic functions!");
   }
 
-  // Verify AI Agent & LLM Discovery Assets (llms.txt, robots.txt, sitemap.xml, vault schema)
-  const LLMS_TXT_PATH = path.join(REPO_ROOT, 'site', 'llms.txt');
-  const LLMS_FULL_PATH = path.join(REPO_ROOT, 'site', 'llms-full.txt');
-  const ROBOTS_PATH = path.join(REPO_ROOT, 'site', 'robots.txt');
-  const SITEMAP_PATH = path.join(REPO_ROOT, 'site', 'sitemap.xml');
-  const VAULT_SCHEMA_PATH = path.join(REPO_ROOT, 'site', 'schema', 'vault.v1.json');
+  // 5. Decoupled Standalone Website Verification (if present in sibling directory)
+  const SIBLING_SITE_REPO = path.resolve(REPO_ROOT, '..', 'idrecoverykit-site');
+  if (fs.existsSync(SIBLING_SITE_REPO)) {
+    const siteIndex = path.join(SIBLING_SITE_REPO, 'index.html');
+    const siteApp = path.join(SIBLING_SITE_REPO, 'app', 'index.html');
+    const siteHeaders = path.join(SIBLING_SITE_REPO, '_headers');
+    const sitePkg = path.join(SIBLING_SITE_REPO, 'package.json');
 
-  if (!fs.existsSync(LLMS_TXT_PATH) || !fs.readFileSync(LLMS_TXT_PATH, 'utf8').includes('ID Recovery Kit')) {
-    throw new Error("Test 20 Failed: site/llms.txt missing or invalid!");
-  }
-  if (!fs.existsSync(LLMS_FULL_PATH) || !fs.readFileSync(LLMS_FULL_PATH, 'utf8').includes('Cryptographic Specification')) {
-    throw new Error("Test 20 Failed: site/llms-full.txt missing or invalid!");
-  }
-  if (!fs.existsSync(ROBOTS_PATH) || !fs.readFileSync(ROBOTS_PATH, 'utf8').includes('GPTBot')) {
-    throw new Error("Test 20 Failed: site/robots.txt missing or lacks AI crawler directives!");
-  }
-  if (!fs.existsSync(SITEMAP_PATH) || !fs.readFileSync(SITEMAP_PATH, 'utf8').includes('https://idrecoverykit.com/')) {
-    throw new Error("Test 20 Failed: site/sitemap.xml missing or invalid!");
-  }
-  if (!fs.existsSync(VAULT_SCHEMA_PATH) || !JSON.parse(fs.readFileSync(VAULT_SCHEMA_PATH, 'utf8')).properties) {
-    throw new Error("Test 20 Failed: site/schema/vault.v1.json missing or invalid JSON schema!");
+    if (!fs.existsSync(siteIndex) || !fs.existsSync(siteApp) || !fs.existsSync(siteHeaders) || !fs.existsSync(sitePkg)) {
+      throw new Error("Test 20 Failed: Sibling idrecoverykit-site repository is missing key root files!");
+    }
+    const siteIndexContent = fs.readFileSync(siteIndex, 'utf8');
+    if (!siteIndexContent.includes("Content-Security-Policy") || !siteIndexContent.includes("default-src 'none'")) {
+      throw new Error("Test 20 Failed: idrecoverykit-site index.html missing strict CSP!");
+    }
   }
 
-  console.log("✓ Test 20 Passed: Public product hub (site/), Cloudflare Pages configuration, GitHub Pages (docs/), and repository trust assets verified.");
+  console.log("✓ Test 20 Passed: Decoupled domain architecture, edge security configuration, and standalone builder verified.");
 }
 
 runTests().catch(err => {
